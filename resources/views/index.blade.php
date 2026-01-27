@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
     <title>Habukhan</title>
-    <script defer="defer" src="/static/js/main.805db54f.js"></script>
+    <script defer="defer" src="/static/js/main.7bb543bd.js"></script>
     <link href="/static/css/main.e986b2f6.css" rel="stylesheet">
 </head>
 
