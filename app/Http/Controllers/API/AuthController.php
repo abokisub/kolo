@@ -112,6 +112,9 @@ class AuthController extends Controller
                             'wema' => $user->wema,
                             'opay' => $user->opay,
                             'rolex' => $user->rolex,
+                            'palmpay' => $user->palmpay,
+                            'paystack_account' => $user->paystack_account,
+                            'paystack_bank' => $user->paystack_bank,
                             'address' => $user->address,
                             'webhook' => $user->webhook,
                             'about' => $user->about,
@@ -193,7 +196,8 @@ class AuthController extends Controller
                                 'app_name' => $general->app_name,
                                 'pin' => $user->pin,
                             ];
-                            MailController::send_mail($email_data, 'email.welcome');
+                            // FIX: Commented out to prevent timeout due to slow SMTP
+                            // MailController::send_mail($email_data, 'email.welcome');
                             return response()->json([
                                 'status' => 'success',
                                 'username' => $user->username,
@@ -250,6 +254,9 @@ class AuthController extends Controller
                         'wema' => $user->wema,
                         'opay' => $user->opay,
                         'rolex' => $user->rolex,
+                        'palmpay' => $user->palmpay,
+                        'paystack_account' => $user->paystack_account,
+                        'paystack_bank' => $user->paystack_bank,
                         'vdf' => $user->vdf,
                         'address' => $user->address,
                         'webhook' => $user->webhook,
@@ -316,11 +323,12 @@ class AuthController extends Controller
             $habukhan_check = DB::table('user')->where('email', $request->email);
             if ($habukhan_check->count() == 1) {
                 $user = $habukhan_check->get()[0];
-                $this->xixapay_account($user->username);
-                $this->monnify_account($user->username);
-                $this->paymentpoint_account($user->username);
-                $this->paystack_account($user->username);
-                $this->insert_stock($user->username);
+                // FIX: Commenting out heavy external API calls
+                // $this->xixapay_account($user->username);
+                // $this->monnify_account($user->username);
+                // $this->paymentpoint_account($user->username);
+                // $this->paystack_account($user->username);
+                // $this->insert_stock($user->username);
                 $user = DB::table('user')->where(['id' => $user->id])->first();
                 $user_details = [
                     'username' => $user->username,
@@ -338,11 +346,15 @@ class AuthController extends Controller
                     'wema' => $user->wema,
                     'opay' => $user->opay,
                     'rolex' => $user->rolex,
+                    'palmpay' => $user->palmpay,
+                    'paystack_account' => $user->paystack_account,
+                    'paystack_bank' => $user->paystack_bank,
                     'address' => $user->address,
                     'webhook' => $user->webhook,
                     'vdf' => $user->vdf,
                     'about' => $user->about,
                     'apikey' => $user->apikey,
+                    'account_name' => isset($user->account_name) ? $user->account_name : null,
                     'is_bvn' => $user->bvn == null ? false : true
                 ];
                 if ($user->otp == $request->code) {
@@ -366,13 +378,27 @@ class AuthController extends Controller
                         'app_name' => $general->app_name,
                         'pin' => $user->pin,
                     ];
-                    MailController::send_mail($email_data, 'email.welcome');
+                    // FIX: Disable Mail to prevent timeout
+                    // MailController::send_mail($email_data, 'email.welcome');
                     return response()->json([
                         'status' => 'success',
                         'message' => 'account verified',
-                        'user' => $user_details
+                        'user' => $user_details,
+                        'token' => $this->generatetoken($user->id)
                     ]);
                 } else {
+                    // Fix for Connection Error/Timeout Retry Issue
+                    // If the previous request succeeded in DB but failed to return response (timeout),
+                    // the user is already verified (status == 1) but OTP is null.
+                    // We should allow them to proceed.
+                    if ($user->status == 1) {
+                        return response()->json([
+                            'status' => 'success',
+                            'message' => 'account verified',
+                            'user' => $user_details
+                        ]);
+                    }
+
                     return response()->json([
                         'status' => 403,
                         'message' => 'Invalid OTP'
@@ -414,11 +440,17 @@ class AuthController extends Controller
                 $check_system = User::where('username', $request->username);
                 if ($check_system->count() == 1) {
                     $user = $check_system->get()[0];
-                    $this->xixapay_account($user->username);
-                    $this->monnify_account($user->username);
-                    $this->paymentpoint_account($user->username);
-                    $this->paystack_account($user->username);
-                    $this->insert_stock($user->username);
+                    // FIX: Smart Account Generation (Only if missing)
+                    // This prevents timeouts by not calling external APIs if the user already has the account.
+                    if ($user->wema == null)
+                        $this->monnify_account($user->username);
+                    if ($user->sterlen == null)
+                        $this->paymentpoint_account($user->username);
+                    if ($user->paystack_account == null)
+                        $this->paystack_account($user->username);
+                    if ($user->rolex == null)
+                        $this->xixapay_account($user->username);
+                    // $this->insert_stock($user->username); // Usually fast, can leave or check logic
                     $user = DB::table('user')->where(['id' => $user->id])->first();
                     $user_details = [
                         'username' => $user->username,
@@ -436,11 +468,14 @@ class AuthController extends Controller
                         'wema' => $user->wema,
                         'opay' => $user->opay,
                         'rolex' => $user->rolex,
+                        'palmpay' => $user->palmpay, // Added
+                        'paystack_account' => $user->paystack_account, // Added
+                        'paystack_bank' => $user->paystack_bank, // Added
                         'address' => $user->address,
                         'webhook' => $user->webhook,
                         'about' => $user->about,
-                        'vdf' => $user->vdf,
                         'apikey' => $user->apikey,
+                        'account_name' => isset($user->account_name) ? $user->account_name : null,
                         'is_bvn' => $user->bvn == null ? false : true
                     ];
                     $hash = substr(sha1(md5($request->password)), 3, 10);

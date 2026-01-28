@@ -50,7 +50,7 @@ class Banks extends Controller
                 // Only add Moniepoint if it is not hardcoded as WEMA
                 if (!is_null($auth_user->wema)) {
                     $banks_array[] = [
-                        "name" => "MONIEPOINT",
+                        "name" => "WEMA BANK",
                         "account" => $auth_user->wema,
                         "accountType" => $auth_user->wema === null,
                         'charges' => $monnify_charge . '%',
@@ -58,7 +58,7 @@ class Banks extends Controller
                 }
                 if (!is_null($auth_user->paystack_account)) {
                     $banks_array[] = [
-                        "name" => !empty($auth_user->paystack_bank) ? strtoupper($auth_user->paystack_bank) : "PAYSTACK",
+                        "name" => !empty($auth_user->paystack_bank) ? strtoupper($auth_user->paystack_bank) : "WEMA BANK",
                         "account" => $auth_user->paystack_account,
                         "accountType" => false,
                         'charges' => $paystack_charge . ' NAIRA',
@@ -85,7 +85,7 @@ class Banks extends Controller
 
                 if (!is_null($auth_user->fed)) {
                     $banks_array[] = [
-                        "name" => "MONNIFY",
+                        "name" => "MONIEPOINT",
                         "account" => $auth_user->fed,
                         "accountType" => false,
                         'charges' => $monnify_charge . '%',

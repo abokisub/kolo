@@ -40,6 +40,25 @@ class AppController extends Controller
         ]);
     }
 
+    public function discountOther(Request $request)
+    {
+        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $origin = $request->headers->get('origin');
+        if (!$origin || in_array($origin, $explode_url)) {
+            $settings = DB::table('settings')->select('monnify_charge', 'xixapay_charge')->first();
+            return response()->json([
+                'status' => 'success',
+                'monnify_charge' => $settings->monnify_charge ?? '0',
+                'glode_charge' => $settings->xixapay_charge ?? '0' // Mapping xixapay_charge to glode_charge for frontend consistency if needed, or just return as is.
+            ]);
+        } else {
+            return response()->json([
+                'status' => 403,
+                'message' => 'Unable to Authenticate System'
+            ])->setStatusCode(403);
+        }
+    }
+
     public function apiUpgrade(Request $request)
     {
         $explode_url = explode(',', env('HABUKHAN_APP_KEY'));

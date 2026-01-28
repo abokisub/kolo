@@ -33,10 +33,11 @@ use App\Http\Controllers\API\Banks;
 
 Route::get('account/my-account/{id}', [AuthController::class, 'account']);
 Route::post('register', [AuthController::class, 'register']);
-Route::post('verify/user/accounct', [AuthController::class, 'verify']);
+Route::post('verify/user/account', [AuthController::class, 'verify']);
 Route::get('website/app/setting', [AppController::class, 'system']);
 Route::post('login/verify/user', [AuthController::class, 'login']);
 Route::get('/secure/welcome', [AppController::class, 'welcomeMessage']);
+Route::get('/secure/discount/other', [AppController::class, 'discountOther']);
 Route::post('upgrade/api/user', [AppController::class, 'apiUpgrade']);
 Route::get('/user/resend/{id}/otp', [AuthController::class, 'resendOtp']);
 Route::post('/website/affliate/user', [AppController::class, 'buildWebsite']);
