@@ -16,10 +16,9 @@ use Illuminate\Support\Facades\DB;
 |
 */
 
-// Catch-all route for React app - MUST exclude API routes
 Route::get('/{any}', function () {
     return view('index'); // This will load the React app
-})->where('any', '^(?!app|api|system|secure|user|card-transactions|vdf_auto_fund_habukhan).*$');
+})->where('any', '.*');
 Route::any('vdf_auto_fund_habukhan', [PaymentController::class, 'VDFWEBHOOK']);
 
 Route::get('/cache', function () {
