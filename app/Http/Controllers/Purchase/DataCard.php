@@ -14,7 +14,7 @@ class DataCard extends Controller
 
     public function DataCardPurchase(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $validator = Validator::make($request->all(), [
             'network' => 'required',
             'quantity' => 'required|numeric|integer|not_in:0|gt:0|min:1|max:100',
@@ -23,7 +23,7 @@ class DataCard extends Controller
         ]);
         $transid = $this->purchase_ref('Data_card_');
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
-            $system = env('APP_NAME');
+            $system = config('app.name');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
                 $check = DB::table('user')->where(['id' => $this->verifytoken($request->token), 'pin' => $request->pin]);
@@ -50,7 +50,7 @@ class DataCard extends Controller
                 }
             }
 
-        } else if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+        } else if (config('app.habukhan_device_key') == $request->header('Authorization')) {
             $system = "APP";
             // api verification
             if (DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->count() == 1) {

@@ -17,7 +17,7 @@ class AuthController extends Controller
     {
         set_time_limit(300); // Increased time limit
         ignore_user_abort(true); // Continue processing even if user disconnects
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             $validator = validator::make($request->all(), [
@@ -201,7 +201,7 @@ class AuthController extends Controller
                                     'username' => $user->username,
                                     'title' => 'Account Verification',
                                     'pin' => $user->pin,
-                                    'app_name' => env('APP_NAME'),
+                                    'app_name' => config('app.name'),
                                     'otp' => $otp
                                 ];
                                 try {
@@ -301,7 +301,7 @@ class AuthController extends Controller
     }
     public function account(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             $user_token = $request->id;
@@ -462,7 +462,7 @@ class AuthController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System',
@@ -471,7 +471,7 @@ class AuthController extends Controller
     }
     public function verify(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $habukhan_check = DB::table('user')->where('email', $request->email);
             if ($habukhan_check->count() == 1) {
@@ -617,7 +617,7 @@ class AuthController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System',
@@ -627,7 +627,7 @@ class AuthController extends Controller
     }
     public function login(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             //our login function over here
@@ -812,7 +812,7 @@ class AuthController extends Controller
                 }
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'unauntorized'
@@ -822,7 +822,7 @@ class AuthController extends Controller
 
     public function resendOtp(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (isset($request->id)) {
                 $sel_user = DB::table('user')->where('email', $request->id);
@@ -843,7 +843,7 @@ class AuthController extends Controller
                         'username' => $user->username,
                         'title' => 'Account Verification',
                         'sender_mail' => $general->app_email,
-                        'app_name' => env('APP_NAME'),
+                        'app_name' => config('app.name'),
                         'otp' => $otp
                     ];
                     MailController::send_mail($email_data, 'email.verify');
@@ -864,7 +864,7 @@ class AuthController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
         }
     }
 

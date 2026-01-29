@@ -119,12 +119,12 @@
                                                 <tr class="">
                                                     <td class="">
                                                         <img alt="web image" class="" height="155"
-                                                            src={{ env('APP_URL') . '/upload/welcome.png' }}
+                                                            src={{ config('app.app_url') . '/upload/welcome.png' }}
                                                             width="155">
                                                     </td>
                                                 </tr>
                                                 <tr class="">
-                                                    <td class="headline">Welcome to {{ env('APP_NAME') }}</td>
+                                                    <td class="headline">Welcome to {{ config('app.name') }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>
@@ -137,7 +137,7 @@
                                                                             style="color:#444; font-weight: 400;">
                                                                             <br><br>
                                                                             Hello, {{ $username }}, <br><br>
-                                                                            welcome to {{ env('APP_NAME') }} we are
+                                                                            welcome to {{ config('app.name') }} we are
                                                                             really excited to have you to join our
                                                                             community! This email will help you get
                                                                             started. Please save it for your

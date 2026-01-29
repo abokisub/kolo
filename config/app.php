@@ -232,4 +232,20 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Habukhan Custom Keys
+    |--------------------------------------------------------------------------
+    |
+    | These keys are used for security and origin validation across the system.
+    |
+    */
+    'habukhan_app_key' => env('HABUKHAN_APP_KEY'),
+    'habukhan_device_key' => env('HABUKHAN_DEVICE_KEY'),
+    'error_500' => env('ERROR_500'),
+    'paystack_secret_key' => env('PAYSTACK_SECRET_KEY'),
+    'fire_base_key' => env('FIRE_BASE_KEY'),
+    'app_url' => env('APP_URL'),
+    'error_404' => env('ERROR_404'),
+
 ];

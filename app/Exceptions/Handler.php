@@ -31,7 +31,7 @@ class Handler extends ExceptionHandler
                     'message' => 'File Not Found.'
                 ], 404);
             }
-            return redirect(env('ERROR_404'));
+            return redirect(config('app.error_404'));
         });
     }
 
@@ -39,11 +39,14 @@ class Handler extends ExceptionHandler
     {
         error_reporting(0);
         if (Str::contains($request->url(), '/api')) {
-            if ($e instanceof ErrorException) return response()->apiResponse($e);
-
-            elseif ($e instanceof MethodNotAllowedHttpException) return response()->apiResponse($e);
-            elseif ($e instanceof BadMethodCallException) return response()->apiResponse($e);
-            elseif ($e instanceof Error) return response()->apiResponse($e);
+            if ($e instanceof ErrorException)
+                return response()->apiResponse($e);
+            elseif ($e instanceof MethodNotAllowedHttpException)
+                return response()->apiResponse($e);
+            elseif ($e instanceof BadMethodCallException)
+                return response()->apiResponse($e);
+            elseif ($e instanceof Error)
+                return response()->apiResponse($e);
         }
 
         return parent::render($request, $e);

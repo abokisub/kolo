@@ -113,14 +113,14 @@ class PaymentController extends Controller
                 "to" => $user->app_token,
                 "priority" => "high",
                 "notification" => [
-                    "title" => env('APP_NAME'),
+                    "title" => config('app.name'),
                     "body" => "You have received a payment of ₦" . number_format($credit, 2),
                     "sound" => "default",
                     "badge" => DB::table('notif')->where(['username' => $user->username, 'habukhan' => 0])->count(),
                 ],
             ];
             Http::withHeaders([
-                'Authorization' => 'key=' . env('FIRE_BASE_KEY'),
+                'Authorization' => 'key=' . config('app.fire_base_key'),
                 'Content-Type' => 'application/json',
             ])->post($fcmUrl, $data);
         }
@@ -157,7 +157,7 @@ class PaymentController extends Controller
     }
     public function BankTransfer(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -226,7 +226,7 @@ class PaymentController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -235,7 +235,7 @@ class PaymentController extends Controller
     }
     public function ATM(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -324,7 +324,7 @@ class PaymentController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -428,24 +428,24 @@ class PaymentController extends Controller
                                 }
                             }
                         }
-                        return redirect(env('APP_URL') . '/dashboard');
+                        return redirect(config('app.app_url') . '/dashboard');
                     } else if (strtolower($trans_status) == 'expired') {
                         DB::table('deposit')->where(['monify_ref' => $request->paymentReference, 'status' => 0])->update(['status' => 2]);
-                        return redirect(env('APP_URL') . '/dashboard');
+                        return redirect(config('app.app_url') . '/dashboard');
                     } else if (strtolower($trans_status) == 'failed') {
                         DB::table('deposit')->where(['monify_ref' => $request->paymentReference, 'status' => 0])->update(['status' => 2]);
-                        return redirect(env('APP_URL') . '/dashboard');
+                        return redirect(config('app.app_url') . '/dashboard');
                     } else {
-                        return redirect(env('APP_URL') . '/dashboard');
+                        return redirect(config('app.app_url') . '/dashboard');
                     }
                 } else {
-                    return redirect(env('APP_URL') . '/dashboard');
+                    return redirect(config('app.app_url') . '/dashboard');
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
         }
     }
     public function MonnifyWebhook(Request $request)
@@ -609,7 +609,7 @@ class PaymentController extends Controller
     }
     public function Paystackfunding(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -634,7 +634,7 @@ class PaymentController extends Controller
                                 "callback_url" => url('') . "/api/callback/paystack",
                                 "metadata" => [
                                     "custom_fields" => [
-                                        "display_name" => env('APP_NAME') . " Payment Gatway",
+                                        "display_name" => config('app.name') . " Payment Gatway",
                                         "variable_name" => $user->username,
                                         "value" => $user->phone
                                     ]
@@ -709,7 +709,7 @@ class PaymentController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -792,19 +792,19 @@ class PaymentController extends Controller
                             }
                         }
 
-                        return redirect(env('APP_URL') . '/dashboard/app');
+                        return redirect(config('app.app_url') . '/dashboard/app');
                     } else {
                         DB::table('deposit')->where(['monify_ref' => $request->trxref, 'status' => 0])->update(['status' => 2]);
-                        return redirect(env('APP_URL') . '/dashboard/app');
+                        return redirect(config('app.app_url') . '/dashboard/app');
                     }
                 } else {
-                    return redirect(env('APP_URL') . '/dashboard/app');
+                    return redirect(config('app.app_url') . '/dashboard/app');
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
         }
     }
     public function VDFWEBHOOK(Request $request)
@@ -895,7 +895,7 @@ class PaymentController extends Controller
 
     public function UpdateKYC(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!in_array($request->headers->get('origin'), $explode_url)) {
             return response()->json([
                 'status' => 403,
@@ -986,7 +986,7 @@ class PaymentController extends Controller
     }
     public function DynamicAccount(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!in_array($request->headers->get('origin'), $explode_url)) {
             return response()->json([
                 'status' => 403,
@@ -1116,14 +1116,14 @@ class PaymentController extends Controller
                             "priority" => "high",
 
                             "notification" => [
-                                "title" => env('APP_NAME'),
+                                "title" => config('app.name'),
                                 "body" => "You have received a payment of ₦" . number_format($credit, 2),
                                 "sound" => "default",
                                 "badge" => DB::table('notif')->where(['username' => $user->username, 'habukhan' => 0])->count(),
                             ],
                         ];
                         $response = Http::withHeaders([
-                            'Authorization' => 'key=' . env('FIRE_BASE_KEY'),
+                            'Authorization' => 'key=' . config('app.fire_base_key'),
                             'Content-Type' => 'application/json',
                         ])->post($fcmUrl, $data);
                     }

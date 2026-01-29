@@ -12,7 +12,7 @@ class AppController extends Controller
 {
     public function system(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             return response()->json([
@@ -23,7 +23,7 @@ class AppController extends Controller
                 'bank' => DB::table('habukhan_key')->select('account_number', 'account_name', 'bank_name', 'min', 'max')->first()
             ]);
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -42,7 +42,7 @@ class AppController extends Controller
 
     public function discountOther(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             $settings = DB::table('settings')->select('monnify_charge', 'xixapay_charge')->first();
@@ -61,7 +61,7 @@ class AppController extends Controller
 
     public function getVirtualAccountStatus(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             $settings = DB::table('settings')->select(
@@ -105,7 +105,7 @@ class AppController extends Controller
 
     public function apiUpgrade(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             $validator = validator::make($request->all(), [
@@ -187,7 +187,7 @@ class AppController extends Controller
                 }
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -199,7 +199,7 @@ class AppController extends Controller
 
     public function buildWebsite(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             $validator = validator::make($request->all(), [
@@ -339,7 +339,7 @@ class AppController extends Controller
                 }
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -348,7 +348,7 @@ class AppController extends Controller
     }
     public function AwufPackage(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             if (!isset($request->id)) {
@@ -430,7 +430,7 @@ class AppController extends Controller
                 }
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -442,7 +442,7 @@ class AppController extends Controller
 
     public function AgentPackage(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             if (!isset($request->id)) {
@@ -524,7 +524,7 @@ class AppController extends Controller
                 }
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -533,7 +533,7 @@ class AppController extends Controller
     }
     public function SystemNetwork(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             return response()->json([
@@ -541,7 +541,7 @@ class AppController extends Controller
                 'network' => DB::table('network')->select('network', 'network_vtu', 'network_share', 'network_sme', 'network_cg', 'network_g', 'plan_id', 'cash', 'data_card', 'recharge_card')->get()
             ]);
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -551,7 +551,7 @@ class AppController extends Controller
 
     public function checkNetworkType(Request $type)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $type->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             if (!empty($type->id)) {
@@ -607,7 +607,7 @@ class AppController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -617,7 +617,7 @@ class AppController extends Controller
 
     public function DeleteUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             if (!empty($request->id)) {
@@ -660,14 +660,14 @@ class AppController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -676,7 +676,7 @@ class AppController extends Controller
     }
     public function singleDelete(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             if (!empty($request->id)) {
@@ -718,14 +718,14 @@ class AppController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -734,7 +734,7 @@ class AppController extends Controller
     }
     public function UserNotif(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             if (!empty($request->id)) {
@@ -777,7 +777,7 @@ class AppController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -786,7 +786,7 @@ class AppController extends Controller
     }
     public function ClearNotifUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             if (!empty($request->id)) {
@@ -810,7 +810,7 @@ class AppController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -820,7 +820,7 @@ class AppController extends Controller
 
     public function CableName(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             return response()->json([
@@ -828,7 +828,7 @@ class AppController extends Controller
                 'cable' => DB::table('cable_result_lock')->first()
             ]);
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -837,7 +837,7 @@ class AppController extends Controller
     }
     public function BillCal(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             if ((isset($request->id)) && (!empty($request->id))) {
@@ -860,7 +860,7 @@ class AppController extends Controller
                 }
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -882,7 +882,7 @@ class AppController extends Controller
     }
     public function AirtimeCash(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->amount)) {
                 if (!empty($request->network)) {
@@ -911,7 +911,7 @@ class AppController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -920,26 +920,26 @@ class AppController extends Controller
     }
     public function BulksmsCal(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             return response()->json([
                 'amount' => $this->core()->bulk_sms
             ]);
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
         }
     }
     public function ResultPrice(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             return response()->json([
                 'price' => DB::table('result_charge')->first()
             ]);
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
         }
     }
 }

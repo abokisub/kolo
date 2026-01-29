@@ -11,7 +11,7 @@ class Trans extends Controller
 
     public function UserTrans(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -198,7 +198,7 @@ class Trans extends Controller
 
     public function AllDepositHistory(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -244,7 +244,7 @@ class Trans extends Controller
 
     public function AllHistoryUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -289,7 +289,7 @@ class Trans extends Controller
     }
     public function AllAirtimeUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -334,7 +334,7 @@ class Trans extends Controller
     }
     public function AllStockHistoryUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -381,7 +381,7 @@ class Trans extends Controller
 
     public function AllDataHistoryUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -428,7 +428,7 @@ class Trans extends Controller
 
     public function AllCableHistoryUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -475,7 +475,7 @@ class Trans extends Controller
 
     public function AllBillHistoryUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -522,7 +522,7 @@ class Trans extends Controller
 
     public function AllResultHistoryUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifytoken($request->id), 'status' => 1])->first();
@@ -705,7 +705,7 @@ class Trans extends Controller
 
     public function DataRechardPrint(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)]);
@@ -784,7 +784,7 @@ class Trans extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'

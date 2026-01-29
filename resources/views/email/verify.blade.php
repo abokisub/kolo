@@ -6,7 +6,9 @@
     <title> ACCOUNT VERIFICATION</title>
     <meta name="description" content="Reset Password Email Template.">
     <style type="text/css">
-        a:hover {text-decoration: underline !important;}
+        a:hover {
+            text-decoration: underline !important;
+        }
     </style>
 </head>
 
@@ -23,9 +25,10 @@
                     </tr>
                     <tr>
                         <td style="text-align:center;">
-                          <a href="{{ env('APP_URL') }}" title="logo" target="_blank">
-                            <img width="200" src={{ env('APP_URL').'/upload/welcome.png' }} title="logo" alt="logo">
-                          </a>
+                            <a href="{{ config('app.app_url') }}" title="logo" target="_blank">
+                                <img width="200" src={{ config('app.app_url') . '/upload/welcome.png' }} title="logo"
+                                    alt="logo">
+                            </a>
                         </td>
                     </tr>
                     <tr>
@@ -40,15 +43,19 @@
                                 </tr>
                                 <tr>
                                     <td style="padding:0 35px;">
-                                        <h1 style="color:#1e1e2d; font-weight:500; margin:0;font-size:32px;font-family:Rubik,sans-serif;">
+                                        <h1
+                                            style="color:#1e1e2d; font-weight:500; margin:0;font-size:32px;font-family:Rubik,sans-serif;">
                                             ACCOUNT VERIFICATION</h1>
                                         <span
                                             style="display:inline-block; vertical-align:middle; margin:29px 0 26px; border-bottom:1px solid #cecece; width:100px;"></span>
                                         <p style="color:#455056; font-size:15px;line-height:24px; margin:0;">
-                                            <span>{{ucfirst($username)}}</sapn>  simply use the otp sent to you to verify your account Note: Don't Send the OTP to anyone
+                                            <span>{{ucfirst($username)}}</sapn> simply use the otp sent to you to verify
+                                                your account Note: Don't Send the OTP to anyone
                                         </p>
 
-         <a href="javascript:void(0);"    style="background:#20e277;text-decoration:none !important; font-weight:500; margin-top:35px; color:#fff;text-transform:uppercase; font-size:14px;padding:10px 24px;display:inline-block;border-radius:50px;"> <span>{{ $otp }}</span></a>
+                                        <a href="javascript:void(0);"
+                                            style="background:#20e277;text-decoration:none !important; font-weight:500; margin-top:35px; color:#fff;text-transform:uppercase; font-size:14px;padding:10px 24px;display:inline-block;border-radius:50px;">
+                                            <span>{{ $otp }}</span></a>
                                     </td>
                                 </tr>
                                 <tr>
@@ -61,7 +68,9 @@
                     </tr>
                     <tr>
                         <td style="text-align:center;">
-                            <p style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">&copy; <strong><span>{{ env('APP_URL') }}</span></strong></p>
+                            <p
+                                style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">
+                                &copy; <strong><span>{{ config('app.app_url') }}</span></strong></p>
                         </td>
                     </tr>
                     <tr>

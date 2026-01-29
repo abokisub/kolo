@@ -16,7 +16,7 @@ class AdminController extends Controller
 
     public function userRequest(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
 
@@ -58,7 +58,7 @@ class AdminController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -67,7 +67,7 @@ class AdminController extends Controller
     }
     public function ClearRequest(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -87,14 +87,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -103,7 +103,7 @@ class AdminController extends Controller
     }
     public function UserSystem(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -169,14 +169,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -185,7 +185,7 @@ class AdminController extends Controller
     }
     public function editUserDetails(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -218,14 +218,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -234,7 +234,7 @@ class AdminController extends Controller
     }
     public function CreateNewUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -377,7 +377,7 @@ class AdminController extends Controller
                                     'username' => $user->username,
                                     'title' => 'Account Verification',
                                     'sender_mail' => $general->app_email,
-                                    'app_name' => env('APP_NAME'),
+                                    'app_name' => config('app.name'),
                                     'otp' => $otp
                                 ];
                                 MailController::send_mail($email_data, 'email.verify');
@@ -411,14 +411,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -427,7 +427,7 @@ class AdminController extends Controller
     }
     public function ChangeApiKey(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -459,14 +459,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -475,7 +475,7 @@ class AdminController extends Controller
     }
     public function EditUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -617,7 +617,7 @@ class AdminController extends Controller
                                         'username' => $request->username,
                                         'title' => 'Account Verification',
                                         'sender_mail' => $general->app_email,
-                                        'app_name' => env('APP_NAME'),
+                                        'app_name' => config('app.name'),
                                         'otp' => $otp
                                     ];
                                     MailController::send_mail($email_data, 'email.verify');
@@ -646,14 +646,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -662,7 +662,7 @@ class AdminController extends Controller
     }
     public function FilterUser(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -683,14 +683,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -699,7 +699,7 @@ class AdminController extends Controller
     }
     public function CreditUserHabukhan(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -863,7 +863,7 @@ class AdminController extends Controller
                                                 'username' => $user_details->username,
                                                 'title' => 'Account Funding',
                                                 'sender_mail' => $general->app_email,
-                                                'app_name' => env('APP_NAME'),
+                                                'app_name' => config('app.name'),
                                                 'wallet' => $wallet,
                                                 'amount' => number_format($request->amount, 2),
                                                 'oldbal' => number_format($user_details->bal, 2),
@@ -880,7 +880,7 @@ class AdminController extends Controller
                                                 'username' => strtoupper($user_details->username),
                                                 'title' => 'Account Funding',
                                                 'sender_mail' => $general->app_email,
-                                                'app_name' => env('APP_NAME'),
+                                                'app_name' => config('app.name'),
                                                 'wallet' => $wallet,
                                                 'amount' => number_format($request->amount, 2),
                                                 'oldbal' => number_format($user_details->bal, 2),
@@ -956,7 +956,7 @@ class AdminController extends Controller
                                                     'username' => $user_details->username,
                                                     'title' => 'Account Funding',
                                                     'sender_mail' => $general->app_email,
-                                                    'app_name' => env('APP_NAME'),
+                                                    'app_name' => config('app.name'),
                                                     'wallet' => $wallet,
                                                     'amount' => number_format($request->amount, 2),
                                                     'oldbal' => number_format($user_stock_details->$ad, 2),
@@ -973,7 +973,7 @@ class AdminController extends Controller
                                                     'username' => strtoupper($user_details->username),
                                                     'title' => 'Account Funding',
                                                     'sender_mail' => $general->app_email,
-                                                    'app_name' => env('APP_NAME'),
+                                                    'app_name' => config('app.name'),
                                                     'wallet' => $wallet,
                                                     'amount' => number_format($request->amount, 2),
                                                     'oldbal' => number_format($user_details->bal, 2),
@@ -1041,7 +1041,7 @@ class AdminController extends Controller
                                             'username' => $user_details->username,
                                             'title' => 'Account Debited',
                                             'sender_mail' => $general->app_email,
-                                            'app_name' => env('APP_NAME'),
+                                            'app_name' => config('app.name'),
                                             'wallet' => $wallet,
                                             'amount' => number_format($request->amount, 2),
                                             'oldbal' => number_format($user_details->bal, 2),
@@ -1058,7 +1058,7 @@ class AdminController extends Controller
                                             'username' => strtoupper($user_details->username),
                                             'title' => 'Account Funding',
                                             'sender_mail' => $general->app_email,
-                                            'app_name' => env('APP_NAME'),
+                                            'app_name' => config('app.name'),
                                             'wallet' => $wallet,
                                             'amount' => number_format($request->amount, 2),
                                             'oldbal' => number_format($user_details->bal, 2),
@@ -1119,7 +1119,7 @@ class AdminController extends Controller
                                                 'username' => $user_details->username,
                                                 'title' => 'Account Debited',
                                                 'sender_mail' => $general->app_email,
-                                                'app_name' => env('APP_NAME'),
+                                                'app_name' => config('app.name'),
                                                 'wallet' => $wallet,
                                                 'amount' => number_format($request->amount, 2),
                                                 'oldbal' => number_format($user_stock_details->$ad, 2),
@@ -1136,7 +1136,7 @@ class AdminController extends Controller
                                                 'username' => strtoupper($user_details->username),
                                                 'title' => 'Account Funding',
                                                 'sender_mail' => $general->app_email,
-                                                'app_name' => env('APP_NAME'),
+                                                'app_name' => config('app.name'),
                                                 'wallet' => $wallet,
                                                 'amount' => number_format($request->amount, 2),
                                                 'oldbal' => number_format($user_details->bal, 2),
@@ -1179,14 +1179,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1195,7 +1195,7 @@ class AdminController extends Controller
     }
     public function UpgradeUserAccount(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1248,7 +1248,7 @@ class AdminController extends Controller
                                     'username' => $details->username,
                                     'title' => 'Account Upgrade/Downgrade',
                                     'sender_mail' => $general->app_email,
-                                    'app_name' => env('APP_NAME'),
+                                    'app_name' => config('app.name'),
                                     'amount' => 0.00,
                                     'oldbal' => number_format($details->bal, 2),
                                     'newbal' => number_format($details->bal, 2),
@@ -1284,14 +1284,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1300,7 +1300,7 @@ class AdminController extends Controller
     }
     public function ResetUserPassword(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1337,7 +1337,7 @@ class AdminController extends Controller
                                     'email' => $details->email,
                                     'title' => 'Password Reset',
                                     'sender_mail' => $general->app_email,
-                                    'app_name' => env('APP_NAME'),
+                                    'app_name' => config('app.name'),
                                     'password' => $request->password,
                                     'username' => $details->username
                                 ];
@@ -1361,14 +1361,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1377,7 +1377,7 @@ class AdminController extends Controller
     }
     public function Automated(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1385,12 +1385,13 @@ class AdminController extends Controller
                 });
                 if ($check_user->count() == 1) {
                     if (isset($request->username)) {
+                        $successCount = 0;
                         for ($i = 0; $i < count($request->username); $i++) {
                             $username = $request->username[$i];
                             $delete_user = DB::table('user')->where('username', $username);
                             $user_id = $delete_user->first();
-                            $id = $user_id->id;
-                            if ($delete_user->count() > 0) {
+                            if ($user_id) {
+                                $id = $user_id->id;
                                 $data = [
                                     'autofund' => null,
                                     'wema' => null,
@@ -1398,12 +1399,13 @@ class AdminController extends Controller
                                     'sterlen' => null,
                                     'fed' => null
                                 ];
-                                $delete = $this->updateData($data, 'user', ['id' => $id]);
-                            } else {
-                                $delete = false;
+                                $updated = $this->updateData($data, 'user', ['id' => $id]);
+                                if ($updated || $updated === 0) {
+                                    $successCount++;
+                                }
                             }
                         }
-                        if ($delete) {
+                        if ($successCount > 0) {
                             return response()->json([
                                 'status' => 'success',
                                 'message' => 'Account Details Deleted Successfully'
@@ -1411,7 +1413,7 @@ class AdminController extends Controller
                         } else {
                             return response()->json([
                                 'status' => 403,
-                                'message' => 'Unable To delete Account'
+                                'message' => 'Unable To delete Account or No Changes Made'
                             ])->setStatusCode(403);
                         }
                     } else {
@@ -1427,14 +1429,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1443,7 +1445,7 @@ class AdminController extends Controller
     }
     public function BankDetails(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1451,18 +1453,20 @@ class AdminController extends Controller
                 });
                 if ($check_user->count() == 1) {
                     if (isset($request->username)) {
+                        $successCount = 0;
                         for ($i = 0; $i < count($request->username); $i++) {
                             $username = $request->username[$i];
                             $delete_user = DB::table('user')->where('username', $username);
-                            $user_id = $delete_user->first();
-                            $id = $user_id->username;
-                            if ($delete_user->count() > 0) {
-                                $delete = DB::table('user_bank')->where('username', $id)->delete();
-                            } else {
-                                $delete = false;
+                            $user = $delete_user->first();
+                            if ($user) {
+                                $id = $user->username;
+                                $deleted = DB::table('user_bank')->where('username', $id)->delete();
+                                if ($deleted) {
+                                    $successCount++;
+                                }
                             }
                         }
-                        if ($delete) {
+                        if ($successCount > 0) {
                             return response()->json([
                                 'status' => 'success',
                                 'message' => 'Account Details Deleted Successfully'
@@ -1486,14 +1490,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1502,7 +1506,7 @@ class AdminController extends Controller
     }
     public function AddBlock(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1541,14 +1545,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1557,7 +1561,7 @@ class AdminController extends Controller
     }
     public function DeleteBlock(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1565,18 +1569,20 @@ class AdminController extends Controller
                 });
                 if ($check_user->count() == 1) {
                     if (isset($request->number)) {
+                        $successCount = 0;
                         for ($i = 0; $i < count($request->number); $i++) {
-                            $username = $request->number[$i];
-                            $delete_user = DB::table('block')->where('number', $username);
-                            $user_id = $delete_user->first();
-                            $id = $user_id->id;
-                            if ($delete_user->count() > 0) {
-                                $delete = DB::table('block')->where('id', $id)->delete();
-                            } else {
-                                $delete = false;
+                            $number = $request->number[$i];
+                            $delete_block = DB::table('block')->where('number', $number);
+                            $block = $delete_block->first();
+                            if ($block) {
+                                $id = $block->id;
+                                $deleted = DB::table('block')->where('id', $id)->delete();
+                                if ($deleted) {
+                                    $successCount++;
+                                }
                             }
                         }
-                        if ($delete) {
+                        if ($successCount > 0) {
                             return response()->json([
                                 'status' => 'success',
                                 'message' => 'Blocked Number Deleted Successfully'
@@ -1600,14 +1606,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1616,7 +1622,7 @@ class AdminController extends Controller
     }
     public function Discount(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1671,14 +1677,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1687,7 +1693,7 @@ class AdminController extends Controller
     }
     public function AirtimeDiscount(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1814,7 +1820,8 @@ class AdminController extends Controller
                             'max_airtime' => $request->max_airtime,
                             'min_airtime' => $request->min_airtime
                         ];
-                        if (DB::table('airtime_discount')->update($data)) {
+                        $updated = DB::table('airtime_discount')->update($data);
+                        if ($updated || $updated === 0) {
                             return response()->json([
                                 'status' => 'success',
                                 'message' => 'Updated Successfully'
@@ -1833,14 +1840,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1849,7 +1856,7 @@ class AdminController extends Controller
     }
     public function CableCharges(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1874,7 +1881,8 @@ class AdminController extends Controller
                                 'startime' => $request->startime,
                                 'direct' => 1
                             ];
-                            if (DB::table('cable_charge')->update($data)) {
+                            $updated = DB::table('cable_charge')->update($data);
+                            if ($updated || $updated === 0) {
                                 return response()->json([
                                     'status' => 'success',
                                     'message' => 'Updated Successfully'
@@ -1909,7 +1917,8 @@ class AdminController extends Controller
                                 'startime' => $request->startime,
                                 'direct' => 0
                             ];
-                            if (DB::table('cable_charge')->update($data)) {
+                            $updated = DB::table('cable_charge')->update($data);
+                            if ($updated || $updated === 0) {
                                 return response()->json([
                                     'status' => 'success',
                                     'message' => 'Updated Successfully'
@@ -1929,14 +1938,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -1945,7 +1954,7 @@ class AdminController extends Controller
     }
     public function BillCharges(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -1970,7 +1979,8 @@ class AdminController extends Controller
                                 'bill_min' => $request->bill_min,
                                 'direct' => 1
                             ];
-                            if (DB::table('bill_charge')->update($data)) {
+                            $updated = DB::table('bill_charge')->update($data);
+                            if ($updated || $updated === 0) {
                                 return response()->json([
                                     'status' => 'success',
                                     'message' => 'Updated Successfully'
@@ -2003,7 +2013,8 @@ class AdminController extends Controller
                                 'bill_min' => $request->bill_min,
                                 'direct' => 0
                             ];
-                            if (DB::table('bill_charge')->update($data)) {
+                            $updated = DB::table('bill_charge')->update($data);
+                            if ($updated || $updated === 0) {
                                 return response()->json([
                                     'status' => 'success',
                                     'message' => 'Updated Successfully'
@@ -2023,14 +2034,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2039,7 +2050,7 @@ class AdminController extends Controller
     }
     public function CashDiscount(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2073,7 +2084,8 @@ class AdminController extends Controller
                             'airtel_number' => $request->airtel_number,
                             'mobile_number' => $request->mobile_number,
                         ];
-                        if (DB::table('cash_discount')->update($data)) {
+                        $updated = DB::table('cash_discount')->update($data);
+                        if ($updated || $updated === 0) {
                             return response()->json([
                                 'status' => 'success',
                                 'message' => 'Updated Successfully'
@@ -2092,14 +2104,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2108,7 +2120,7 @@ class AdminController extends Controller
     }
     public function ResultCharge(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2132,7 +2144,8 @@ class AdminController extends Controller
                             'neco' => $request->neco,
                             'nabteb' => $request->nabteb,
                         ];
-                        if (DB::table('result_charge')->update($data)) {
+                        $updated = DB::table('result_charge')->update($data);
+                        if ($updated || $updated === 0) {
                             return response()->json([
                                 'status' => 'success',
                                 'message' => 'Updated Successfully'
@@ -2151,14 +2164,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2167,7 +2180,7 @@ class AdminController extends Controller
     }
     public function OtherCharge(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2220,14 +2233,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2236,7 +2249,7 @@ class AdminController extends Controller
     }
     public function RechargeCardSel(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2274,14 +2287,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2290,7 +2303,7 @@ class AdminController extends Controller
     }
     public function DataCardSel(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2328,14 +2341,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2344,7 +2357,7 @@ class AdminController extends Controller
     }
     public function DataSel(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2425,14 +2438,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2441,7 +2454,7 @@ class AdminController extends Controller
     }
     public function AirtimeSel(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2488,14 +2501,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2504,7 +2517,7 @@ class AdminController extends Controller
     }
     public function CashSel(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2542,14 +2555,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2558,7 +2571,7 @@ class AdminController extends Controller
     }
     public function CableSel(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2594,14 +2607,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2610,7 +2623,7 @@ class AdminController extends Controller
     }
     public function BillSel(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2642,14 +2655,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2658,7 +2671,7 @@ class AdminController extends Controller
     }
     public function BulkSMSsel(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2690,14 +2703,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2706,7 +2719,7 @@ class AdminController extends Controller
     }
     public function ExamSel(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2742,14 +2755,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2758,7 +2771,7 @@ class AdminController extends Controller
     }
     public function AllUsersInfo(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2818,14 +2831,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2834,7 +2847,7 @@ class AdminController extends Controller
     }
     public function AllBankDetails(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2860,14 +2873,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2876,7 +2889,7 @@ class AdminController extends Controller
     }
     public function UserBankAccountD(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2902,14 +2915,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2918,7 +2931,7 @@ class AdminController extends Controller
     }
     public function AllUserBanned(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2937,14 +2950,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2953,7 +2966,7 @@ class AdminController extends Controller
     }
     public function AllSystemPlan(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -2981,14 +2994,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -2998,7 +3011,7 @@ class AdminController extends Controller
 
     public function ApiBalance(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -3046,14 +3059,14 @@ class AdminController extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -3063,7 +3076,7 @@ class AdminController extends Controller
 
     public function lockVirtualAccount(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -3132,7 +3145,7 @@ class AdminController extends Controller
 
     public function setDefaultVirtualAccount(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {

@@ -146,7 +146,7 @@ class Controller extends BaseController
     {
         $code = random_int(100000, 999999);
         $me = random_int(1000, 9999);
-        $app_name = env('APP_NAME');
+        $app_name = config('app.name');
         $ref = "|$app_name|$title|$code|habukhan-dev-$me";
         return $ref;
     }
@@ -365,7 +365,7 @@ class Controller extends BaseController
                 return false;
             }
             $habukhan_key = $this->habukhan_key();
-            $paystack_secret = $habukhan_key->psk ?? env('PAYSTACK_SECRET_KEY');
+            $paystack_secret = $habukhan_key->psk ?? config('app.paystack_secret_key');
             if (!$paystack_secret) {
                 \Log::error('Paystack: Secret key missing for user: ' . $username);
                 return false;

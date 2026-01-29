@@ -13,7 +13,7 @@ class BonusTransfer extends Controller
 
     public function Convert(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $transid = $this->purchase_ref('BONUS_');
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if ($this->core()->allow_pin == 1) {
@@ -41,7 +41,7 @@ class BonusTransfer extends Controller
                     ])->setStatusCode(403);
                 }
             }
-        } else if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+        } else if (config('app.habukhan_device_key') == $request->header('Authorization')) {
             // Mobile app authentication
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required for mobile
@@ -72,7 +72,7 @@ class BonusTransfer extends Controller
                 }
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'

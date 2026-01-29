@@ -14,7 +14,7 @@ class CablePurchase extends Controller
 
     public function BuyCable(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $validator = Validator::make($request->all(), [
                 'cable' => 'required',
@@ -22,11 +22,11 @@ class CablePurchase extends Controller
                 'bypass' => 'boolean|required',
                 'cable_plan' => 'required',
             ]);
-            $system = env('APP_NAME');
+            $system = config('app.name');
             $transid = $this->purchase_ref('CABLE_');
             if ($this->core()->allow_pin == 1) {
                 $authHeader = $request->header('Authorization');
-                if ($authHeader == env('HABUKHAN_DEVICE_KEY')) {
+                if ($authHeader == config('app.habukhan_device_key')) {
                     // Mobile app/device key request (like Data/Airtime)
                     $check = DB::table('user')->where([
                         'id' => $this->verifyapptoken($request->user_id),
@@ -61,7 +61,7 @@ class CablePurchase extends Controller
                     ])->setStatusCode(403);
                 }
             }
-        } else if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+        } else if (config('app.habukhan_device_key') == $request->header('Authorization')) {
 
             // api verification
             $validator = Validator::make($request->all(), [

@@ -11,7 +11,7 @@ class MessageController extends Controller
 {
     public function Gmail(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -37,7 +37,7 @@ class MessageController extends Controller
                             'title' => $request->title,
                             'sender_mail' => $general->app_email,
                             'messages' => $real_message,
-                            'app_name' => env('APP_NAME'),
+                            'app_name' => config('app.name'),
                         ];
                         MailController::send_mail($email_data, 'email.notif');
                     }
@@ -54,7 +54,7 @@ class MessageController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -63,7 +63,7 @@ class MessageController extends Controller
     }
     public function System(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if (!empty($request->id)) {
                 $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
@@ -97,7 +97,7 @@ class MessageController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -106,7 +106,7 @@ class MessageController extends Controller
     }
     public function Bulksms(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             set_time_limit(0);
             if (!empty($request->id)) {
@@ -128,7 +128,7 @@ class MessageController extends Controller
                         $r = array(
                             "user" => $habukhan_api->hollatag_username,
                             "pass" => $habukhan_api->hollatag_password,
-                            "from" => env('APP_NAME'),
+                            "from" => config('app.name'),
                             "to" => $user->phone,
                             "msg" => $real_message,
                             "type" => 0,
@@ -156,7 +156,7 @@ class MessageController extends Controller
                 ])->setStatusCode(403);
             }
         } else {
-            return redirect(env('ERROR_500'));
+            return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'

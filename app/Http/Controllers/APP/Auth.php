@@ -16,7 +16,7 @@ class Auth extends Controller
 {
     public function AppLogin(Request $request)
     {
-        if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+        if (config('app.habukhan_device_key') == $request->header('Authorization')) {
             $validator = Validator::make($request->all(), [
                 'username' => 'required|string',
                 'password' => 'required',
@@ -302,7 +302,7 @@ class Auth extends Controller
                             'balance' => number_format($user->bal, 2),
                             'title' => strtoupper($admin_user->username) . ', ' . strtoupper($user->name) . ' want to delete his account',
                             'sender_mail' => $general->app_email,
-                            'app_name' => env('APP_NAME'),
+                            'app_name' => config('app.name'),
                             'type' => $user->type,
                             'admin_username' => $admin_user->username
 
@@ -370,7 +370,7 @@ class Auth extends Controller
                         'username' => $user->username,
                         'title' => 'Account Verification',
                         'sender_mail' => $general->app_email,
-                        'app_name' => env('APP_NAME'),
+                        'app_name' => config('app.name'),
                         'otp' => $otp
                     ];
                     MailController::send_mail($email_data, 'email.verify');
@@ -580,7 +580,7 @@ class Auth extends Controller
                                     'pin' => $user->pin,
                                     'title' => 'Account Verification',
                                     'sender_mail' => $general->app_email,
-                                    'app_name' => env('APP_NAME'),
+                                    'app_name' => config('app.name'),
                                     'otp' => $otp
                                 ];
                                 MailController::send_mail($email_data, 'email.verify');
@@ -1100,13 +1100,13 @@ class Auth extends Controller
                                     "to" => $user->app_token,
                                     "priority" => "high",
                                     "notification" => [
-                                        "title" => env('APP_NAME'),
+                                        "title" => config('app.name'),
                                         "body" => 'Account Has Been Credited By Monnify ATM (APP) ₦' . number_format($credit, 2),
                                     ]
                                 ];
                                 $dataString = json_encode($data);
                                 $headers = [
-                                    'Authorization: key=' . env('FIRE_BASE_KEY'),
+                                    'Authorization: key=' . config('app.fire_base_key'),
                                     'Content-Type: application/json',
                                 ];
                                 $ch = curl_init();
@@ -1508,7 +1508,7 @@ class Auth extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
@@ -1594,7 +1594,7 @@ class Auth extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
@@ -1704,7 +1704,7 @@ class Auth extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
@@ -2033,7 +2033,7 @@ class Auth extends Controller
                     'exam' => $exam_list
                 ]);
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
@@ -2173,7 +2173,7 @@ class Auth extends Controller
                     'deposit' => $deposit_trans
                 ]);
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
@@ -2248,7 +2248,7 @@ class Auth extends Controller
                     ])->setStatusCode(403);
                 }
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
@@ -2284,7 +2284,7 @@ class Auth extends Controller
                     'data' => DB::table('notif')->where(['username' => $user->username])->orderBy('id', 'desc')->paginate(100)
                 ]);
             } else {
-                return redirect(env('ERROR_500'));
+                return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
@@ -2797,8 +2797,8 @@ class Auth extends Controller
                     'username' => $user->username,
                     'title' => 'Account Verification',
                     'pin' => $user->pin,
-                    'sender_mail' => env('MAIL_FROM_ADDRESS'),
-                    'app_name' => env('APP_NAME'),
+                    'sender_mail' => config('mail.from.address'),
+                    'app_name' => config('app.name'),
                     'otp' => $otp
                 ];
                 MailController::send_mail($email_data, 'email.reset_pin');
@@ -2866,7 +2866,7 @@ class Auth extends Controller
             $request->validate([
                 'user_id' => 'required|string',
             ]);
-            if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+            if (config('app.habukhan_device_key') == $request->header('Authorization')) {
                 $user = DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->first();
                 if ($user) {
                     DB::table('notif')->where(['username' => $user->username])->delete();
@@ -2896,7 +2896,7 @@ class Auth extends Controller
             $request->validate([
                 'user_id' => 'required|string',
             ]);
-            if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+            if (config('app.habukhan_device_key') == $request->header('Authorization')) {
                 $user = DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->first();
                 if ($user) {
                     return response()->json([

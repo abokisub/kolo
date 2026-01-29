@@ -20,17 +20,17 @@ class DataPurchase extends Controller
         \Log::info('🚨 DATA PURCHASE DEBUG - Authorization header: ' . $request->header('Authorization'));
 
         // check where the response coming from
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         \Log::info('🚨 DATA PURCHASE DEBUG - Origin header: ' . $request->headers->get('origin'));
-        \Log::info('🚨 DATA PURCHASE DEBUG - HABUKHAN_APP_KEY: ' . env('HABUKHAN_APP_KEY'));
+        \Log::info('🚨 DATA PURCHASE DEBUG - HABUKHAN_APP_KEY: ' . config('app.habukhan_app_key'));
         \Log::info('🚨 DATA PURCHASE DEBUG - Exploded HABUKHAN_APP_KEY: ' . json_encode($explode_url));
         \Log::info('🚨 DATA PURCHASE DEBUG - Origin in array: ' . (in_array($request->headers->get('origin'), $explode_url) ? 'TRUE' : 'FALSE'));
 
         // Prioritize device key authentication for mobile apps
-        if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+        if (config('app.habukhan_device_key') == $request->header('Authorization')) {
             \Log::info('🚨 DATA PURCHASE DEBUG - Using device key authentication');
-            \Log::info('🚨 DATA PURCHASE DEBUG - Device key comparison: ' . env('HABUKHAN_DEVICE_KEY') . ' == ' . $request->header('Authorization'));
-            \Log::info('🚨 DATA PURCHASE DEBUG - Comparison result: ' . (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization') ? 'TRUE' : 'FALSE'));
+            \Log::info('🚨 DATA PURCHASE DEBUG - Device key comparison: ' . config('app.habukhan_device_key') . ' == ' . $request->header('Authorization'));
+            \Log::info('🚨 DATA PURCHASE DEBUG - Comparison result: ' . (config('app.habukhan_device_key') == $request->header('Authorization') ? 'TRUE' : 'FALSE'));
 
             $validator = Validator::make($request->all(), [
                 'network' => 'required',
@@ -49,7 +49,7 @@ class DataPurchase extends Controller
                 'pin' => $request->pin,
                 'pin_type' => gettype($request->pin),
                 'authorization' => $request->header('Authorization'),
-                'device_key' => env('HABUKHAN_DEVICE_KEY')
+                'device_key' => config('app.habukhan_device_key')
             ]);
 
             $verified_user_id = $this->verifyapptoken($request->user_id);
@@ -110,7 +110,7 @@ class DataPurchase extends Controller
                 'phone.digits' => 'Phone Number Digits Must Be 11',
                 'data_plan.required' => 'Data Plan ID Required'
             ]);
-            $system = env('APP_NAME');
+            $system = config('app.name');
             $transid = $this->purchase_ref('DATA_');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
@@ -400,7 +400,7 @@ class DataPurchase extends Controller
 
                                                                                                     // fake real time response
                                                                                                     if ($network_d->network == 'AIRTEL') {
-                                                                                                        $message = "You have been gifted " . $plan_d->plan_name . $plan_d->plan_size . ' of Data from ' . env('APP_NAME') . ' Technology';
+                                                                                                        $message = "You have been gifted " . $plan_d->plan_name . $plan_d->plan_size . ' of Data from ' . config('app.name') . ' Technology';
                                                                                                     } else if ($network_d->network == 'MTN' && $plan_d->plan_type == 'SME') {
                                                                                                         $message = "Dear Customer, You have successfully shared " . $plan_d->plan_name . $plan_d->plan_size . " Data to 234" . substr($phone, -10);
                                                                                                     } else if ($network_d->network == 'MTN' && $plan_d->plan_type == 'COOPERATE GIFTING') {

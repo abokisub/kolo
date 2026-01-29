@@ -14,7 +14,7 @@ class AirtimeCash extends Controller
 
     public function Convert(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $transid = $this->purchase_ref('AIRTIME2CASH_');
         $validator = Validator::make($request->all(), [
             'network' => 'required',
@@ -24,7 +24,7 @@ class AirtimeCash extends Controller
             'amount' => 'required|numeric|integer|not_in:0|gt:0',
         ]);
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
-            $system = env('APP_NAME');
+            $system = config('app.name');
 
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
@@ -51,7 +51,7 @@ class AirtimeCash extends Controller
                     ])->setStatusCode(403);
                 }
             }
-        } else if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+        } else if (config('app.habukhan_device_key') == $request->header('Authorization')) {
             $system = "APP";
             if (DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->count() == 1) {
                 $d_token = DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->first();

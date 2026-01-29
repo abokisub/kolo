@@ -14,7 +14,7 @@ class AirtimePurchase extends Controller
 
     public function BuyAirtime(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $validator = Validator::make($request->all(), [
                 'network' => 'required',
@@ -27,7 +27,7 @@ class AirtimePurchase extends Controller
                 'phone.required' => 'Phone Number Required',
                 'phone.digits' => 'Phone Number Digits Must Be 11',
             ]);
-            $system = env('APP_NAME');
+            $system = config('app.name');
             $transid = $this->purchase_ref('AIRTIME_');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
@@ -54,7 +54,7 @@ class AirtimePurchase extends Controller
                     ])->setStatusCode(403);
                 }
             }
-        } else if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+        } else if (config('app.habukhan_device_key') == $request->header('Authorization')) {
             $validator = Validator::make($request->all(), [
                 'network' => 'required',
                 'phone' => 'required|numeric|digits:11',
@@ -71,7 +71,7 @@ class AirtimePurchase extends Controller
                 'user_id' => $request->user_id,
                 'pin' => $request->pin,
                 'authorization' => $request->header('Authorization'),
-                'device_key' => env('HABUKHAN_DEVICE_KEY')
+                'device_key' => config('app.habukhan_device_key')
             ]);
 
             if (DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->count() == 1) {

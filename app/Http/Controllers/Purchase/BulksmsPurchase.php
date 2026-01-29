@@ -13,7 +13,7 @@ class BulksmsPurchase extends Controller
 {
     public function Buy(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         $transid = $this->purchase_ref('BULKSMS_');
         $limit = $this->core()->bulk_length;
         $validator = Validator::make($request->all(), [
@@ -22,7 +22,7 @@ class BulksmsPurchase extends Controller
             'sender' => 'required|min:1|max:10',
         ]);
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
-            $system = env('APP_NAME');
+            $system = config('app.name');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
                 $check = DB::table('user')->where(['id' => $this->verifytoken($request->token), 'pin' => $request->pin]);

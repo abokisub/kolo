@@ -13,7 +13,7 @@ class BillPurchase extends Controller
 {
     public function Buy(Request $request)
     {
-        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $validator = Validator::make($request->all(), [
                 'disco' => 'required',
@@ -22,7 +22,7 @@ class BillPurchase extends Controller
                 'meter_type' => 'required',
                 'amount' => 'required|numeric|integer|not_in:0|gt:0'
             ]);
-            $system = env('APP_NAME');
+            $system = config('app.name');
             $transid = $this->purchase_ref('BILL_');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
@@ -49,7 +49,7 @@ class BillPurchase extends Controller
                     ])->setStatusCode(403);
                 }
             }
-        } else if (env('HABUKHAN_DEVICE_KEY') == $request->header('Authorization')) {
+        } else if (config('app.habukhan_device_key') == $request->header('Authorization')) {
 
             $validator = Validator::make($request->all(), [
                 'disco' => 'required',
