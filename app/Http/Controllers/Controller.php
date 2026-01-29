@@ -86,9 +86,10 @@ class Controller extends BaseController
 
     public function updateData($data, $tablename, $tableid)
     {
-        return DB::table($tablename)
+        DB::table($tablename)
             ->where($tableid)
             ->update($data);
+        return true;
     }
 
 
