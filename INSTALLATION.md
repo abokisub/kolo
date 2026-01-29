@@ -50,18 +50,33 @@ DB_PASSWORD=your_db_password
 # Add your API keys and settings
 ```
 
-### 4. Install Dependencies
+### 4. Install Dependencies & Build Frontend
 
 ```bash
 # Install PHP dependencies
 composer install --optimize-autoloader --no-dev
 
-# Install Node dependencies and build React
-cd frontend
-npm install
-npm run build
-cd ..
+# PROFESSIONALLY BUILD THE FRONTEND
+# Run this from the root folder (or inside /frontend)
+npm run build:gui
 ```
+
+**What does `build:gui` do?**
+- Compiles the React application.
+- Automatically moves hashed assets (JS/CSS) to the `public/` folder.
+- Updates `resources/views/index.blade.php` to use the correct hashed files.
+- Cleans up any routing conflicts.
+
+---
+
+## cPanel / Shared Hosting (LiteSpeed) Rules
+
+This project is optimized for LiteSpeed/CPanel. The included `.htaccess` files handle:
+1.  **SPA Routing**: Ensures that clicking "Refresh" on the React page doesn't show a 404.
+2.  **API Routing**: Correctly routes `/api/*` requests to Laravel.
+3.  **Cache Busting**: Forces the browser to load the latest JS/CSS after an update (no more "old design" bugs).
+
+---
 
 ### 5. Set Permissions
 
