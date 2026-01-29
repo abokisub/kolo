@@ -178,7 +178,7 @@ class Controller extends BaseController
                 \Log::info("Xixapay: Starting for user $username");
 
                 if (is_null($get_user->palmpay)) {
-                    $response = Http::withHeaders([
+                    $response = Http::timeout(10)->withOptions(['connect_timeout' => 5])->withHeaders([
                         'Authorization' => 'Bearer 3d47f078e1dc246f65a200104b9cefeae5caf0719b6614cfa072aec60835bfea6f450e1c1568bbbdd2a4b804bf2ac437e9abe7dea8b402c4af9be3ba',
                         'api-key' => '5e1a59b5fd64b39065a83ba858c9f3dc00bbaf88'
                     ])->post('https://api.xixapay.com/api/v1/createVirtualAccount', [
@@ -226,7 +226,7 @@ class Controller extends BaseController
 
             // 1. Authenticate
             $authString = base64_encode($keys->mon_app_key . ':' . $keys->mon_sk_key);
-            $authResponse = Http::withHeaders([
+            $authResponse = Http::timeout(10)->withOptions(['connect_timeout' => 5])->withHeaders([
                 'Authorization' => 'Basic ' . $authString
             ])->post('https://api.monnify.com/api/v1/auth/login');
 
@@ -252,7 +252,8 @@ class Controller extends BaseController
                     $payload['customerBvn'] = $keys->mon_bvn;
                 }
 
-                $response = Http::withToken($accessToken)->post('https://api.monnify.com/api/v1/bank-transfer/reserved-accounts', $payload);
+                $response = Http::timeout(10)->withOptions(['connect_timeout' => 5])->withToken($accessToken)
+                    ->post('https://api.monnify.com/api/v1/bank-transfer/reserved-accounts', $payload);
                 \Log::info("Monnify: Create Account Status: " . $response->status());
 
                 if ($response->successful()) {
@@ -281,12 +282,8 @@ class Controller extends BaseController
                             } elseif (strpos($bankName, 'FIDELITY') !== false || strpos($bankName, 'ROLEX') !== false) {
                                 $updateData['rolex'] = $accountNumber;
                             } elseif (strpos($bankName, 'MONIEPOINT') !== false) {
-                                // Map Moniepoint to 'wema' if wema is empty, else 'fed'
-                                if (empty($updateData['wema'])) {
-                                    $updateData['wema'] = $accountNumber;
-                                } else {
-                                    $updateData['fed'] = $accountNumber;
-                                }
+                                // Map Moniepoint to 'sterlen' for correct "Moniepoint" label in AuthController
+                                $updateData['sterlen'] = $accountNumber;
                             } else {
                                 // Default generic monnify field if no specific match
                                 if (!isset($updateData['fed'])) {
@@ -320,7 +317,7 @@ class Controller extends BaseController
                 $get_user = $check_first->get()[0];
                 // Provision only if at least one account is missing
                 if (is_null($get_user->palmpay) || is_null($get_user->opay)) {
-                    $response = Http::withHeaders([
+                    $response = Http::timeout(10)->withOptions(['connect_timeout' => 5])->withHeaders([
                         // 'Authorization' => 'Bearer de6fa807e97867a89055958086bef7b13ba16ef1905a291443f682580e7414ab64f8ab9afd0e2d6512a5a9ed6d886272fb2fcc01e0d31d40a9486bca',
                         // 'api-key' => '812c9e04c7760e4389a1e013d09fd4e5a8537358'
                     ])->post('https://api.paymentpoint.co/api/v1/createVirtualAccount', [
@@ -384,7 +381,7 @@ class Controller extends BaseController
                 'first_name' => $user->username,
                 'phone' => $user->phone,
             ];
-            $customerResponse = Http::withToken($paystack_secret)
+            $customerResponse = Http::timeout(10)->withOptions(['connect_timeout' => 5])->withToken($paystack_secret)
                 ->post('https://api.paystack.co/customer', $customerPayload);
             \Log::info('Paystack: Customer API response for user ' . $username . ': ' . json_encode($customerResponse->json()));
             if ($customerResponse->successful() && isset($customerResponse['data']['customer_code'])) {
@@ -412,7 +409,7 @@ class Controller extends BaseController
                     'first_name' => $first_name,
                     'last_name' => $last_name,
                 ];
-                $validateResponse = Http::withToken($paystack_secret)
+                $validateResponse = Http::timeout(10)->withOptions(['connect_timeout' => 5])->withToken($paystack_secret)
                     ->post("https://api.paystack.co/customer/{$customer_code}/identification", $validatePayload);
                 \Log::info("Paystack: Customer Validation Status for {$username}: " . $validateResponse->status() . " Response: " . $validateResponse->body());
             }
@@ -426,7 +423,7 @@ class Controller extends BaseController
                 'last_name' => $last_name,
                 'phone' => $phone,
             ];
-            $accountResponse = Http::withToken($paystack_secret)
+            $accountResponse = Http::timeout(10)->withOptions(['connect_timeout' => 5])->withToken($paystack_secret)
                 ->post('https://api.paystack.co/dedicated_account', $accountPayload);
             \Log::info('Paystack: Dedicated Account API Status: ' . $accountResponse->status() . ' Response: ' . json_encode($accountResponse->json()));
             if ($accountResponse->successful() && isset($accountResponse['data']['account_number'])) {

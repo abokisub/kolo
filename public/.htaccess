@@ -4,32 +4,49 @@
     </IfModule>
 
     RewriteEngine On
+    RewriteBase /
 
-    # 1. FIX for ERR_CONNECTION_RESET / HTTP2 Errors
-    # Prevents server from mishandling JS/CSS compression
-    <FilesMatch "\.(js|css)$">
-        Header unset ETag
+    # --- 1. FORCE NO-CACHE FOR REACT UPDATES ---
+    # This prevents the "Old Design" from sticking and fixes "Blank Screen" issues
+    <FilesMatch "\.(html|htm|js|json)$">
         FileETag None
+        <IfModule mod_headers.c>
+            Header unset ETag
+            Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+            Header set Pragma "no-cache"
+            Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+        </IfModule>
     </FilesMatch>
 
-    # 2. Handle Authorization Header
+    # --- 2. CORS HEADERS (Required for API) ---
+    <IfModule mod_headers.c>
+        Header always set Access-Control-Allow-Origin "*"
+        Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
+        Header always set Access-Control-Max-Age "1000"
+        Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token"
+    </IfModule>
+
+    # --- 3. CORE ROUTING ---
+
+    # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # 3. CORS Headers
-    Header always set Access-Control-Allow-Origin "*"
-    Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
-    Header always set Access-Control-Max-Age "1000"
-    Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token"
-
-    # 4. Handle OPTIONS requests (for CORS preflight)
+    # Handle OPTIONS requests
     RewriteCond %{REQUEST_METHOD} OPTIONS
     RewriteRule ^(.*)$ $1 [R=200,L]
 
-    # 5. Send ALL non-file Requests To Laravel (index.php)
-    # IMPORTANT: We route to index.php (Laravel), NOT index.html.
-    # Laravel's route "/" will serve the View that contains the React App.
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
+    # Don't touch real files or directories
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # IF REQUEST IS FOR API -> SEND TO LARAVEL (index.php)
+    RewriteCond %{REQUEST_URI} ^/api [NC]
     RewriteRule ^ index.php [L]
+
+    # IF REQUEST IS ANYTHING ELSE -> SEND TO REACT (index.html)
+    # This fixes the "Refresh = 404/Blank checkout" errors
+    RewriteRule ^ index.html [L]
 </IfModule>

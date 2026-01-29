@@ -350,8 +350,7 @@ class AdminController extends Controller
                         $user->refbal = '0.00';
                         $user->ref = $request->ref;
                         $user->type = $request->type;
-                        $user->date = Carbon::now("Africa/Lagos")->toDateTimeString();
-                        ;
+                        $user->date = Carbon::now("Africa/Lagos");
                         $user->kyc = $kyc;
                         $user->status = $status;
                         $user->user_limit = $this->habukhan_key()->default_limit;
@@ -832,6 +831,30 @@ class AdminController extends Controller
                                             'charges' => 0.0
                                         ];
                                         $this->inserting_data('deposit', $deposit_data);
+
+                                        // Handle referral for manual credit
+                                        if ($this->core()->referral == 1 && $user_details->ref) {
+                                            if (DB::table('deposit')->where(['username' => $user_details->username, 'status' => 1])->count() == 1) {
+                                                if (DB::table('user')->where(['username' => $user_details->ref, 'status' => 1])->exists()) {
+                                                    $user_ref = DB::table('user')->where(['username' => $user_details->ref, 'status' => 1])->first();
+                                                    $credit_ref = ($request->amount / 100) * $this->core()->referral_price;
+                                                    DB::table('user')->where(['username' => $user_details->ref, 'status' => 1])->update(['refbal' => $user_ref->refbal + $credit_ref]);
+
+                                                    DB::table('message')->insert([
+                                                        'username' => $user_ref->username,
+                                                        'amount' => $credit_ref,
+                                                        'message' => 'Referral Earning From ' . ucfirst($user_details->username),
+                                                        'oldbal' => $user_ref->refbal,
+                                                        'newbal' => $user_ref->refbal + $credit_ref,
+                                                        'habukhan_date' => $this->system_date(),
+                                                        'plan_status' => 1,
+                                                        'transid' => $deposit_ref,
+                                                        'role' => 'referral'
+                                                    ]);
+                                                }
+                                            }
+                                        }
+
                                         if ($request->isnotif == true) {
                                             //sending mail over here
                                             $email_data = [
@@ -3031,6 +3054,131 @@ class AdminController extends Controller
             }
         } else {
             return redirect(env('ERROR_500'));
+            return response()->json([
+                'status' => 403,
+                'message' => 'Unable to Authenticate System'
+            ])->setStatusCode(403);
+        }
+    }
+
+    public function lockVirtualAccount(Request $request)
+    {
+        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN');
+                });
+
+                if ($check_user->count() > 0) {
+                    $validator = Validator::make($request->all(), [
+                        'provider' => 'required|in:palmpay,monnify,wema,xixapay',
+                        'enabled' => 'required|boolean'
+                    ]);
+
+                    if ($validator->fails()) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => $validator->errors()->first()
+                        ], 400);
+                    }
+
+                    $provider = $request->provider;
+                    $enabled = $request->enabled;
+
+                    // Check if trying to disable all providers
+                    if (!$enabled) {
+                        $settings = DB::table('settings')->first();
+                        $enabledCount = 0;
+                        if ($settings->palmpay_enabled)
+                            $enabledCount++;
+                        if ($settings->monnify_enabled)
+                            $enabledCount++;
+                        if ($settings->wema_enabled)
+                            $enabledCount++;
+                        if ($settings->xixapay_enabled)
+                            $enabledCount++;
+
+                        if ($enabledCount <= 1) {
+                            return response()->json([
+                                'status' => 'error',
+                                'message' => 'Cannot disable all providers. At least one must remain enabled.'
+                            ], 400);
+                        }
+                    }
+
+                    // Update the provider status
+                    $column = $provider . '_enabled';
+                    DB::table('settings')->update([$column => $enabled]);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => ucfirst($provider) . ' has been ' . ($enabled ? 'enabled' : 'disabled')
+                    ]);
+                } else {
+                    return response()->json([
+                        'status' => 403,
+                        'message' => 'Unauthorized'
+                    ])->setStatusCode(403);
+                }
+            }
+        } else {
+            return response()->json([
+                'status' => 403,
+                'message' => 'Unable to Authenticate System'
+            ])->setStatusCode(403);
+        }
+    }
+
+    public function setDefaultVirtualAccount(Request $request)
+    {
+        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN');
+                });
+
+                if ($check_user->count() > 0) {
+                    $validator = Validator::make($request->all(), [
+                        'default_provider' => 'required|in:palmpay,monnify,wema,xixapay'
+                    ]);
+
+                    if ($validator->fails()) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => $validator->errors()->first()
+                        ], 400);
+                    }
+
+                    $provider = $request->default_provider;
+
+                    // Check if the provider is enabled
+                    $settings = DB::table('settings')->first();
+                    $column = $provider . '_enabled';
+
+                    if (!$settings->$column) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Cannot set a disabled provider as default. Please enable it first.'
+                        ], 400);
+                    }
+
+                    // Update the default provider
+                    DB::table('settings')->update(['default_virtual_account' => $provider]);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'Default provider set to ' . ucfirst($provider)
+                    ]);
+                } else {
+                    return response()->json([
+                        'status' => 403,
+                        'message' => 'Unauthorized'
+                    ])->setStatusCode(403);
+                }
+            }
+        } else {
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'

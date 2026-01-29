@@ -34,10 +34,14 @@ use App\Http\Controllers\API\Banks;
 Route::get('account/my-account/{id}', [AuthController::class, 'account']);
 Route::post('register', [AuthController::class, 'register']);
 Route::post('verify/user/account', [AuthController::class, 'verify']);
+Route::post('create-pin', [AuthController::class, 'createPin']);
 Route::get('website/app/setting', [AppController::class, 'system']);
 Route::post('login/verify/user', [AuthController::class, 'login']);
 Route::get('/secure/welcome', [AppController::class, 'welcomeMessage']);
 Route::get('/secure/discount/other', [AppController::class, 'discountOther']);
+Route::get('/secure/virtualaccounts/status', [AppController::class, 'getVirtualAccountStatus']);
+Route::post('/secure/lock/virtualaccounts/{id}/habukhan/secure', [AdminController::class, 'lockVirtualAccount']);
+Route::post('/secure/selection/virtualaccounts/{id}/habukhan/secure', [AdminController::class, 'setDefaultVirtualAccount']);
 Route::post('upgrade/api/user', [AppController::class, 'apiUpgrade']);
 Route::get('/user/resend/{id}/otp', [AuthController::class, 'resendOtp']);
 Route::post('/website/affliate/user', [AppController::class, 'buildWebsite']);
@@ -182,6 +186,13 @@ Route::get('system/all/airtime/trans/habukhan/{id}/secure', [Trans::class, 'AllA
 Route::get('system/all/cable/trans/habukhan/{id}/secure', [Trans::class, 'AllCableHistoryUser']);
 Route::get('system/all/bill/trans/habukhan/{id}/secure', [Trans::class, 'AllBillHistoryUser']);
 Route::get('system/all/result/trans/habukhan/{id}/secure', [Trans::class, 'AllResultHistoryUser']);
+
+// Fix: Missing route for "Adex" history calls (maps to AllHistoryUser)
+Route::get('system/all/history/adex/{id}/secure', [Trans::class, 'AllHistoryUser']);
+// Fix: Stub for card transactions to prevent 500 error
+Route::get('card-transactions/{id}/secure', function () {
+    return response()->json(['status' => 'success', 'data' => []]);
+});
 Route::get('data_card/trans/{id}/secure', [Trans::class, 'DataCardInvoice']);
 Route::get('data_card/trans/{id}/secure/sucess', [Trans::class, 'DataCardSuccess']);
 Route::get('data/trans/{id}/secure', [Trans::class, "DataTrans"]);
@@ -310,6 +321,8 @@ Route::post('app/transaction_history_habukhan_doing', [Auth::class, 'Transaction
 Route::post('app/system_notification_here', [Auth::class, 'AppSystemNotification']);
 Route::post('app/clear/notification/here', [Auth::class, 'ClearNotification']);
 Route::post('app/recent_transacion', [Auth::class, 'recentTransaction']);
+// Fix: Add GET route for recent transactions matching mobile app call
+Route::get('user/recent-transactions/{user_id}', [Auth::class, 'recentTransaction']);
 Route::post('app/data_card_plan', [Auth::class, 'DataCardPlans']);
 Route::post('app/recharge_card_plan', [Auth::class, 'RechargeCardPlans']);
 Route::post('app/otp_transaction_pin', [Auth::class, 'SendOtp']);

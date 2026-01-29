@@ -59,6 +59,50 @@ class AppController extends Controller
         }
     }
 
+    public function getVirtualAccountStatus(Request $request)
+    {
+        $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
+        $origin = $request->headers->get('origin');
+        if (!$origin || in_array($origin, $explode_url)) {
+            $settings = DB::table('settings')->select(
+                'palmpay_enabled',
+                'monnify_enabled',
+                'wema_enabled',
+                'xixapay_enabled',
+                'default_virtual_account'
+            )->first();
+
+            return response()->json([
+                'status' => 'success',
+                'providers' => [
+                    'palmpay' => [
+                        'enabled' => (bool) ($settings->palmpay_enabled ?? true),
+                        'is_default' => ($settings->default_virtual_account ?? 'palmpay') === 'palmpay'
+                    ],
+                    'monnify' => [
+                        'enabled' => (bool) ($settings->monnify_enabled ?? true),
+                        'is_default' => ($settings->default_virtual_account ?? 'palmpay') === 'monnify'
+                    ],
+                    'wema' => [
+                        'enabled' => (bool) ($settings->wema_enabled ?? true),
+                        'is_default' => ($settings->default_virtual_account ?? 'palmpay') === 'wema'
+                    ],
+                    'xixapay' => [
+                        'enabled' => (bool) ($settings->xixapay_enabled ?? true),
+                        'is_default' => ($settings->default_virtual_account ?? 'palmpay') === 'xixapay'
+                    ]
+                ],
+                'default_provider' => $settings->default_virtual_account ?? 'palmpay'
+            ]);
+        } else {
+            return response()->json([
+                'status' => 403,
+                'message' => 'Unable to Authenticate System'
+            ])->setStatusCode(403);
+        }
+    }
+
+
     public function apiUpgrade(Request $request)
     {
         $explode_url = explode(',', env('HABUKHAN_APP_KEY'));
