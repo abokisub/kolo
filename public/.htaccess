@@ -46,7 +46,7 @@
     RewriteCond %{REQUEST_URI} ^/api [NC]
     RewriteRule ^ index.php [L]
 
-    # IF REQUEST IS ANYTHING ELSE -> SEND TO REACT (index.html)
-    # This fixes the "Refresh = 404/Blank checkout" errors
-    RewriteRule ^ index.html [L]
+    # FINAL CATCH-ALL -> SEND TO LARAVEL (index.php)
+    # This lets Laravel's routes/web.php handle the React SPA routes
+    RewriteRule ^ index.php [L]
 </IfModule>

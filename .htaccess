@@ -1,6 +1,15 @@
 <IfModule mod_rewrite.c>
-    RewriteEngine on
-    # Ensure it doesn't loop if public is already in the URL
+    RewriteEngine On
+
+    # Prevent infinite loop
     RewriteCond %{REQUEST_URI} !^/public/
+
+    # Handle static files in public folder directly
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -d
     RewriteRule ^(.*)$ public/$1 [L]
+
+    # Everything else goes to index.php
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/index.php [L]
 </IfModule>
