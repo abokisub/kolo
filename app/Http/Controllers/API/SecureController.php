@@ -358,14 +358,21 @@ class SecureController extends Controller
                     } else {
                         $gotv = 0;
                     }
+                    if ($request->showmax == true || $request->showmax == 1) {
+                        $showmax = 1;
+                    } else {
+                        $showmax = 0;
+                    }
 
                     $data = [
                         'dstv' => $dstv,
                         'gotv' => $gotv,
                         'startime' => $startime,
+                        'showmax' => $showmax,
                     ];
 
-                    if (DB::table('cable_result_lock')->update($data)) {
+                    $updated = DB::table('cable_result_lock')->update($data);
+                    if ($updated !== false) {
                         return response()->json([
                             'status' => 'success',
                             'message' => 'Updated'

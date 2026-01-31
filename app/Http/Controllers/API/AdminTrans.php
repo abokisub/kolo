@@ -564,7 +564,7 @@ class AdminTrans extends Controller
                                 'oldbal' => $user_balance,
                                 'newbal' => $user_balance + $trans->amount,
                                 'username' => $trans->username,
-                                'adex_date' => $this->system_date(),
+                                'habukhan_date' => $this->system_date(),
                                 'transid' => $trans->transid,
                                 'role' => 'data',
                                 'amount' => $trans->amount
@@ -1447,5 +1447,42 @@ class AdminTrans extends Controller
                 'message' => 'Unable to Authenticate System'
             ])->setStatusCode(403);
         }
+    }
+    public function TransferTransSum(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN')->orwhere('type', 'CUSTOMER');
+                });
+                if ($check_user->count() > 0) {
+                    $search = strtolower($request->search);
+                    $query = DB::table('transfers')
+                        ->join('user', 'transfers.user_id', '=', 'user.id')
+                        ->select('transfers.*', 'user.username');
+
+                    if (!empty($search)) {
+                        $query->where(function ($q) use ($search) {
+                            $q->orWhere('user.username', 'LIKE', "%$search%")
+                                ->orWhere('transfers.reference', 'LIKE', "%$search%")
+                                ->orWhere('transfers.account_number', 'LIKE', "%$search%")
+                                ->orWhere('transfers.account_name', 'LIKE', "%$search%");
+                        });
+                    }
+
+                    if ($request->status != 'ALL') {
+                        $query->where('transfers.status', $request->status);
+                    }
+
+                    $results = $query->orderBy('transfers.id', 'desc')->paginate($request->limit);
+
+                    return response()->json([
+                        'transfer_trans' => $results
+                    ]);
+                }
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
     }
 }

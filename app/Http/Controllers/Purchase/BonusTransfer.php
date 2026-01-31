@@ -15,13 +15,37 @@ class BonusTransfer extends Controller
     {
         $explode_url = explode(',', config('app.habukhan_app_key'));
         $transid = $this->purchase_ref('BONUS_');
-        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+        if (config('app.habukhan_device_key') == $request->header('Authorization')) {
+            // Mobile app authentication
+            $verified_id = $this->verifyapptoken($request->user_id);
+            $check = DB::table('user')->where(['id' => $verified_id, 'status' => 1]);
+            if ($check->count() == 1) {
+                $d_token = $check->first();
+                if (trim($d_token->pin) == trim($request->pin)) {
+                    $accessToken = $d_token->apikey;
+                } else {
+                    return response()->json([
+                        'status' => 'fail',
+                        'message' => 'Invalid Transaction Pin'
+                    ])->setStatusCode(403);
+                }
+            } else {
+                $accessToken = 'null';
+            }
+        } else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
-                $check = DB::table('user')->where(['id' => $this->verifytoken($request->token), 'pin' => $request->pin]);
+                $check = DB::table('user')->where(['id' => $this->verifytoken($request->token)]);
                 if ($check->count() == 1) {
                     $det = $check->first();
-                    $accessToken = $det->apikey;
+                    if (trim($det->pin) == trim($request->pin)) {
+                        $accessToken = $det->apikey;
+                    } else {
+                        return response()->json([
+                            'status' => 'fail',
+                            'message' => 'Invalid Transaction Pin'
+                        ])->setStatusCode(403);
+                    }
                 } else {
                     return response()->json([
                         'status' => 'fail',
@@ -39,36 +63,6 @@ class BonusTransfer extends Controller
                         'status' => 'fail',
                         'message' => 'An Error Occur'
                     ])->setStatusCode(403);
-                }
-            }
-        } else if (config('app.habukhan_device_key') == $request->header('Authorization')) {
-            // Mobile app authentication
-            if ($this->core()->allow_pin == 1) {
-                // transaction pin required for mobile
-                $check = DB::table('user')->where([
-                    'id' => $this->verifyapptoken($request->user_id),
-                    'pin' => $request->pin
-                ]);
-                if ($check->count() == 1) {
-                    $d_token = $check->first();
-                    $accessToken = $d_token->apikey;
-                } else {
-                    return response()->json([
-                        'status' => 'fail',
-                        'message' => 'Invalid Transaction Pin'
-                    ])->setStatusCode(403);
-                }
-            } else {
-                // transaction pin not required for mobile
-                $check = DB::table('user')->where([
-                    'id' => $this->verifyapptoken($request->user_id),
-                    'status' => 1
-                ]);
-                if ($check->count() == 1) {
-                    $d_token = $check->first();
-                    $accessToken = $d_token->apikey;
-                } else {
-                    $accessToken = 'null';
                 }
             }
         } else {

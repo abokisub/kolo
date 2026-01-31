@@ -36,22 +36,32 @@ class AirtimeSend extends Controller
             // Store reference immediately
             DB::table('airtime')->where('transid', $data['transid'])->update(['api_reference' => $reference]);
 
+            \Log::info('Autopilot Airtime REQUEST:', ['payload' => $payload, 'transid' => $data['transid']]);
+
             $response = (new Controller)->autopilot_request('/v1/airtime', $payload);
 
+            \Log::info('Autopilot Airtime RESPONSE:', ['response' => $response, 'transid' => $data['transid']]);
+
             if (!empty($response)) {
-                if (isset($response['status']) && $response['status'] == true) {
-                    if (isset($response['data']['message'])) {
-                        DB::table('airtime')->where(['username' => $data['username'], 'transid' => $data['transid']])->update(['api_response' => $response['data']['message']]);
-                    }
+                // Autopilot uses both 'status' and 'code' fields
+                // Success: status=true AND code=200
+                // Partial: status=true AND code=201 (only for A2C, treat as process)
+                // Failed: status=false OR code=424
+                $status = $response['status'] ?? false;
+                $code = $response['code'] ?? 0;
+
+                if ($status == true && $code == 200) {
+                    \Log::info('Autopilot Airtime: Returning SUCCESS', ['transid' => $data['transid']]);
                     return 'success';
-                } else if (isset($response['status']) && $response['status'] == false) {
-                    if (isset($response['data']['message'])) {
-                        DB::table('airtime')->where(['username' => $data['username'], 'transid' => $data['transid']])->update(['api_response' => $response['data']['message']]);
-                    }
+                } else if ($status == false || $code == 424) {
+                    \Log::info('Autopilot Airtime: Returning FAIL', ['transid' => $data['transid'], 'code' => $code, 'message' => $response['data']['message'] ?? 'No message']);
                     return 'fail';
                 } else {
+                    \Log::info('Autopilot Airtime: Returning PROCESS (code=' . $code . ')', ['transid' => $data['transid'], 'response' => $response]);
                     return 'process';
                 }
+            } else {
+                \Log::info('Autopilot Airtime: Returning PROCESS (empty response)', ['transid' => $data['transid']]);
             }
             return 'process';
         } else {
@@ -862,35 +872,41 @@ class AirtimeSend extends Controller
             $sendRequest = DB::table('airtime')->where(['username' => $data['username'], 'transid' => $data['transid']])->first();
             $network = DB::table('network')->where(['network' => $sendRequest->network])->first();
             $other_api = DB::table('other_api')->first();
+
+            $serviceID = strtolower($network->virus_id);
+
+
             $paypload = array(
-                'serviceID' => strtolower($network->virus_id),
+                'serviceID' => $serviceID,
                 'phone' => $sendRequest->plan_phone,
                 'amount' => $sendRequest->amount,
-                'request_id' => Carbon::parse($this->system_date())->formatLocalized("%Y%m%d%H%M%S") . '_' . $data['transid']
+                'request_id' => Carbon::now('Africa/Lagos')->format('YmdHi') . substr(md5($data['transid']), 0, 8)
             );
-            $endpoints = "https://vtpass.com/api/pay";
+            $endpoints = "https://sandbox.vtpass.com/api/pay";
             $headers = [
                 "Authorization: Basic " . base64_encode($other_api->vtpass_username . ":" . $other_api->vtpass_password),
                 'Content-Type: application/json'
             ];
+
+            // Log for debugging
+            \Log::info('VTPass Airtime SENDING:', ['url' => $endpoints, 'payload' => $paypload]);
             $response = ApiSending::OTHERAPI($endpoints, $paypload, $headers);
+            \Log::info('VTPass Airtime RECEIVED:', ['response' => $response]);
+
             // declare plan status
             if (!empty($response)) {
-                if (isset($response['code'])) {
-                    if ($response['code'] == 000) {
-                        $plan_status = 'success';
-                    } else if ($response['response_description'] != 'TRANSACTION SUCCESSFUL') {
-                        $plan_status = 'fail';
-                    } else {
-                        $plan_status = 'process';
-                    }
+                $code = $response['code'] ?? '';
+                // Handle various VTPASS success indicators (loose comparison like BillSend)
+                if ($code == '000' || $code == 'success') {
+                    $plan_status = 'success';
+                } else if ($code == '099') {
+                    $plan_status = 'process';
                 } else {
-                    $plan_status = null;
+                    $plan_status = 'fail';
                 }
             } else {
-                $plan_status = null;
+                $plan_status = 'fail';
             }
-
             return $plan_status;
         } else {
             return 'fail';
@@ -953,8 +969,34 @@ class AirtimeSend extends Controller
 
             $response = ApiSending::BoltNetApi($endpoint_details, $payload);
 
+            // Log for debugging BoltNet status
+            \Log::info('BoltNet Airtime Response:', ['response' => $response]);
+
             if (!empty($response)) {
-                if (isset($response['response']['Status']) && $response['response']['Status'] == 'successful') {
+                // BoltNet response is already nested in ['response']
+                $responseData = $response['response'] ?? $response;
+
+                $status = $responseData['Status'] ?? $responseData['status'] ?? '';
+                $message = $responseData['message'] ?? $responseData['Message'] ?? '';
+
+                // Handle various BoltNet success indicators (case-insensitive)
+                $statusLower = strtolower($status);
+                $messageLower = strtolower($message);
+
+                \Log::info('BoltNet Decision:', [
+                    'status' => $status,
+                    'statusLower' => $statusLower,
+                    'matches' => ($statusLower == 'successful')
+                ]);
+
+                if (
+                    $statusLower == 'successful' ||
+                    $statusLower == 'success' ||
+                    $statusLower == 'completed' ||
+                    $messageLower == 'successful' ||
+                    $messageLower == 'success' ||
+                    (isset($response['response']['code']) && $response['response']['code'] == 200)
+                ) {
                     return 'success';
                 } else {
                     return 'fail';

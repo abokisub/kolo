@@ -15,7 +15,42 @@ class AirtimePurchase extends Controller
     public function BuyAirtime(Request $request)
     {
         $explode_url = explode(',', config('app.habukhan_app_key'));
-        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+        if (config('app.habukhan_device_key') == $request->header('Authorization')) {
+            $validator = Validator::make($request->all(), [
+                'network' => 'required',
+                'phone' => 'required|numeric|digits:11',
+                'bypass' => 'required',
+                'plan_type' => 'required',
+                'amount' => 'required|numeric|integer|not_in:0|gt:0',
+                'user_id' => 'required'
+            ]);
+            $system = "APP";
+            file_put_contents('debug_trace.txt', "Step 1: Start. ID: " . $request->user_id . " Amount: " . $request->amount . "\n", FILE_APPEND);
+
+            // Professional Refactor: Use client-provided request-id for idempotency if available
+            if ($request->has('request-id')) {
+                $transid = $request->input('request-id');
+            } else {
+                $transid = $this->purchase_ref('AIRTIME_');
+            }
+
+            $verified_id = $this->verifyapptoken($request->user_id);
+            $check = DB::table('user')->where(['id' => $verified_id, 'status' => 1]);
+            if ($check->count() == 1) {
+                $d_token = $check->first();
+                if (trim($d_token->pin) == trim($request->pin)) {
+                    $accessToken = $d_token->apikey;
+                    file_put_contents('debug_trace.txt', "Step 2: Auth Success\n", FILE_APPEND);
+                } else {
+                    return response()->json([
+                        'status' => 'fail',
+                        'message' => 'Invalid Transaction Pin'
+                    ])->setStatusCode(403);
+                }
+            } else {
+                $accessToken = 'null';
+            }
+        } else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $validator = Validator::make($request->all(), [
                 'network' => 'required',
                 'phone' => 'required|numeric|digits:11',
@@ -31,10 +66,17 @@ class AirtimePurchase extends Controller
             $transid = $this->purchase_ref('AIRTIME_');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
-                $check = DB::table('user')->where(['id' => $this->verifytoken($request->token), 'pin' => $request->pin]);
+                $check = DB::table('user')->where(['id' => $this->verifytoken($request->token)]);
                 if ($check->count() == 1) {
                     $det = $check->first();
-                    $accessToken = $det->apikey;
+                    if (trim($det->pin) == trim($request->pin)) {
+                        $accessToken = $det->apikey;
+                    } else {
+                        return response()->json([
+                            'status' => 'fail',
+                            'message' => 'Invalid Transaction Pin'
+                        ])->setStatusCode(403);
+                    }
                 } else {
                     return response()->json([
                         'status' => 'fail',
@@ -53,46 +95,6 @@ class AirtimePurchase extends Controller
                         'message' => 'An Error Occur'
                     ])->setStatusCode(403);
                 }
-            }
-        } else if (config('app.habukhan_device_key') == $request->header('Authorization')) {
-            $validator = Validator::make($request->all(), [
-                'network' => 'required',
-                'phone' => 'required|numeric|digits:11',
-                'bypass' => 'required',
-                'plan_type' => 'required',
-                'amount' => 'required|numeric|integer|not_in:0|gt:0',
-                'user_id' => 'required'
-            ]);
-            $system = "APP";
-            $transid = $this->purchase_ref('AIRTIME_');
-
-            // Debug logging for mobile app airtime purchase
-            \Log::info('🚨 AIRTIME PURCHASE DEBUG - Request received:', [
-                'user_id' => $request->user_id,
-                'pin' => $request->pin,
-                'authorization' => $request->header('Authorization'),
-                'device_key' => config('app.habukhan_device_key')
-            ]);
-
-            if (DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->count() == 1) {
-                $d_token = DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->first();
-
-                \Log::info('🚨 AIRTIME PURCHASE DEBUG - User found:', [
-                    'user_id' => $d_token->id,
-                    'username' => $d_token->username,
-                    'stored_pin' => $d_token->pin,
-                    'sent_pin' => $request->pin,
-                    'pin_match' => ($d_token->pin == $request->pin)
-                ]);
-
-                $accessToken = $d_token->apikey;
-                \Log::info('🚨 AIRTIME PURCHASE DEBUG - User authentication successful');
-            } else {
-                \Log::error('🚨 AIRTIME PURCHASE DEBUG - User not found:', [
-                    'user_id' => $request->user_id,
-                    'verified_user_id' => $this->verifyapptoken($request->user_id)
-                ]);
-                $accessToken = 'null';
             }
         } else {
             // api verification
@@ -118,7 +120,11 @@ class AirtimePurchase extends Controller
             ])->setStatusCode(403);
         }
         if ($accessToken) {
-            $user = DB::table('user')->where(['apikey' => $accessToken, 'status' => 1])->sharedLock()->first();
+            $user = DB::table('user')->where(function ($query) use ($accessToken) {
+                $query->where('apikey', $accessToken)
+                    ->orWhere('app_key', $accessToken)
+                    ->orWhere('habukhan_key', $accessToken);
+            })->where('status', 1)->sharedLock()->first();
             if ($user) {
                 if (DB::table('block')->where(['number' => $request->phone])->count() == 0) {
                     // declear user type
@@ -147,6 +153,7 @@ class AirtimePurchase extends Controller
 
                         // check if network exits before
                         if (DB::table('network')->where('plan_id', $network)->count() == 1) {
+                            file_put_contents('debug_trace.txt', "Step 3: Network Found: $network\n", FILE_APPEND);
                             //network details
                             $network_d = DB::table('network')->where('plan_id', $network)->first();
 
@@ -161,7 +168,10 @@ class AirtimePurchase extends Controller
                                 // check number
                                 if ($bypass == false || $request->bypass == 'false') {
                                     $validate = substr($phone, 0, 4);
-                                    if ($network_d->network == "MTN") {
+                                    // ALLOW SANDBOX NUMBER
+                                    if ($phone == '08011111111') {
+                                        $habukhan_bypass = true;
+                                    } else if ($network_d->network == "MTN") {
                                         if (strpos(" 0702 0703 0713 0704 0706 0707 0716 0802 0803 0806 0810 0813 0814 0816 0903 0913 0906 0916 0804 ", $validate) == FALSE || strlen($phone) != 11) {
                                             return response()->json([
                                                 'status' => 'fail',
@@ -229,6 +239,7 @@ class AirtimePurchase extends Controller
                                         }
 
                                         if ($habukhan_new_go == true) {
+                                            file_put_contents('debug_trace.txt', "Step 4: Limits Passed\n", FILE_APPEND);
 
                                             if ($plan_type == 'sns') {
                                                 $type = 'share';
@@ -252,6 +263,7 @@ class AirtimePurchase extends Controller
                                                         if ($discount->max_airtime >= $amount) {
                                                             if ($amount >= $discount->min_airtime) {
                                                                 if ($user->bal >= $discount_amount) {
+                                                                    file_put_contents('debug_trace.txt', "Step 5: Balance Sufficient\n", FILE_APPEND);
                                                                     $debit = $user->bal - $discount_amount;
                                                                     $refund = $debit + $discount_amount;
                                                                     $trans_history = [
@@ -282,6 +294,8 @@ class AirtimePurchase extends Controller
                                                                     ];
                                                                     if (DB::table('user')->where(['id' => $user->id])->update(['bal' => $debit])) {
                                                                         DB::commit();
+                                                                        file_put_contents('debug_trace.txt', "Step 6: Debit Success\n", FILE_APPEND);
+
                                                                         if ($this->inserting_data('message', $trans_history) and $this->inserting_data('airtime', $airtime_history)) {
                                                                             // purchase data now
                                                                             $sending_data = [

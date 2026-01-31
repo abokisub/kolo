@@ -104,10 +104,12 @@ class MeterSend extends Controller
             'type' => $data['meter_type']
         );
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://vtpass.com/api/merchant-verify");
+        curl_setopt($ch, CURLOPT_URL, "https://sandbox.vtpass.com/api/merchant-verify");
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));  //Post Fields
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         $headers = [
             'Authorization: Basic ' . $vtpass_token . '',
             'Content-Type: application/json',

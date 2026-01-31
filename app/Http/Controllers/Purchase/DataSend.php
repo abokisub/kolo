@@ -37,20 +37,27 @@ class DataSend extends Controller
             // Store reference immediately
             DB::table('data')->where('transid', $data['transid'])->update(['api_reference' => $reference]);
 
+            \Log::info('Autopilot Data REQUEST:', ['payload' => $payload, 'transid' => $data['transid']]);
+
             $response = (new Controller)->autopilot_request('/v1/data', $payload);
 
+            \Log::info('Autopilot Data RESPONSE:', ['response' => $response, 'transid' => $data['transid']]);
+
             if (!empty($response)) {
-                if (isset($response['status']) && $response['status'] == true) {
-                    if (isset($response['data']['message'])) {
-                        DB::table('data')->where(['username' => $data['username'], 'transid' => $data['transid']])->update(['api_response' => $response['data']['message']]);
-                    }
+                // Autopilot uses both 'status' and 'code' fields
+                // Success: status=true AND code=200
+                // Failed: status=false OR code=424
+                $status = $response['status'] ?? false;
+                $code = $response['code'] ?? 0;
+
+                if ($status == true && $code == 200) {
+                    \Log::info('Autopilot Data: Returning SUCCESS', ['transid' => $data['transid']]);
                     return 'success';
-                } else if (isset($response['status']) && $response['status'] == false) {
-                    if (isset($response['data']['message'])) {
-                        DB::table('data')->where(['username' => $data['username'], 'transid' => $data['transid']])->update(['api_response' => $response['data']['message']]);
-                    }
+                } else if ($status == false || $code == 424) {
+                    \Log::info('Autopilot Data: Returning FAIL', ['transid' => $data['transid'], 'code' => $code, 'message' => $response['data']['message'] ?? 'No message']);
                     return 'fail';
                 } else {
+                    \Log::info('Autopilot Data: Returning PROCESS (code=' . $code . ')', ['transid' => $data['transid'], 'response' => $response]);
                     return 'process';
                 }
             }
@@ -1460,9 +1467,9 @@ class DataSend extends Controller
                 'variation_code' => $dataplan->virus,
                 'amount' => $sendRequest->amount,
                 'phone' => $sendRequest->plan_phone,
-                'request_id' => Carbon::now()->format("YmdHis") . '_' . $data['transid']
+                'request_id' => Carbon::now('Africa/Lagos')->format('YmdHi') . substr(md5($data['transid']), 0, 8)
             );
-            $endpoints = "https://vtpass.com/api/pay";
+            $endpoints = "https://sandbox.vtpass.com/api/pay";
             $headers = [
                 "Authorization: Basic " . base64_encode($other_api->vtpass_username . ":" . $other_api->vtpass_password),
                 'Content-Type: application/json'
@@ -1476,10 +1483,10 @@ class DataSend extends Controller
                         return 'fail';
                     }
                 } else {
-                    return 'fail';
+                    return null;
                 }
             } else {
-                return 'fail';
+                return null;
             }
         } else {
             return 'fail';
@@ -1632,7 +1639,12 @@ class DataSend extends Controller
     {
         // 1. Try Primary Vendor
         \Log::info("🚨 SmartSwitch: Trying Primary - $primary_method");
-        $response = self::$primary_method($data);
+        if (method_exists(self::class, $primary_method)) {
+            $response = self::$primary_method($data);
+        } else {
+            \Log::error("SmartSwitch: Method $primary_method does not exist.");
+            $response = 'fail';
+        }
 
         // 2. If Failed, Trigger Failover
         if ($response == 'fail') {
@@ -1679,7 +1691,12 @@ class DataSend extends Controller
                 \Log::info("🚨 SmartSwitch: Found Alternate - $method (ID: " . $dataplan->$column . ")");
 
                 // Try this vendor
-                $response = self::$method($data);
+                if (method_exists(self::class, $method)) {
+                    $response = self::$method($data);
+                } else {
+                    \Log::error("SmartSwitch: Method $method does not exist.");
+                    $response = 'fail';
+                }
 
                 // If success, return success immediately
                 if ($response == 'success') {

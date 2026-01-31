@@ -32,8 +32,20 @@ class BillSend extends Controller
             $response = ApiSending::HabukhanApi($admin_details, $paypload);
             if (!empty($response)) {
                 if ($response['status'] == 'success') {
-                    if ((isset($response['token'])) && !empty($response['token'])) {
-                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $response['token']]);
+                    $tokenToSave = null;
+                    if (!empty($response['token']))
+                        $tokenToSave = $response['token'];
+                    elseif (!empty($response['purchased_code']))
+                        $tokenToSave = $response['purchased_code'];
+                    elseif (!empty($response['pin']))
+                        $tokenToSave = $response['pin'];
+                    elseif (!empty($response['Pin']))
+                        $tokenToSave = $response['Pin'];
+                    elseif (!empty($response['mainToken']))
+                        $tokenToSave = $response['mainToken'];
+
+                    if ($tokenToSave) {
+                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
                 } else if ($response['status'] == 'fail') {
@@ -76,8 +88,20 @@ class BillSend extends Controller
             $response = ApiSending::HabukhanApi($admin_details, $paypload);
             if (!empty($response)) {
                 if ($response['status'] == 'success') {
-                    if ((isset($response['token'])) && !empty($response['token'])) {
-                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $response['token']]);
+                    $tokenToSave = null;
+                    if (!empty($response['token']))
+                        $tokenToSave = $response['token'];
+                    elseif (!empty($response['purchased_code']))
+                        $tokenToSave = $response['purchased_code'];
+                    elseif (!empty($response['pin']))
+                        $tokenToSave = $response['pin'];
+                    elseif (!empty($response['Pin']))
+                        $tokenToSave = $response['Pin'];
+                    elseif (!empty($response['mainToken']))
+                        $tokenToSave = $response['mainToken'];
+
+                    if ($tokenToSave) {
+                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
                 } else if ($response['status'] == 'fail') {
@@ -121,8 +145,20 @@ class BillSend extends Controller
             $response = ApiSending::HabukhanApi($admin_details, $paypload);
             if (!empty($response)) {
                 if ($response['status'] == 'success') {
-                    if ((isset($response['token'])) && !empty($response['token'])) {
-                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $response['token']]);
+                    $tokenToSave = null;
+                    if (!empty($response['token']))
+                        $tokenToSave = $response['token'];
+                    elseif (!empty($response['purchased_code']))
+                        $tokenToSave = $response['purchased_code'];
+                    elseif (!empty($response['pin']))
+                        $tokenToSave = $response['pin'];
+                    elseif (!empty($response['Pin']))
+                        $tokenToSave = $response['Pin'];
+                    elseif (!empty($response['mainToken']))
+                        $tokenToSave = $response['mainToken'];
+
+                    if ($tokenToSave) {
+                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
                 } else if ($response['status'] == 'fail') {
@@ -165,8 +201,20 @@ class BillSend extends Controller
             $response = ApiSending::HabukhanApi($admin_details, $paypload);
             if (!empty($response)) {
                 if ($response['status'] == 'success') {
-                    if ((isset($response['token'])) && !empty($response['token'])) {
-                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $response['token']]);
+                    $tokenToSave = null;
+                    if (!empty($response['token']))
+                        $tokenToSave = $response['token'];
+                    elseif (!empty($response['purchased_code']))
+                        $tokenToSave = $response['purchased_code'];
+                    elseif (!empty($response['pin']))
+                        $tokenToSave = $response['pin'];
+                    elseif (!empty($response['Pin']))
+                        $tokenToSave = $response['Pin'];
+                    elseif (!empty($response['mainToken']))
+                        $tokenToSave = $response['mainToken'];
+
+                    if ($tokenToSave) {
+                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
                 } else if ($response['status'] == 'fail') {
@@ -210,8 +258,20 @@ class BillSend extends Controller
             $response = ApiSending::HabukhanApi($admin_details, $paypload);
             if (!empty($response)) {
                 if ($response['status'] == 'success') {
-                    if ((isset($response['token'])) && !empty($response['token'])) {
-                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $response['token']]);
+                    $tokenToSave = null;
+                    if (!empty($response['token']))
+                        $tokenToSave = $response['token'];
+                    elseif (!empty($response['purchased_code']))
+                        $tokenToSave = $response['purchased_code'];
+                    elseif (!empty($response['pin']))
+                        $tokenToSave = $response['pin'];
+                    elseif (!empty($response['Pin']))
+                        $tokenToSave = $response['Pin'];
+                    elseif (!empty($response['mainToken']))
+                        $tokenToSave = $response['mainToken'];
+
+                    if ($tokenToSave) {
+                        DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
                 } else if ($response['status'] == 'fail') {
@@ -274,9 +334,9 @@ class BillSend extends Controller
                 'variation_code' => strtolower($sendRequest->meter_type),
                 'phone' => $system->app_phone,
                 'amount' => $sendRequest->amount,
-                'request_id' => Carbon::parse($this->system_date())->formatLocalized("%Y%m%d%H%M%S") . '_' . $data['transid']
+                'request_id' => Carbon::now('Africa/Lagos')->format('YmdHi') . substr(md5($data['transid']), 0, 8)
             );
-            $endpoints = "https://vtpass.com/api/pay";
+            $endpoints = "https://sandbox.vtpass.com/api/pay";
             $headers = [
                 "Authorization: Basic " . base64_encode($other_api->vtpass_username . ":" . $other_api->vtpass_password),
                 'Content-Type: application/json'
@@ -285,18 +345,18 @@ class BillSend extends Controller
             // declare plan status
             if (!empty($response)) {
                 if (isset($response['code'])) {
-                    if ($response['code'] == 000) {
+                    if ($response['code'] == '000') {
                         if ((isset($response['purchased_code'])) && !empty($response['purchased_code'])) {
                             DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $response['purchased_code']]);
                         }
                         $plan_status = 'success';
-                    } else if ($response['response_description'] != 'TRANSACTION SUCCESSFUL') {
-                        $plan_status = 'fail';
-                    } else {
+                    } else if ($response['code'] == '099') {
                         $plan_status = 'process';
+                    } else {
+                        $plan_status = 'fail';
                     }
                 } else {
-                    $plan_status = null;
+                    $plan_status = 'fail';
                 }
             } else {
                 $plan_status = null;

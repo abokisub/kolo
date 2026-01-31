@@ -358,4 +358,35 @@ class Selection extends Controller
             ])->setStatusCode(403);
         }
     }
+    public function BankTransferSel(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN');
+                });
+                if ($check_user->count() > 0) {
+                    $sel = DB::table('bank_transfer_sel')->first();
+                    $providers = DB::table('transfer_providers')->select('name', 'slug as key')->get();
+                    return response()->json([
+                        'bank_transfer' => $sel,
+                        'transfer_providers' => $providers
+                    ]);
+                } else {
+                    return response()->json([
+                        'status' => 403,
+                        'message' => 'Not Authorised'
+                    ])->setStatusCode(403);
+                }
+            } else {
+                return response()->json([
+                    'status' => 403,
+                    'message' => 'Unable to Authenticate System'
+                ])->setStatusCode(403);
+            }
+        } else {
+            return redirect(config('app.error_500'));
+        }
+    }
 }

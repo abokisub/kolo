@@ -41,7 +41,12 @@ class DataPurchase extends Controller
                 'pin' => 'required|numeric|digits:4'
             ]);
             $system = "APP";
-            $transid = $this->purchase_ref('DATA_');
+            // Professional Refactor: Use client-provided request-id for idempotency if available
+            if ($request->has('request-id')) {
+                $transid = $request->input('request-id');
+            } else {
+                $transid = $this->purchase_ref('DATA_');
+            }
 
             // Debug logging for mobile app data purchase
             \Log::info('🚨 DATA PURCHASE DEBUG - Request received:', [
@@ -74,7 +79,7 @@ class DataPurchase extends Controller
                 ]);
 
                 // Verify PIN for mobile app
-                if ($d_token->pin == $request->pin) {
+                if (trim($d_token->pin) == trim($request->pin)) {
                     $accessToken = $d_token->apikey;
                     \Log::info('🚨 DATA PURCHASE DEBUG - PIN validation successful');
                 } else {
@@ -114,10 +119,17 @@ class DataPurchase extends Controller
             $transid = $this->purchase_ref('DATA_');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
-                $check = DB::table('user')->where(['id' => $this->verifytoken($request->token), 'pin' => $request->pin]);
+                $check = DB::table('user')->where(['id' => $this->verifytoken($request->token)]);
                 if ($check->count() == 1) {
                     $det = $check->first();
-                    $accessToken = $det->apikey;
+                    if (trim($det->pin) == trim($request->pin)) {
+                        $accessToken = $det->apikey;
+                    } else {
+                        return response()->json([
+                            'status' => 'fail',
+                            'message' => 'Invalid Transaction Pin'
+                        ])->setStatusCode(403);
+                    }
                 } else {
                     return response()->json([
                         'status' => 'fail',
@@ -159,7 +171,11 @@ class DataPurchase extends Controller
             $accessToken = trim(str_replace("Token", "", $d_token));
         }
         if (isset($accessToken)) {
-            $user = DB::table('user')->where(['apikey' => $accessToken, 'status' => 1])->first();
+            $user = DB::table('user')->where(function ($query) use ($accessToken) {
+                $query->where('apikey', $accessToken)
+                    ->orWhere('app_key', $accessToken)
+                    ->orWhere('habukhan_key', $accessToken);
+            })->where('status', 1)->first();
             if ($user) {
                 if (DB::table('block')->where(['number' => $request->phone])->count() == 0) {
                     // declear user type

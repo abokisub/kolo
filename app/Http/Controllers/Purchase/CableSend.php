@@ -280,9 +280,9 @@ class CableSend extends Controller
                 'billersCode' => $sendRequest->iuc,
                 'variation_code' => $cable_plan->vtpass,
                 'phone' => $system->app_phone,
-                'request_id' => Carbon::parse($this->system_date())->formatLocalized("%Y%m%d%H%M%S") . '_' . $data['transid']
+                'request_id' => Carbon::now('Africa/Lagos')->format('YmdHi') . substr(md5($data['transid']), 0, 8)
             );
-            $endpoints = "https://vtpass.com/api/pay";
+            $endpoints = "https://sandbox.vtpass.com/api/pay";
             $headers = [
                 "Authorization: Basic " . base64_encode($other_api->vtpass_username . ":" . $other_api->vtpass_password),
                 'Content-Type: application/json'
@@ -293,8 +293,8 @@ class CableSend extends Controller
                 if (isset($response['code'])) {
                     if ($response['code'] == 000) {
                         $plan_status = 'success';
-                    } else if ($response['response_description'] != 'TRANSACTION SUCCESSFUL') {
-                        $plan_status = 'fail';
+                    } else if ($response['response_description'] == 'TRANSACTION SUCCESSFUL') {
+                        $plan_status = 'success';
                     } else {
                         $plan_status = 'process';
                     }
@@ -310,6 +310,51 @@ class CableSend extends Controller
             return 'fail';
         }
     }
+
+    public function Showmax($data)
+    {
+        if (DB::table('cable')->where(['username' => $data['username'], 'transid' => $data['transid']])->count() == 1) {
+            $sendRequest = DB::table('cable')->where(['username' => $data['username'], 'transid' => $data['transid']])->first();
+            $cable_plan = DB::table('cable_plan')->where(['plan_id' => $data['plan_id']])->first();
+            $other_api = DB::table('other_api')->first();
+            $system = DB::table('general')->first();
+
+            $paypload = array(
+                'serviceID' => 'showmax',
+                'billersCode' => $sendRequest->iuc, // Phone number for Showmax
+                'variation_code' => $cable_plan->vtpass,
+                'phone' => $system->app_phone,
+                'request_id' => Carbon::parse($this->system_date())->formatLocalized("%Y%m%d%H%M%S") . '_' . $data['transid']
+            );
+            $endpoints = "https://sandbox.vtpass.com/api/pay";
+            $headers = [
+                "Authorization: Basic " . base64_encode($other_api->vtpass_username . ":" . $other_api->vtpass_password),
+                'Content-Type: application/json'
+            ];
+            $response = ApiSending::OTHERAPI($endpoints, $paypload, $headers);
+            // declare plan status
+            if (!empty($response)) {
+                if (isset($response['code'])) {
+                    if ($response['code'] == 000) {
+                        $plan_status = 'success';
+                    } else if ($response['response_description'] == 'TRANSACTION SUCCESSFUL') {
+                        $plan_status = 'success';
+                    } else {
+                        $plan_status = 'process';
+                    }
+                } else {
+                    $plan_status = null;
+                }
+            } else {
+                $plan_status = null;
+            }
+
+            return $plan_status;
+        } else {
+            return 'fail';
+        }
+    }
+
     public static function Email($data)
     {
         if (DB::table('cable')->where(['username' => $data['username'], 'transid' => $data['transid']])->count() == 1) {

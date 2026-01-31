@@ -29,10 +29,12 @@ class TransactionCalculator extends Controller
                         $deposit_trans = DB::table('deposit')->whereDate('date', Carbon::now("Africa/Lagos"))->where(['status' => 1])->get();
                         $spend_trans = DB::table('message')->where(function ($query) {
                             $query->where('role', '!=', 'credit');
+                            $query->where('role', '!=', 'transfer');
                             $query->where('plan_status', '!=', 2);
                         })->whereDate('habukhan_date', Carbon::now("Africa/Lagos"))->where(['plan_status' => 1])->get();
                         $cash_trans = DB::table('cash')->whereDate('plan_date', Carbon::now("Africa/Lagos"))->where(['plan_status' => 1])->get();
                         $bill_trans = DB::table('bill')->whereDate('plan_date', Carbon::now("Africa/Lagos"))->where(['plan_status' => 1])->get();
+                        $transfer_trans = DB::table('transfers')->whereDate('created_at', Carbon::now("Africa/Lagos"))->where(['status' => 'SUCCESS'])->get();
                     } else if ($request->status == '7DAYS') {
                         $data_trans = DB::table('data')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1])->get();
                         $airtime_trans = DB::table('airtime')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1])->get();
@@ -42,10 +44,12 @@ class TransactionCalculator extends Controller
                         $deposit_trans = DB::table('deposit')->whereDate('date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['status' => 1])->get();
                         $spend_trans = DB::table('message')->where(function ($query) {
                             $query->where('role', '!=', 'credit');
+                            $query->where('role', '!=', 'transfer');
                             $query->where('plan_status', '!=', 2);
                         })->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1])->get();
                         $cash_trans = DB::table('cash')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1])->get();
                         $bill_trans = DB::table('bill')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1])->get();
+                        $transfer_trans = DB::table('transfers')->whereDate('created_at', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['status' => 'SUCCESS'])->get();
                     } else if ($request->status == '30DAYS') {
                         $data_trans = DB::table('data')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1])->get();
                         $airtime_trans = DB::table('airtime')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1])->get();
@@ -55,10 +59,12 @@ class TransactionCalculator extends Controller
                         $deposit_trans = DB::table('deposit')->whereDate('date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['status' => 1])->get();
                         $spend_trans = DB::table('message')->where(function ($query) {
                             $query->where('role', '!=', 'credit');
+                            $query->where('role', '!=', 'transfer');
                             $query->where('plan_status', '!=', 2);
-                        })->whereDate('adex_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1])->get();
+                        })->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1])->get();
                         $cash_trans = DB::table('cash')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1])->get();
                         $bill_trans = DB::table('bill')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1])->get();
+                        $transfer_trans = DB::table('transfers')->whereDate('created_at', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['status' => 'SUCCESS'])->get();
                     } else if ($request->status == 'ALL TIME') {
                         $data_trans = DB::table('data')->where(['plan_status' => 1])->get();
                         $airtime_trans = DB::table('airtime')->where(['plan_status' => 1])->get();
@@ -68,10 +74,12 @@ class TransactionCalculator extends Controller
                         $deposit_trans = DB::table('deposit')->where(['status' => 1])->get();
                         $spend_trans = DB::table('message')->where(function ($query) {
                             $query->where('role', '!=', 'credit');
+                            $query->where('role', '!=', 'transfer');
                             $query->where('plan_status', '!=', 2);
                         })->where(['plan_status' => 1])->get();
                         $cash_trans = DB::table('cash')->where(['plan_status' => 1])->get();
                         $bill_trans = DB::table('bill')->where(['plan_status' => 1])->get();
+                        $transfer_trans = DB::table('transfers')->where(['status' => 'SUCCESS'])->get();
                     } else if ($request->status == 'CUSTOM USER') {
                         if ((isset($request->from)) and isset($request->to)) {
                             if (!empty($request->username)) {
@@ -88,9 +96,12 @@ class TransactionCalculator extends Controller
                                         $spend_trans = DB::table('message')->where(function ($query) {
                                             $query->where('role', '!=', 'credit');
                                             $query->where('plan_status', '!=', 2);
-                                        })->whereBetween('adex_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $request->username])->get();
+                                        })->whereBetween('habukhan_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $request->username])->get();
                                         $cash_trans = DB::table('cash')->whereBetween('plan_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $request->username])->get();
                                         $bill_trans = DB::table('bill')->whereBetween('plan_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $request->username])->get();
+                                        $transfer_trans = DB::table('transfers')->whereBetween('created_at', [$start_date, $end_date])->where(['status' => 'SUCCESS'])->whereIn('user_id', function ($q) use ($request) {
+                                            $q->select('id')->from('user')->where('username', $request->username);
+                                        })->get();
                                     } else {
                                         return response()->json([
                                             'message' => 'Invalid User Username'
@@ -124,10 +135,12 @@ class TransactionCalculator extends Controller
                                 $deposit_trans = DB::table('deposit')->whereBetween('date', [$start_date, $end_date])->where(['status' => 1])->get();
                                 $spend_trans = DB::table('message')->where(function ($query) {
                                     $query->where('role', '!=', 'credit');
+                                    $query->where('role', '!=', 'transfer');
                                     $query->where('plan_status', '!=', 2);
-                                })->whereBetween('adex_date', [$start_date, $end_date])->where(['plan_status' => 1])->get();
+                                })->whereBetween('habukhan_date', [$start_date, $end_date])->where(['plan_status' => 1])->get();
                                 $cash_trans = DB::table('cash')->whereBetween('plan_date', [$start_date, $end_date])->where(['plan_status' => 1])->get();
                                 $bill_trans = DB::table('bill')->whereBetween('plan_date', [$start_date, $end_date])->where(['plan_status' => 1])->get();
+                                $transfer_trans = DB::table('transfers')->whereBetween('created_at', [$start_date, $end_date])->where(['status' => 'SUCCESS'])->get();
                             } else {
                                 return response()->json([
                                     'message' => 'start date and end date required'
@@ -599,15 +612,22 @@ class TransactionCalculator extends Controller
                     foreach ($spend_trans as $spend) {
                         $money_spent += $spend->amount;
                     }
-                    $adex_in = $deposit_amount;
-                    $adex_out = $money_spent;
-                    $total_m = $adex_in + $adex_out;
+                    $transfer_total = 0;
+                    $transfer_charges = 0;
+                    foreach ($transfer_trans as $trans) {
+                        $transfer_total += $trans->amount;
+                        $transfer_charges += $trans->charge;
+                    }
+                    $habukhan_in = $deposit_amount;
+                    $money_spent = $money_spent + $transfer_total + $transfer_charges;
+                    $habukhan_out = $money_spent;
+                    $total_m = $habukhan_in + $habukhan_out;
                     if ($total_m != 0) {
-                        $adex_in_trans = ($adex_in / $total_m) * 100;
-                        $adex_out_trans = ($adex_out / $total_m) * 100;
+                        $habukhan_in_trans = ($habukhan_in / $total_m) * 100;
+                        $habukhan_out_trans = ($habukhan_out / $total_m) * 100;
                     } else {
-                        $adex_in_trans = 0;
-                        $adex_out_trans = 0;
+                        $habukhan_in_trans = 0;
+                        $habukhan_out_trans = 0;
                     }
 
                     $calculate_mtn_cg = '0GB';
@@ -845,9 +865,11 @@ class TransactionCalculator extends Controller
                         // deposit
                         'deposit_amount' => number_format($deposit_amount, 2),
                         'deposit_charges' => number_format($deposit_charges, 2),
-                        'deposit_trans' => number_format($adex_in_trans, 1),
-                        'spend_trans' => number_format($adex_out_trans, 1),
-                        'spend_amount' => number_format($money_spent, 2)
+                        'deposit_trans' => number_format($habukhan_in_trans, 1),
+                        'spend_trans' => number_format($habukhan_out_trans, 1),
+                        'spend_amount' => number_format($money_spent, 2),
+                        'transfer_amount' => number_format($transfer_total, 2),
+                        'transfer_charges' => number_format($transfer_charges, 2)
                     ]);
                 } else {
                     return response()->json([
@@ -889,10 +911,12 @@ class TransactionCalculator extends Controller
                         $deposit_trans = DB::table('deposit')->whereDate('date', Carbon::now("Africa/Lagos"))->where(['status' => 1, 'username' => $real_username])->get();
                         $spend_trans = DB::table('message')->where(function ($query) {
                             $query->where('role', '!=', 'credit');
+                            $query->where('role', '!=', 'transfer');
                             $query->where('plan_status', '!=', 2);
-                        })->whereDate('adex_date', Carbon::now("Africa/Lagos"))->where(['plan_status' => 1, 'username' => $real_username])->get();
+                        })->whereDate('habukhan_date', Carbon::now("Africa/Lagos"))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $cash_trans = DB::table('cash')->whereDate('plan_date', Carbon::now("Africa/Lagos"))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $bill_trans = DB::table('bill')->whereDate('plan_date', Carbon::now("Africa/Lagos"))->where(['plan_status' => 1, 'username' => $real_username])->get();
+                        $transfer_trans = DB::table('transfers')->whereDate('created_at', Carbon::now("Africa/Lagos"))->where(['status' => 'SUCCESS', 'user_id' => $adex_username->id])->get();
                     } else if ($request->status == '7DAYS') {
                         $data_trans = DB::table('data')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $airtime_trans = DB::table('airtime')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
@@ -902,10 +926,12 @@ class TransactionCalculator extends Controller
                         $deposit_trans = DB::table('deposit')->whereDate('date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['status' => 1, 'username' => $real_username])->get();
                         $spend_trans = DB::table('message')->where(function ($query) {
                             $query->where('role', '!=', 'credit');
+                            $query->where('role', '!=', 'transfer');
                             $query->where('plan_status', '!=', 2);
-                        })->whereDate('adex_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
+                        })->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $cash_trans = DB::table('cash')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $bill_trans = DB::table('bill')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
+                        $transfer_trans = DB::table('transfers')->whereDate('created_at', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['status' => 'SUCCESS', 'user_id' => $adex_username->id])->get();
                     } else if ($request->status == '30DAYS') {
                         $data_trans = DB::table('data')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $airtime_trans = DB::table('airtime')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
@@ -915,10 +941,12 @@ class TransactionCalculator extends Controller
                         $deposit_trans = DB::table('deposit')->whereDate('date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['status' => 1, 'username' => $real_username])->get();
                         $spend_trans = DB::table('message')->where(function ($query) {
                             $query->where('role', '!=', 'credit');
+                            $query->where('role', '!=', 'transfer');
                             $query->where('plan_status', '!=', 2);
-                        })->whereDate('adex_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
+                        })->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $cash_trans = DB::table('cash')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $bill_trans = DB::table('bill')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
+                        $transfer_trans = DB::table('transfers')->whereDate('created_at', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['status' => 'SUCCESS', 'user_id' => $adex_username->id])->get();
                     } else if ($request->status == 'ALL TIME') {
                         $data_trans = DB::table('data')->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $airtime_trans = DB::table('airtime')->where(['plan_status' => 1, 'username' => $real_username])->get();
@@ -928,10 +956,12 @@ class TransactionCalculator extends Controller
                         $deposit_trans = DB::table('deposit')->where(['status' => 1, 'username' => $real_username])->get();
                         $spend_trans = DB::table('message')->where(function ($query) {
                             $query->where('role', '!=', 'credit');
+                            $query->where('role', '!=', 'transfer');
                             $query->where('plan_status', '!=', 2);
                         })->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $cash_trans = DB::table('cash')->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $bill_trans = DB::table('bill')->where(['plan_status' => 1, 'username' => $real_username])->get();
+                        $transfer_trans = DB::table('transfers')->where(['status' => 'SUCCESS', 'user_id' => $adex_username->id])->get();
                     } else {
                         if ((isset($request->from)) and isset($request->to)) {
                             if ((!empty($request->from)) and !empty($request->to)) {
@@ -945,10 +975,12 @@ class TransactionCalculator extends Controller
                                 $deposit_trans = DB::table('deposit')->whereBetween('date', [$start_date, $end_date])->where(['status' => 1, 'username' => $real_username])->get();
                                 $spend_trans = DB::table('message')->where(function ($query) {
                                     $query->where('role', '!=', 'credit');
+                                    $query->where('role', '!=', 'transfer');
                                     $query->where('plan_status', '!=', 2);
-                                })->whereBetween('adex_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $real_username])->get();
+                                })->whereBetween('habukhan_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $real_username])->get();
                                 $cash_trans = DB::table('cash')->whereBetween('plan_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $real_username])->get();
                                 $bill_trans = DB::table('bill')->whereBetween('plan_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $real_username])->get();
+                                $transfer_trans = DB::table('transfers')->whereBetween('created_at', [$start_date, $end_date])->where(['status' => 'SUCCESS', 'user_id' => $adex_username->id])->get();
                             } else {
                                 return response()->json([
                                     'message' => 'start date and end date required'
@@ -1419,7 +1451,14 @@ class TransactionCalculator extends Controller
                     foreach ($spend_trans as $spend) {
                         $money_spent += $spend->amount;
                     }
+                    $transfer_total = 0;
+                    $transfer_charges = 0;
+                    foreach ($transfer_trans as $trans) {
+                        $transfer_total += $trans->amount;
+                        $transfer_charges += $trans->charge;
+                    }
                     $habukhan_in = $deposit_amount;
+                    $money_spent = $money_spent + $transfer_total + $transfer_charges;
                     $habukhan_out = $money_spent;
                     $total_m = $habukhan_in + $habukhan_out;
                     if ($total_m != 0) {
@@ -1594,7 +1633,9 @@ class TransactionCalculator extends Controller
                         'deposit_charges' => number_format($deposit_charges, 2),
                         'deposit_trans' => number_format($habukhan_in_trans, 1),
                         'spend_trans' => number_format($habukhan_out_trans, 1),
-                        'spend_amount' => number_format($money_spent, 2)
+                        'spend_amount' => number_format($money_spent, 2),
+                        'transfer_amount' => number_format($transfer_total, 2),
+                        'transfer_charges' => number_format($transfer_charges, 2)
                     ]);
                 } else {
                     return response()->json([

@@ -848,7 +848,7 @@ class AdminController extends Controller
                                                         'newbal' => $user_ref->refbal + $credit_ref,
                                                         'habukhan_date' => $this->system_date(),
                                                         'plan_status' => 1,
-                                                        'transid' => $deposit_ref,
+                                                        'transid' => $deposit_ref . '-REF',
                                                         'role' => 'referral'
                                                     ]);
                                                 }
@@ -1868,6 +1868,7 @@ class AdminController extends Controller
                             'dstv' => 'required|numeric|integer|not_in:0|gt:0',
                             'gotv' => 'required|numeric|integer|not_in:0|gt:0',
                             'startime' => 'required|numeric|integer|not_in:0|gt:0',
+                            'showmax' => 'required|numeric|integer|not_in:0|gt:0',
                         ]);
                         if ($main_validator->fails()) {
                             return response()->json([
@@ -1879,6 +1880,7 @@ class AdminController extends Controller
                                 'dstv' => $request->dstv,
                                 'gotv' => $request->gotv,
                                 'startime' => $request->startime,
+                                'showmax' => $request->showmax,
                                 'direct' => 1
                             ];
                             $updated = DB::table('cable_charge')->update($data);
@@ -1899,10 +1901,12 @@ class AdminController extends Controller
                             'dstv' => 'required|numeric|between:0,100',
                             'gotv' => 'required|numeric|between:0,100',
                             'startime' => 'required|numeric|between:0,100',
+                            'showmax' => 'required|numeric|between:0,100',
                         ], [
                             'dstv.between' => 'DSTV Charges Must Be Between 0 and 100 (charging in percentage)',
                             'gotv.between' => 'GOTV Charges Must Be Between 0 and 100 (charging in percentage)',
-                            'startime.between' => 'STARTIME Charges Must Be Between 0 and 100 (charging in percentage)'
+                            'startime.between' => 'STARTIME Charges Must Be Between 0 and 100 (charging in percentage)',
+                            'showmax.between' => 'SHOWMAX Charges Must Be Between 0 and 100 (charging in percentage)'
                         ]);
 
                         if ($main_validator->fails()) {
@@ -1915,6 +1919,7 @@ class AdminController extends Controller
                                 'dstv' => $request->dstv,
                                 'gotv' => $request->gotv,
                                 'startime' => $request->startime,
+                                'showmax' => $request->showmax,
                                 'direct' => 0
                             ];
                             $updated = DB::table('cable_charge')->update($data);
@@ -2582,6 +2587,7 @@ class AdminController extends Controller
                         'dstv' => 'required',
                         'startime' => 'required',
                         'gotv' => 'required',
+                        'showmax' => 'required',
                     ]);
                     if ($main_validator->fails()) {
                         return response()->json([
@@ -2593,6 +2599,7 @@ class AdminController extends Controller
                             'startime' => $request->startime,
                             'gotv' => $request->gotv,
                             'dstv' => $request->dstv,
+                            'showmax' => $request->showmax,
                         ];
                         DB::table('cable_sel')->update($data);
                         return response()->json([
@@ -2767,6 +2774,50 @@ class AdminController extends Controller
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
             ])->setStatusCode(403);
+        }
+    }
+    public function BankTransferSel(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN');
+                });
+                if ($check_user->count() == 1) {
+                    $main_validator = validator::make($request->all(), [
+                        'bank_transfer' => 'required'
+                    ]);
+                    if ($main_validator->fails()) {
+                        return response()->json([
+                            'message' => $main_validator->errors()->first(),
+                            'status' => 403
+                        ])->setStatusCode(403);
+                    } else {
+                        $data = [
+                            'bank_transfer' => $request->bank_transfer,
+                        ];
+                        DB::table('bank_transfer_sel')->update($data);
+                        DB::table('settings')->update(['primary_transfer_provider' => $request->bank_transfer]);
+                        return response()->json([
+                            'status' => 'success',
+                            'message' => 'Updated Success'
+                        ]);
+                    }
+                } else {
+                    return response()->json([
+                        'status' => 403,
+                        'message' => 'Not Authorised'
+                    ])->setStatusCode(403);
+                }
+            } else {
+                return response()->json([
+                    'status' => 403,
+                    'message' => 'Unable to Authenticate System'
+                ])->setStatusCode(403);
+            }
+        } else {
+            return redirect(config('app.error_500'));
         }
     }
     public function AllUsersInfo(Request $request)
@@ -3197,5 +3248,96 @@ class AdminController extends Controller
                 'message' => 'Unable to Authenticate System'
             ])->setStatusCode(403);
         }
+    }
+
+    // SMART TRANSFER ROUTER METHODS
+
+    public function getTransferSettings(Request $request, $id = null)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            $token = $id ?: $request->id;
+            $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($token)])->where(['type' => 'ADMIN']);
+            if ($check_user->count() > 0) {
+                $settings = DB::table('settings')->select('transfer_lock_all', 'transfer_charge_type', 'transfer_charge_value', 'transfer_charge_cap')->first();
+                $providers = DB::table('transfer_providers')->orderBy('priority', 'asc')->get();
+
+                return response()->json([
+                    'status' => 'success',
+                    'providers' => $providers,
+                    'settings' => $settings
+                ]);
+            } else {
+                \Log::error('Check User Failed', ['id' => $token, 'verified' => $this->verifytoken($token)]);
+                return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Invalid Origin'])->setStatusCode(403);
+    }
+
+    public function lockTransferProvider(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(['type' => 'ADMIN']);
+            if ($check_user->count() > 0) {
+                // $request->slug (e.g., 'paystack'), $request->action ('lock' or 'unlock')
+                $is_locked = ($request->action == 'lock') ? 1 : 0;
+                DB::table('transfer_providers')->where('slug', $request->slug)->update(['is_locked' => $is_locked]);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => ucfirst($request->slug) . ' has been ' . ($is_locked ? 'Locked' : 'Unlocked')
+                ]);
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+    }
+
+    public function setTransferPriority(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(['type' => 'ADMIN']);
+            if ($check_user->count() > 0 && is_array($request->priorities)) {
+                // Expects array like: [['slug' => 'xixapay', 'priority' => 1], ['slug' => 'monnify', 'priority' => 2]]
+                foreach ($request->priorities as $p) {
+                    DB::table('transfer_providers')->where('slug', $p['slug'])->update(['priority' => $p['priority']]);
+                }
+                return response()->json(['status' => 'success', 'message' => 'Priorities Updated']);
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+    }
+
+    public function updateTransferCharges(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(['type' => 'ADMIN']);
+            if ($check_user->count() > 0) {
+                DB::table('settings')->update([
+                    'transfer_charge_type' => $request->type, // FLAT or PERCENT
+                    'transfer_charge_value' => $request->value,
+                    'transfer_charge_cap' => $request->cap // Optional max charge for percent
+                ]);
+                return response()->json(['status' => 'success', 'message' => 'Transfer Charges Updated']);
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+    }
+
+    public function toggleGlobalTransferLock(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(['type' => 'ADMIN']);
+            if ($check_user->count() > 0) {
+                $lock = ($request->action == 'lock') ? 1 : 0;
+                DB::table('settings')->update(['transfer_lock_all' => $lock]);
+                return response()->json(['status' => 'success', 'message' => 'Global Transfer Lock ' . ($lock ? 'Enabled' : 'Disabled')]);
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
     }
 }

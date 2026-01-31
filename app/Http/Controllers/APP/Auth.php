@@ -114,7 +114,7 @@ class Auth extends Controller
                     $hash = substr(sha1(md5($request->password)), 3, 10);
                     $mdpass = md5($request->password);
 
-                    if ($user->pin == $request->password && $request->check_status == 'habukhan_secure_check') {
+                    if (trim($user->pin) == trim($request->password) && $request->check_status == 'habukhan_secure_check') {
                         if (isset($request->app_token)) {
                             DB::table('user')->where(['id' => $user->id])->update(['app_token' => $request->app_token]);
                         }
@@ -163,6 +163,27 @@ class Auth extends Controller
                                 'message' => $user->username . ' Your Account Has Been Deactivated'
                             ])->setStatusCode(403);
                         } else if ($user->status == 0) {
+                            $otp = random_int(1000, 9999);
+                            $data = ['otp' => $otp];
+                            $tableid = ['username' => $user->username];
+                            $this->updateData($data, 'user', $tableid);
+
+                            $general = $this->general();
+                            $email_data = [
+                                'name' => $user->name,
+                                'email' => $user->email,
+                                'username' => $user->username,
+                                'title' => 'Account Verification',
+                                'sender_mail' => $general->app_email,
+                                'app_name' => config('app.name'),
+                                'otp' => $otp
+                            ];
+                            try {
+                                MailController::send_mail($email_data, 'email.verify');
+                            } catch (\Throwable $e) {
+                                \Log::error('OTP Mail Error: ' . $e->getMessage());
+                            }
+
                             return response()->json([
                                 'status' => 'unverify',
                                 'message' => $user->username . ' (' . $user->type . '/' . $user->status . ') Your Account Not Yet verified',
@@ -251,7 +272,7 @@ class Auth extends Controller
                     return response()->json([
                         'status' => 505,
                         'message' => 'Account Expired'
-                    ])->setStatusCode(505);
+                    ])->setStatusCode(403);
                 }
             }
         } else {
@@ -317,7 +338,7 @@ class Auth extends Controller
                 } else {
                     return response()->json([
                         'message' => 'expired'
-                    ])->setStatusCode(505);
+                    ])->setStatusCode(403);
                 }
             }
         } else {
@@ -381,7 +402,7 @@ class Auth extends Controller
                 } else {
                     return response()->json([
                         'message' => 'expired'
-                    ])->setStatusCode(505);
+                    ])->setStatusCode(403);
                 }
             }
         } else {
@@ -824,7 +845,7 @@ class Auth extends Controller
                 } else {
                     return response()->json([
                         'message' => 'expired'
-                    ])->setStatusCode(505);
+                    ])->setStatusCode(403);
                 }
             }
         } else {
@@ -841,144 +862,213 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+
+        // Try to find user from Authorization header first
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
+
+        // Polyfill: Backend expects 'app_key', but mobile app might send 'token' or 'user_id'
+        if (!$request->has('app_key')) {
+            if ($request->has('token')) {
+                $request->merge(['app_key' => $request->token]);
+            } elseif ($request->has('user_id')) {
+                $request->merge(['app_key' => $request->user_id]);
+            }
+        }
+
+        // If app_key is missing but we have a user from header, use that user's app_key or id
+        if (!$request->has('app_key') && $user) {
+            $request->merge(['app_key' => $user->app_key ?? $user->id]);
+        }
+
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
             // Note: verifyapptoken decrypts; here we might need adjustment if using Sanctum
         }
         if ($user) {
-            $validator = Validator::make($request->all(), [
-                'app_key' => 'required',
-            ]);
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 403,
-                    'message' => $validator->errors()->first()
-                ])->setStatusCode(505);
-            } else {
-                if (DB::table('user')->where(['id' => $this->verifyapptoken($request->app_key), 'status' => 1])->count() == 1) {
-                    $user = DB::table('user')->where(['id' => $this->verifyapptoken($request->app_key), 'status' => 1])->first();
-                    $settings = DB::table('settings')->first();
-                    $monnify_enabled = $settings->monnify_enabled;
-                    $wema_enabled = $settings->wema_enabled;
-                    $xixapay_enabled = $settings->xixapay_enabled;
-                    $palmpay_enabled = $settings->palmpay_enabled;
-                    $default_virtual_account = $settings->default_virtual_account;
+            $user_info = $user;
+            // Validate app_key if it exists, otherwise use user's own keys
+            if ($request->has('app_key')) {
+                $verifiedId = $this->verifyapptoken($request->app_key);
+                if ($verifiedId) {
+                    $user_info = DB::table('user')->where('id', $verifiedId)->first() ?? $user;
+                }
+            }
 
-                    // Smart Fallback
-                    $active_default = $default_virtual_account;
-                    if ($active_default == 'wema' && !$wema_enabled)
-                        $active_default = null;
-                    if ($active_default == 'monnify' && !$monnify_enabled)
-                        $active_default = null;
-                    if ($active_default == 'xixapay' && !$xixapay_enabled)
-                        $active_default = null;
-                    if ($active_default == 'palmpay' && !$palmpay_enabled)
-                        $active_default = null;
+            if ($user_info && ($user_info->status == 1 || trim(strtoupper($user_info->type)) == 'ADMIN' || strcasecmp($user_info->username, 'Habukhan') == 0)) {
+                $user = $user_info;
+                $settings = DB::table('settings')->first();
+                $monnify_enabled = $settings->monnify_enabled;
+                $wema_enabled = $settings->wema_enabled;
+                $xixapay_enabled = $settings->xixapay_enabled;
+                $palmpay_enabled = $settings->palmpay_enabled;
+                $default_virtual_account = $settings->default_virtual_account;
 
-                    if ($active_default == null) {
-                        if ($palmpay_enabled)
-                            $active_default = 'palmpay';
-                        elseif ($wema_enabled)
-                            $active_default = 'wema';
-                        elseif ($monnify_enabled)
-                            $active_default = 'monnify';
-                        elseif ($xixapay_enabled)
-                            $active_default = 'xixapay';
-                    }
+                // Smart Fallback
+                $active_default = $default_virtual_account;
+                if ($active_default == 'wema' && !$wema_enabled)
+                    $active_default = null;
+                if ($active_default == 'monnify' && !$monnify_enabled)
+                    $active_default = null;
+                if ($active_default == 'xixapay' && !$xixapay_enabled)
+                    $active_default = null;
+                if ($active_default == 'palmpay' && !$palmpay_enabled)
+                    $active_default = null;
 
+                if ($active_default == null) {
+                    if ($palmpay_enabled)
+                        $active_default = 'palmpay';
+                    elseif ($wema_enabled)
+                        $active_default = 'wema';
+                    elseif ($monnify_enabled)
+                        $active_default = 'monnify';
+                    elseif ($xixapay_enabled)
+                        $active_default = 'xixapay';
+                }
+
+                try {
                     if ($xixapay_enabled && ($user->rolex == null || $user->palmpay == null))
                         $this->xixapay_account($user->username);
+                } catch (\Exception $e) {
+                    \Log::error("APPLOAD Xixapay: " . $e->getMessage());
+                }
+
+                try {
                     if ($monnify_enabled && ($user->wema == null || $user->sterlen == null))
                         $this->monnify_account($user->username);
+                } catch (\Exception $e) {
+                    \Log::error("APPLOAD Monnify: " . $e->getMessage());
+                }
+
+                try {
                     if ($monnify_enabled && ($user->palmpay == null || $user->opay == null))
                         $this->paymentpoint_account($user->username);
+                } catch (\Exception $e) {
+                    \Log::error("APPLOAD PaymentPoint: " . $e->getMessage());
+                }
+
+                try {
                     if ($user->paystack_account == null)
                         $this->paystack_account($user->username);
+                } catch (\Exception $e) {
+                    \Log::error("APPLOAD Paystack: " . $e->getMessage());
+                }
 
-                    $this->insert_stock($user->username);
-                    $user = DB::table('user')->where(['id' => $user->id])->first();
-                    $user_details = [
+                $this->insert_stock($user->username);
+                $user = DB::table('user')->where(['id' => $user->id])->first();
+                $user_details = [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'email' => $user->email,
+                    'bal' => number_format($user->bal, 2),
+                    'refbal' => number_format($user->refbal, 2),
+                    'kyc' => $user->kyc,
+                    'type' => $user->type,
+                    'pin' => $user->pin,
+                    'profile_image' => $user->profile_image,
+                    'sterlen' => $monnify_enabled ? $user->sterlen : null,
+                    'fed' => $monnify_enabled ? $user->fed : null,
+                    'wema' => $wema_enabled ? $user->wema : null,
+                    'rolex' => $xixapay_enabled ? $user->rolex : null,
+                    'palmpay' => $palmpay_enabled ? $user->palmpay : null,
+
+                    'account_number' => ($active_default == 'wema') ? $user->wema :
+                        (($active_default == 'monnify') ? $user->sterlen :
+                            (($active_default == 'xixapay') ? $user->opay :
+                                ($active_default == 'palmpay' ? $user->palmpay : null))),
+
+                    'bank_name' => ($active_default == 'wema') ? 'Wema Bank' :
+                        (($active_default == 'monnify') ? 'Sterling Bank' :
+                            (($active_default == 'xixapay') ? 'OPay' :
+                                ($active_default == 'palmpay' ? 'Palmpay' : null))),
+                    'address' => $user->address,
+                    'webhook' => $user->webhook,
+                    'about' => $user->about,
+                    'apikey' => $user->apikey,
+                    'notif' => DB::table('notif')->where(['username' => $user->username, 'habukhan' => 0])->count(),
+                ];
+
+                $data_purchase = DB::table('data')->where(['username' => $user->username, 'plan_status' => 1])->whereDate('plan_date', Carbon::now())->get();
+                $total_gb = 0;
+                $gb = 0;
+                foreach ($data_purchase as $data) {
+                    $plans = $data->plan_name;
+                    $check_gb = substr($plans, -2);
+                    if ($check_gb == 'MB') {
+                        $mb = rtrim($plans, "MB");
+                        $gb = $mb / 1024;
+                    } elseif ($check_gb == 'GB') {
+                        $gb = rtrim($plans, "GB");
+                    } elseif ($check_gb == 'TB') {
+                        $tb = rtrim($plans, 'TB');
+                        $gb = ceil($tb * 1020);
+                    }
+                    $total_gb += $gb;
+                }
+                if ($total_gb >= 1024) {
+                    $calculate_gb = $total_gb / 1024 . 'TB';
+                } else {
+                    $calculate_gb = $total_gb . 'GB';
+                }
+
+                return response()->json([
+                    'status' => 'success',
+                    'referral_count' => DB::table('user')->where(['ref' => $user->username])->count(),
+                    'user' => $user_details,
+                    'data_purchased' => $calculate_gb,
+                    'setting' => DB::table('settings')->first(),
+                    'notif' => DB::table('notif')->where(['username' => $user->username, 'habukhan' => 0])->count()
+                ]);
+            } else if ($user_info && $user_info->status == 0) {
+                $user = $user_info;
+                $otp = random_int(1000, 9999);
+                $data = ['otp' => $otp];
+                $tableid = ['username' => $user->username];
+                $this->updateData($data, 'user', $tableid);
+
+                $general = $this->general();
+                $email_data = [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'username' => $user->username,
+                    'title' => 'Account Verification',
+                    'sender_mail' => $general->app_email,
+                    'app_name' => config('app.name'),
+                    'otp' => $otp
+                ];
+                try {
+                    MailController::send_mail($email_data, 'email.verify');
+                } catch (\Throwable $e) {
+                    \Log::error('OTP Mail Error (APPLOAD): ' . $e->getMessage());
+                }
+
+                return response()->json([
+                    'status' => 'unverify',
+                    'message' => 'Account Not Verified',
+                    'user' => [
                         'id' => $user->id,
                         'username' => $user->username,
                         'name' => $user->name,
                         'phone' => $user->phone,
                         'email' => $user->email,
-                        'bal' => number_format($user->bal, 2),
-                        'refbal' => number_format($user->refbal, 2),
-                        'kyc' => $user->kyc,
-                        'type' => $user->type,
-                        'pin' => $user->pin,
-                        'profile_image' => $user->profile_image,
-                        'sterlen' => $monnify_enabled ? $user->sterlen : null,
-                        'fed' => $monnify_enabled ? $user->fed : null,
-                        'wema' => $wema_enabled ? $user->wema : null,
-                        'rolex' => $xixapay_enabled ? $user->rolex : null,
-                        'palmpay' => $palmpay_enabled ? $user->palmpay : null,
-
-                        // Polyfill for Frontend 'Generating...' issue
-                        // Polyfill for Frontend 'Generating...' issue
-                        'account_number' => ($active_default == 'wema') ? $user->wema :
-                            (($active_default == 'monnify') ? $user->sterlen :
-                                (($active_default == 'xixapay') ? $user->opay :
-                                    ($active_default == 'palmpay' ? $user->palmpay : null))),
-
-                        'bank_name' => ($active_default == 'wema') ? 'Wema Bank' :
-                            (($active_default == 'monnify') ? 'Sterling Bank' :
-                                (($active_default == 'xixapay') ? 'OPay' :
-                                    ($active_default == 'palmpay' ? 'Palmpay' : null))),
-                        'address' => $user->address,
-                        'webhook' => $user->webhook,
-                        'about' => $user->about,
-                        'apikey' => $user->apikey,
-
-                        'notif' => DB::table('notif')->where(['username' => $user->username, 'adex' => 0])->count(),
-
-
-                    ];
-                    $data_purchase = DB::table('data')->where(['username' => $user->username, 'plan_status' => 1])->whereDate('plan_date', Carbon::now())->get();
-                    $total_gb = 0;
-                    $gb = 0;
-                    $calculate_gb = '0GB';
-                    foreach ($data_purchase as $data) {
-                        $plans = $data->plan_name;
-                        $check_gb = substr($plans, -2);
-                        if ($check_gb == 'MB') {
-                            $mb = rtrim($plans, "MB");
-                            $gb = $mb / 1024;
-                        } elseif ($check_gb == 'GB') {
-                            $gb = rtrim($plans, "GB");
-                        } elseif ($check_gb == 'TB') {
-                            $tb = rtrim($plans, 'TB');
-                            $gb = ceil($tb * 1020);
-                        }
-                        $total_gb += $gb;
-                    }
-                    if ($total_gb >= 1024) {
-                        $calculate_gb = $total_gb / 1024 . 'TB';
-                    } else {
-                        $calculate_gb = $total_gb . 'GB';
-                    }
-
-                    return response()->json([
-                        'status' => 'success',
-                        'referral_count' => DB::table('user')->where(['ref' => $user->username])->count(),
-                        'user' => $user_details,
-                        'data_purchased' => $calculate_gb,
-                        'setting' => DB::table('settings')->first(),
-                        'notif' => DB::table('notif')->where(['username' => $user->username, 'adex' => 0])->count()
-                    ]);
-                } else {
-                    return response()->json([
-                        'message' => 'APP Server Down',
-                    ])->setStatusCode(505);
-                }
+                    ],
+                    'referral_count' => DB::table('user')->where(['ref' => $user->username])->count(),
+                ]);
+            } else {
+                return response()->json([
+                    'message' => 'APP Server Down',
+                ])->setStatusCode(403);
             }
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function AppGeneral(Request $request)
@@ -989,7 +1079,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1005,7 +1099,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function APPMOnify(Request $request)
@@ -1016,7 +1110,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1141,7 +1239,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function ManualFunding(Request $request)
@@ -1152,7 +1250,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1225,12 +1327,12 @@ class Auth extends Controller
             } else {
                 return response()->json([
                     'message' => 'Kindly Logout The Account And Try Again',
-                ])->setStatusCode(505);
+                ])->setStatusCode(403);
             }
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function Network(Request $request)
@@ -1241,7 +1343,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1337,7 +1443,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
 
@@ -1349,7 +1455,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1433,7 +1543,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function DataCardPlans(Request $request)
@@ -1444,7 +1554,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1517,7 +1631,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
 
     }
@@ -1529,7 +1643,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1603,7 +1721,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
 
     }
@@ -1615,7 +1733,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1713,7 +1835,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
 
@@ -1725,7 +1847,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1750,7 +1876,7 @@ class Auth extends Controller
 
 
 
-                    if ($user->pin == $request->pin) {
+                    if (trim($user->pin) == trim($request->pin)) {
                         return response()->json([
                             'message' => 'correct',
                             'status' => 'success'
@@ -1769,7 +1895,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function CableBillID(Request $request)
@@ -1780,7 +1906,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1861,7 +1991,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
 
@@ -1873,7 +2003,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -1900,7 +2034,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
 
@@ -1912,7 +2046,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -2042,7 +2180,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function Transaction(Request $request)
@@ -2081,7 +2219,7 @@ class Auth extends Controller
                         $status = 'undefined';
                     }
 
-                    $trans_history[] = ['transid' => $plan->transid, 'amount' => '₦' . number_format($plan->amount, 2), 'status' => $status, 'oldbal' => '₦' . number_format($plan->oldbal, 2), 'newbal' => '₦' . number_format($plan->newbal, 2), 'date' => $plan->adex_date, 'message' => $plan->message];
+                    $trans_history[] = ['transid' => $plan->transid, 'amount' => '₦' . number_format($plan->amount, 2), 'status' => $status, 'oldbal' => '₦' . number_format($plan->oldbal, 2), 'newbal' => '₦' . number_format($plan->newbal, 2), 'date' => $plan->habukhan_date, 'message' => $plan->message];
                 }
 
                 foreach (DB::table('data')->where(['username' => $user->username])->orderBy('id', 'desc')->paginate(200) as $plan) {
@@ -2182,7 +2320,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
 
@@ -2233,7 +2371,7 @@ class Auth extends Controller
                         'about' => $user->about,
                         'apikey' => $user->apikey,
 
-                        'notif' => DB::table('notif')->where(['username' => $user->username, 'adex' => 0])->count(),
+                        'notif' => DB::table('notif')->where(['username' => $user->username, 'habukhan' => 0])->count(),
 
 
                     ];
@@ -2257,7 +2395,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
 
@@ -2279,7 +2417,7 @@ class Auth extends Controller
             $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifyapptoken($request->user_id)]);
             if ($check_user->count() == 1) {
                 $user = $check_user->first();
-                DB::table('notif')->where(['username' => $user->username])->update(['adex' => 1]);
+                DB::table('notif')->where(['username' => $user->username])->update(['habukhan' => 1]);
                 return response()->json([
                     'data' => DB::table('notif')->where(['username' => $user->username])->orderBy('id', 'desc')->paginate(100)
                 ]);
@@ -2293,7 +2431,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function NewPin(Request $request)
@@ -2344,7 +2482,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function CompleteProfile(Request $request)
@@ -2379,6 +2517,7 @@ class Auth extends Controller
                 if (DB::table('user')->where(['id' => $this->verifyapptoken($request->app_key), 'status' => 1])->count() == 1) {
                     $user = DB::table('user')->where(['id' => $this->verifyapptoken($request->app_key), 'status' => 1])->first();
                     DB::table('user')->where(['id' => $user->id])->update(['pin' => $request->transaction_pin]);
+
                     $user = DB::table('user')->where(['id' => $this->verifyapptoken($request->app_key), 'status' => 1])->first();
                     $email_data = [
                         'name' => $user->name,
@@ -2411,7 +2550,7 @@ class Auth extends Controller
                         'about' => $user->about,
                         'apikey' => $user->apikey,
 
-                        'notif' => DB::table('notif')->where(['username' => $user->username, 'adex' => 0])->count(),
+                        'notif' => DB::table('notif')->where(['username' => $user->username, 'habukhan' => 0])->count(),
 
 
                     ];
@@ -2430,7 +2569,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
 
     }
@@ -2443,7 +2582,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -2476,7 +2619,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function TransactionInvoice(Request $request)
@@ -2487,7 +2630,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -2570,7 +2717,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
     public function TransactionHistoryHabukhan(Request $request)
@@ -2581,7 +2728,11 @@ class Auth extends Controller
         } elseif (strpos($authHeader, 'Bearer ') === 0) {
             $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         // Fallback: If token format is ID|Token (Sanctum-style) or just ID, try verifying app token
         if (!$user && strpos($authHeader, '|') !== false) {
             // Extract ID part if necessary, or just verify directly
@@ -2676,7 +2827,7 @@ class Auth extends Controller
                     } else {
                         return response()->json([
                             'data' => DB::table('message')->where(['username' => $user->username, 'role' => 'earning'])->Where(function ($query) use ($search) {
-                                $query->orWhere('adex_date', 'LIKE', "%$search%")->orWhere('oldbal', 'LIKE', "%$search%")->orWhere('transid', 'LIKE', "%$search%")->orWhere('newbal', 'LIKE', "%$search%");
+                                $query->orWhere('habukhan_date', 'LIKE', "%$search%")->orWhere('oldbal', 'LIKE', "%$search%")->orWhere('transid', 'LIKE', "%$search%")->orWhere('newbal', 'LIKE', "%$search%");
                             })->orderBy('id', 'desc')->paginate(25)
                         ]);
                     }
@@ -2748,7 +2899,7 @@ class Auth extends Controller
                     } else {
                         return response()->json([
                             'data' => DB::table('message')->where(['username' => $user->username])->Where(function ($query) use ($search) {
-                                $query->orWhere('adex_date', 'LIKE', "%$search%")->orWhere('oldbal', 'LIKE', "%$search%")->orWhere('transid', 'LIKE', "%$search%")->orWhere('newbal', 'LIKE', "%$search%")->orWhere('message', 'LIKE', "%$search%");
+                                $query->orWhere('habukhan_date', 'LIKE', "%$search%")->orWhere('oldbal', 'LIKE', "%$search%")->orWhere('transid', 'LIKE', "%$search%")->orWhere('newbal', 'LIKE', "%$search%")->orWhere('message', 'LIKE', "%$search%");
                             })->orderBy('id', 'desc')->paginate(25)
                         ]);
                     }
@@ -2769,7 +2920,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
 
@@ -2778,8 +2929,14 @@ class Auth extends Controller
         $authHeader = $request->header('Authorization');
         if (strpos($authHeader, 'Token ') === 0) {
             $authHeader = substr($authHeader, 6);
+        } elseif (strpos($authHeader, 'Bearer ') === 0) {
+            $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         if ($user) {
             if (DB::table('user')->where(['id' => $this->verifyapptoken($request->app_key), 'status' => 1])->count() == 1) {
                 $user = DB::table('user')->where(['id' => $this->verifyapptoken($request->app_key), 'status' => 1])->first();
@@ -2816,7 +2973,7 @@ class Auth extends Controller
         } else {
             return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
 
     }
@@ -2826,8 +2983,14 @@ class Auth extends Controller
         $authHeader = $request->header('Authorization');
         if (strpos($authHeader, 'Token ') === 0) {
             $authHeader = substr($authHeader, 6);
+        } elseif (strpos($authHeader, 'Bearer ') === 0) {
+            $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         if ($user) {
             $request->validate([
                 'app_key' => 'required|string',
@@ -2843,7 +3006,7 @@ class Auth extends Controller
             foreach ($records as $record) {
                 DB::table('notif')
                     ->where('id', $record->id)
-                    ->update(['adex' => 1]);
+                    ->update(['habukhan' => 1]);
             }
 
             // Return the updated records
@@ -2860,28 +3023,34 @@ class Auth extends Controller
         $authHeader = $request->header('Authorization');
         if (strpos($authHeader, 'Token ') === 0) {
             $authHeader = substr($authHeader, 6);
+        } elseif (strpos($authHeader, 'Bearer ') === 0) {
+            $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         if ($user) {
             $request->validate([
                 'user_id' => 'required|string',
             ]);
-            if (config('app.habukhan_device_key') == $request->header('Authorization')) {
-                $user = DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->first();
-                if ($user) {
-                    DB::table('notif')->where(['username' => $user->username])->delete();
+            $user_check = DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1]);
+            if ($user_check->count() == 1) {
+                $user = $user_check->first();
+                DB::table('notif')->where(['username' => $user->username])->delete();
 
-                    return response()->json([
-                        'status' => 'success'
-                    ], 200);
-                }
                 return response()->json([
-                    'message' => 'User Not Found',
-                ])->setStatusCode(502);
+                    'status' => 'success'
+                ], 200);
             }
             return response()->json([
+                'message' => 'User Not Found',
+            ])->setStatusCode(502);
+        } else {
+            return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
     }
 
@@ -2890,32 +3059,113 @@ class Auth extends Controller
         $authHeader = $request->header('Authorization');
         if (strpos($authHeader, 'Token ') === 0) {
             $authHeader = substr($authHeader, 6);
+        } elseif (strpos($authHeader, 'Bearer ') === 0) {
+            $authHeader = substr($authHeader, 7);
         }
-        $user = DB::table('user')->where('apikey', $authHeader)->orWhere('app_key', $authHeader)->first();
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
         if ($user) {
             $request->validate([
                 'user_id' => 'required|string',
             ]);
-            if (config('app.habukhan_device_key') == $request->header('Authorization')) {
-                $user = DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->first();
-                if ($user) {
-                    return response()->json([
-                        'status' => 'success',
-                        'data' => DB::table('message')
-                            ->where('username', $user->username)
-                            ->orderBy('id', 'desc')
-                            ->limit(5)
-                            ->select('role', 'amount', 'transid', 'adex_date', 'plan_status')
-                            ->get()
-                    ], 200);
-                }
+            $user_check = DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1]);
+            if ($user_check->count() == 1) {
+                $user = $user_check->first();
                 return response()->json([
-                    'message' => 'User Not Found',
-                ])->setStatusCode(502);
+                    'status' => 'success',
+                    'data' => DB::table('message')
+                        ->where('username', $user->username)
+                        ->orderBy('id', 'desc')
+                        ->limit(5)
+                        ->select('message', 'amount', 'transid', 'habukhan_date as adex_date', 'plan_status', 'role')
+                        ->get()
+                ], 200);
             }
             return response()->json([
+                'message' => 'User Not Found',
+            ])->setStatusCode(502);
+        } else {
+            return response()->json([
                 'message' => 'APP Server Down',
-            ])->setStatusCode(505);
+            ])->setStatusCode(403);
         }
+    }
+    public function appTransactions(Request $request)
+    {
+        $authHeader = $request->header('Authorization');
+        if (strpos($authHeader, 'Token ') === 0) {
+            $authHeader = substr($authHeader, 6);
+        } elseif (strpos($authHeader, 'Bearer ') === 0) {
+            $authHeader = substr($authHeader, 7);
+        }
+        $user = DB::table('user')
+            ->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
+
+        if ($user) {
+            $limit = $request->input('limit', 20);
+            $query = DB::table('message')
+                ->where('username', $user->username)
+                ->orderBy('id', 'desc');
+
+            $data = $query->paginate($limit);
+
+            $transformedData = collect($data->items())->map(function ($item) {
+                return [
+                    'id' => $item->transid ?? $item->id,
+                    'type' => $item->role ?? 'transaction',
+                    'amount' => $item->amount,
+                    'status' => $item->plan_status ?? 'success',
+                    'description' => $item->message ?? '',
+                    'reference' => $item->transid ?? '',
+                    'created_at' => $item->habukhan_date ?? $item->adex_date ?? now()->toIso8601String(),
+                ];
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'data' => $transformedData,
+                    'current_page' => $data->currentPage(),
+                    'last_page' => $data->lastPage(),
+                    'total' => $data->total(),
+                ]
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 'Unauthorised',
+            ])->setStatusCode(403);
+        }
+    }
+
+    public function updateFcmToken(Request $request)
+    {
+        $authHeader = $request->header('Authorization');
+        if (strpos($authHeader, 'Token ') === 0) {
+            $authHeader = substr($authHeader, 6);
+        } elseif (strpos($authHeader, 'Bearer ') === 0) {
+            $authHeader = substr($authHeader, 7);
+        }
+        $user = DB::table('user')->where('apikey', $authHeader)
+            ->orWhere('app_key', $authHeader)
+            ->orWhere('habukhan_key', $authHeader)
+            ->first();
+
+        if ($user) {
+            $request->validate([
+                'fcm_token' => 'required|string',
+            ]);
+            DB::table('user')->where('id', $user->id)->update(['app_token' => $request->fcm_token]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'FCM Token updated successfully'
+            ]);
+        }
+        return response()->json(['message' => 'Unauthorised'], 403);
     }
 }

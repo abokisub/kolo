@@ -15,7 +15,38 @@ class CablePurchase extends Controller
     public function BuyCable(Request $request)
     {
         $explode_url = explode(',', config('app.habukhan_app_key'));
-        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+        if (config('app.habukhan_device_key') == $request->header('Authorization')) {
+            $validator = Validator::make($request->all(), [
+                'cable' => 'required',
+                'iuc' => 'required',
+                'bypass' => 'required',
+                'cable_plan' => 'required',
+                'user_id' => 'required'
+            ]);
+            $system = "APP";
+            // Professional Refactor: Use client-provided request-id for idempotency if available
+            if ($request->has('request-id')) {
+                $transid = $request->input('request-id');
+            } else {
+                $transid = $this->purchase_ref('CABLE_');
+            }
+
+            $verified_id = $this->verifyapptoken($request->user_id);
+            $check = DB::table('user')->where(['id' => $verified_id, 'status' => 1]);
+            if ($check->count() == 1) {
+                $d_token = $check->first();
+                if (trim($d_token->pin) == trim($request->pin)) {
+                    $accessToken = $d_token->apikey;
+                } else {
+                    return response()->json([
+                        'status' => 'fail',
+                        'message' => 'Invalid Transaction Pin'
+                    ])->setStatusCode(403);
+                }
+            } else {
+                $accessToken = 'null';
+            }
+        } else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $validator = Validator::make($request->all(), [
                 'cable' => 'required',
                 'iuc' => 'required',
@@ -25,23 +56,18 @@ class CablePurchase extends Controller
             $system = config('app.name');
             $transid = $this->purchase_ref('CABLE_');
             if ($this->core()->allow_pin == 1) {
-                $authHeader = $request->header('Authorization');
-                if ($authHeader == config('app.habukhan_device_key')) {
-                    // Mobile app/device key request (like Data/Airtime)
-                    $check = DB::table('user')->where([
-                        'id' => $this->verifyapptoken($request->user_id),
-                        'pin' => $request->pin
-                    ]);
-                } else {
-                    // Web/API request (keep your existing logic)
-                    $check = DB::table('user')->where([
-                        'id' => $this->verifytoken($request->token),
-                        'pin' => $request->pin
-                    ]);
-                }
+                // transaction pin required
+                $check = DB::table('user')->where(['id' => $this->verifytoken($request->token)]);
                 if ($check->count() == 1) {
                     $det = $check->first();
-                    $accessToken = $det->apikey;
+                    if (trim($det->pin) == trim($request->pin)) {
+                        $accessToken = $det->apikey;
+                    } else {
+                        return response()->json([
+                            'status' => 'fail',
+                            'message' => 'Invalid Transaction Pin'
+                        ])->setStatusCode(403);
+                    }
                 } else {
                     return response()->json([
                         'status' => 'fail',
@@ -60,23 +86,6 @@ class CablePurchase extends Controller
                         'message' => 'An Error Occur'
                     ])->setStatusCode(403);
                 }
-            }
-        } else if (config('app.habukhan_device_key') == $request->header('Authorization')) {
-
-            // api verification
-            $validator = Validator::make($request->all(), [
-                'cable' => 'required',
-                'iuc' => 'required',
-                'bypass' => 'required',
-                'cable_plan' => 'required',
-            ]);
-            $system = "APP";
-            $transid = $this->purchase_ref('Cable_');
-            if (DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->count() == 1) {
-                $d_token = DB::table('user')->where(['id' => $this->verifyapptoken($request->user_id), 'status' => 1])->first();
-                $accessToken = $d_token->apikey;
-            } else {
-                $accessToken = 'null';
             }
         } else {
             // api verification
@@ -105,7 +114,11 @@ class CablePurchase extends Controller
                     'reference' => $reference,
                 ])->setStatusCode(403);
             } else {
-                $user_check = DB::table('user')->where(['apikey' => $accessToken, 'status' => 1]);
+                $user_check = DB::table('user')->where(function ($query) use ($accessToken) {
+                    $query->where('apikey', $accessToken)
+                        ->orWhere('app_key', $accessToken)
+                        ->orWhere('habukhan_key', $accessToken);
+                })->where('status', 1);
                 if ($user_check->count() == 1) {
                     $user = $user_check->first();
                     if (DB::table('block')->where(['number' => $request->iuc])->count() == 0) {
@@ -156,11 +169,20 @@ class CablePurchase extends Controller
                                                                 'iuc' => $request->iuc,
                                                                 'cable' => $request->cable
                                                             ];
-                                                            $customer_name = $adm->$check_now($sending_data);
+                                                            if (method_exists($adm, $check_now)) {
+                                                                $customer_name = $adm->$check_now($sending_data);
+                                                            } else {
+                                                                \Log::error("CablePurchase IUC Error: Method {$check_now} does not exist in IUCsend.");
+                                                                $customer_name = null;
+                                                            }
+                                                            \Log::info("Cable Purchase Validation - Cable: {$cable_name}, Method: {$check_now}, Customer Name: {$customer_name}, Bypass: " . ($request->bypass ? 'true' : 'false'));
                                                             if ((empty($customer_name)) && ($request->bypass == false || $request->bypass == 'false')) {
+                                                                $errorMessage = (strpos($cable_name, 'showmax') !== false)
+                                                                    ? 'Invalid Phone Number or Service Unavailable'
+                                                                    : 'Invalid IUC Number or Service Unavailable';
                                                                 return response()->json([
                                                                     'status' => 'fail',
-                                                                    'message' => 'Invalid IUC Number'
+                                                                    'message' => $errorMessage
                                                                 ])->setStatusCode(403);
                                                             } else {
                                                                 // debit user
@@ -202,7 +224,12 @@ class CablePurchase extends Controller
                                                                             'transid' => $transid,
                                                                             'plan_id' => $request->cable_plan
                                                                         ];
-                                                                        $response = $sender->$check_now($user_info);
+                                                                        if (method_exists($sender, $check_now)) {
+                                                                            $response = $sender->$check_now($user_info);
+                                                                        } else {
+                                                                            \Log::error("CablePurchase Error: Method {$check_now} does not exist in CableSend.");
+                                                                            $response = 'fail';
+                                                                        }
                                                                         if (!empty($response)) {
                                                                             if ($response == 'success') {
                                                                                 DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1, 'message' => 'successfully purchase ' . strtoupper($cable_name) . ' ' . $cable_plan->plan_name . ' ₦' . $cable_plan->plan_price . ' to ' . $request->iuc]);

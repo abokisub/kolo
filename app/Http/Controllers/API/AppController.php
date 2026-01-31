@@ -59,6 +59,33 @@ class AppController extends Controller
         }
     }
 
+    public function getBankCharges(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        $origin = $request->headers->get('origin');
+        if (!$origin || in_array($origin, $explode_url)) {
+            $settings = DB::table('settings')->select(
+                'transfer_charge_type',
+                'transfer_charge_value',
+                'transfer_charge_cap'
+            )->first();
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'transfer_charge_type' => $settings->transfer_charge_type ?? 'FLAT',
+                    'transfer_charge_value' => (float) ($settings->transfer_charge_value ?? 0),
+                    'transfer_charge_cap' => (float) ($settings->transfer_charge_cap ?? 0),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'status' => 403,
+                'message' => 'Unable to Authenticate System'
+            ])->setStatusCode(403);
+        }
+    }
+
     public function getVirtualAccountStatus(Request $request)
     {
         $explode_url = explode(',', config('app.habukhan_app_key'));

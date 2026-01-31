@@ -28,7 +28,9 @@ use App\Http\Controllers\Purchase\MeterVerify;
 use App\Http\Controllers\APP\Auth;
 use App\Http\Controllers\Purchase\DataCard;
 use App\Http\Controllers\Purchase\RechargeCard;
+use App\Http\Controllers\Purchase\TransferPurchase; // New Import
 use App\Http\Controllers\API\Banks;
+use App\Http\Controllers\API\AccountVerification;
 
 
 Route::get('account/my-account/{id}', [AuthController::class, 'account']);
@@ -39,9 +41,30 @@ Route::get('website/app/setting', [AppController::class, 'system']);
 Route::post('login/verify/user', [AuthController::class, 'login']);
 Route::get('/secure/welcome', [AppController::class, 'welcomeMessage']);
 Route::get('/secure/discount/other', [AppController::class, 'discountOther']);
+Route::get('/secure/discount/banks', [AppController::class, 'getBankCharges']); // Added for bank transfer fees
 Route::get('/secure/virtualaccounts/status', [AppController::class, 'getVirtualAccountStatus']);
 Route::post('/secure/lock/virtualaccounts/{id}/habukhan/secure', [AdminController::class, 'lockVirtualAccount']);
 Route::post('/secure/selection/virtualaccounts/{id}/habukhan/secure', [AdminController::class, 'setDefaultVirtualAccount']);
+
+// Smart Transfer Router Admin Routes
+Route::post('/secure/lock/bank/{id}/habukhan/secure', [AdminController::class, 'lockTransferProvider']);
+Route::post('/secure/selection/banks/{id}/habukhan/secure', [AdminController::class, 'setTransferPriority']);
+Route::post('/secure/discount/other/{id}/habukhan/secure', [AdminController::class, 'updateTransferCharges']);
+Route::post('/secure/lock/global/transfers/{id}/habukhan/secure', [AdminController::class, 'toggleGlobalTransferLock']);
+Route::get('/secure/trans/settings/{id}/habukhan/secure', [AdminController::class, 'getTransferSettings']);
+
+// Mobile App - Banks List for Transfers
+Route::get('/paystack/banks/{id}/secure', [Banks::class, 'GetBanksList']);
+
+// Mobile App - Account Verification (Routes to active provider: Xixapay/Paystack/Monnify)
+Route::post('/paystack/resolve/{id}/secure', [AccountVerification::class, 'verifyBankAccount']);
+Route::get('/banks/sync', [Banks::class, 'syncBanks']);
+
+// Transfer Webhooks (Paystack / Xixapay)
+// URL: https://[domain]/api/webhook/transfer/paystack
+// URL: https://[domain]/api/webhook/transfer/xixapay
+Route::post('/webhook/transfer/{provider}', [WebhookController::class, 'transferWebhook']);
+
 Route::post('upgrade/api/user', [AppController::class, 'apiUpgrade']);
 Route::get('/user/resend/{id}/otp', [AuthController::class, 'resendOtp']);
 Route::post('/website/affliate/user', [AppController::class, 'buildWebsite']);
@@ -124,6 +147,7 @@ Route::post('edit/cashsel/account/{id}/habukhan/secure', [AdminController::class
 Route::post('edit/cablesel/account/{id}/habukhan/secure', [AdminController::class, 'CableSel']);
 Route::post('edit/billsel/account/{id}/habukhan/secure', [AdminController::class, 'BillSel']);
 Route::post('edit/bulksmssel/account/{id}/habukhan/secure', [AdminController::class, 'BulkSMSsel']);
+Route::post('edit/bank-transfer/sel/account/{id}/habukhan/secure', [AdminController::class, 'BankTransferSel']);
 Route::post('edit/examsel/account/{id}/habukhan/secure', [AdminController::class, 'ExamSel']);
 Route::get('website/app/cable/lock', [AppController::class, 'CableName']);
 Route::get('bill/charges/{id}/admin', [AppController::class, 'BillCal']);
@@ -204,6 +228,7 @@ Route::get('airtimecash/trans/{id}/secure', [Trans::class, 'AirtimeCashTrans']);
 Route::get('bulksms/trans/{id}/secure', [Trans::class, 'BulkSMSTrans']);
 Route::get('resultchecker/trans/{id}/secure', [Trans::class, 'ResultCheckerTrans']);
 Route::get('manual/trans/{id}/secure', [Trans::class, 'ManualTransfer']);
+Route::get('transfer/trans/{id}/secure', [Trans::class, 'TransferDetails']);
 Route::get('website/app/{id}/data_card_pan', [PlanController::class, 'DataCard']);
 Route::get('website/app/{id}/recharge_card_pan', [PlanController::class, 'RechargeCard']);
 Route::get('website/app/{id}/dataplan', [PlanController::class, 'DataList']);
@@ -220,6 +245,8 @@ Route::post('bill', [BillPurchase::class, 'Buy']);
 Route::post('cash', [AirtimeCash::class, 'Convert']);
 Route::post('bulksms', [BulksmsPurchase::class, 'Buy']);
 Route::post('transferwallet', [BonusTransfer::class, 'Convert']);
+Route::post('transfer', [TransferPurchase::class, 'TransferRequest']); // Web Transfer Route
+Route::post('paystack/transfer/{id}/secure', [TransferPurchase::class, 'TransferRequest']); // Mobile App Transfer Route
 Route::post('exam', [ExamPurchase::class, 'ExamPurchase']);
 Route::post('user', [AccessUser::class, 'Generate']);
 Route::post('data_card', [DataCard::class, 'DataCardPurchase']);
@@ -237,6 +264,7 @@ Route::get('admin/all/transaction/history/{id}/secure', [AdminTrans::class, 'All
 Route::get('admin/all/data/trans/by/system/{id}/secure', [AdminTrans::class, 'DataTransSum']);
 Route::get('admin/all/airtime/trans/by/system/{id}/secure', [AdminTrans::class, 'AirtimeTransSum']);
 Route::get('admin/all/stock/trans/by/system/{id}/secure', [AdminTrans::class, 'StockTransSum']);
+Route::get('admin/all/transfer/trans/by/system/{id}/secure', [AdminTrans::class, 'TransferTransSum']);
 Route::get('admin/all/deposit/trans/by/system/{id}/secure', [AdminTrans::class, 'DepositTransSum']);
 Route::post('admin/data/{id}/secure', [AdminTrans::class, 'DataRefund']);
 Route::post('admin/airtime/{id}/secure', [AdminTrans::class, 'AirtimeRefund']);
@@ -286,20 +314,21 @@ Route::get('cash/sel/by/system/{id}/secure', [Selection::class, 'CashSel']);
 Route::get('cable/sel/by/system/{id}/secure', [Selection::class, 'CableSel']);
 Route::get('bulksms/sel/by/system/{id}/secure', [Selection::class, 'BulksmsSel']);
 Route::get('bill/sel/by/system/{id}/secure', [Selection::class, 'BillSel']);
-Route::get('result/sel/by/system/{id}/secure', [Selection::class, 'ResultSel']);
+Route::get('exam/sel/by/system/{id}/secure', [Selection::class, 'ResultSel']);
+Route::get('bank-transfer/sel/by/system/{id}/secure', [Selection::class, 'BankTransferSel']);
 Route::get('data_card_sel/system/{id}/data_card', [Selection::class, 'DataCard']);
 Route::get('recharge_card_sel/system/{id}/recharge_card', [Selection::class, 'RechargeCard']);
 
 
 // app link over here
-
+//
 
 Route::post('app/habukhan/secure/login', [Auth::class, 'AppLogin']);
 Route::post('app/habukhan/verify/otp', [Auth::class, 'AppVerify']);
 Route::post('app/habukhan/resend/otp', [Auth::class, 'ResendOtp']);
 Route::post('app/habukhan/signup', [Auth::class, 'SignUp']);
 Route::post('app/finger/habukhan/login', [Auth::class, 'FingerPrint']);
-Route::post('app/secure/check/login/details', [Auth::class, 'APPLOAD']);
+Route::match(['get', 'post'], 'app/secure/check/login/details', [Auth::class, 'APPLOAD']);
 Route::get('app/habukhan/setting', [Auth::class, 'AppGeneral']);
 // Route::post('app/check/monnify/secure', [Auth::class, 'APPMOnify']);
 Route::post('app/manual/funding/{id}/send', [Auth::class, 'ManualFunding']);
@@ -321,12 +350,13 @@ Route::post('app/transaction_history_habukhan_doing', [Auth::class, 'Transaction
 Route::post('app/system_notification_here', [Auth::class, 'AppSystemNotification']);
 Route::post('app/clear/notification/here', [Auth::class, 'ClearNotification']);
 Route::post('app/recent_transacion', [Auth::class, 'recentTransaction']);
-// Fix: Add GET route for recent transactions matching mobile app call
 Route::get('user/recent-transactions/{user_id}', [Auth::class, 'recentTransaction']);
+Route::get('transactions', [Auth::class, 'appTransactions']);
 Route::post('app/data_card_plan', [Auth::class, 'DataCardPlans']);
 Route::post('app/recharge_card_plan', [Auth::class, 'RechargeCardPlans']);
 Route::post('app/otp_transaction_pin', [Auth::class, 'SendOtp']);
 Route::post('app/delete_account_habukhan', [Auth::class, 'DeleteUserAccountNot']);
+Route::post('app/update-fcm-token', [Auth::class, 'updateFcmToken']);
 
 // data and airtime refund
 Route::get('refund/system/refund', [AdminTrans::class, 'AutoRefundBySystem']);
@@ -339,9 +369,9 @@ Route::get('check/api/balance/{id}/secure', [AdminController::class, 'ApiBalance
 
 // Route::get('habukhan-export-to-excel', [PaymentController::class, 'importExcel']);
 
-Route::get('/test', function () {
-    return response()->json(['status' => 'ok']);
-});
+
+
+
 
 Route::post('xixapay/webhook', [\App\Http\Controllers\API\PaymentController::class, 'Xixapay']);
 Route::post('monnify/webhook', [\App\Http\Controllers\API\PaymentController::class, 'MonnifyWebhook']);

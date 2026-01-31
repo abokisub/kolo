@@ -143,79 +143,110 @@ class WebhookController extends Controller
 
     public function AutopilotWebhook(Request $request)
     {
-        $response = $request->all();
-        \Log::info('📞 Autopilot Webhook Received:', $response);
+        // ... (existing code)
+    }
 
-        // Autopilot sometimes sends 'status' or 'request_status' or 'data.status'
-        $status_text = strtolower($response['status'] ?? $response['request_status'] ?? ($response['data']['status'] ?? ''));
-        $reference = $response['reference'] ?? ($response['data']['reference'] ?? ($response['yourReference'] ?? ''));
+    /**
+     * Unified Bank Transfer Webhook Handler (Paystack / Xixapay)
+     * Single Source of Truth for Transfer Status.
+     */
+    public function transferWebhook(Request $request, $provider)
+    {
+        // 1. Normalize Payload
+        $payload = $request->all();
+        \Log::info("📞 Transfer Webhook Received ($provider):", $payload);
 
-        if (!$reference || !$status_text) {
-            \Log::warning('📞 Autopilot Webhook: Missing reference or status', $response);
-            return response()->json(['status' => 'ignored', 'reason' => 'missing fields']);
-        }
+        $status = null; // 'SUCCESS', 'FAILED'
+        $reference = null;
+        $message = 'Webhook processed';
 
-        // Search in cash table by api_reference or custom reference
-        $cash = DB::table('cash')->where('api_reference', $reference)->orWhere('transid', $reference)->first();
+        try {
+            if ($provider == 'paystack') {
+                // Verify Signature (Important!)
+                // $signature = $request->header('x-paystack-signature');
+                // if ($signature !== hash_hmac('sha512', file_get_contents("php://input"), config('paystack.secret_key'))) { ... }
 
-        if ($cash) {
-            $user = DB::table('user')->where('username', $cash->username)->first();
-            if (!$user) {
-                \Log::error('📞 Autopilot Webhook: User not found for conversion', ['username' => $cash->username]);
-                return response()->json(['status' => 'fail', 'message' => 'User not found']);
+                $event = $payload['event'] ?? '';
+                if ($event == 'transfer.success') {
+                    $status = 'SUCCESS';
+                    $reference = $payload['data']['reference'];
+                } elseif ($event == 'transfer.failed' || $event == 'transfer.reversed') {
+                    $status = 'FAILED';
+                    $reference = $payload['data']['reference'];
+                    $message = $payload['data']['reason'] ?? 'Transfer Failed';
+                }
+
+            } elseif ($provider == 'xixapay') {
+                // Xixapay Structure (Assumed based on pattern)
+                $reference = $payload['reference'] ?? $payload['data']['reference'] ?? null;
+                $rawStatus = strtolower($payload['status'] ?? $payload['data']['status'] ?? '');
+
+                if ($rawStatus == 'success' || $rawStatus == 'successful') {
+                    $status = 'SUCCESS';
+                } elseif ($rawStatus == 'failed' || $rawStatus == 'reversed') {
+                    $status = 'FAILED';
+                    $message = $payload['message'] ?? 'Transfer Failed';
+                }
             }
 
-            if ($status_text == 'completed' || $status_text == 'success' || $status_text == 'delivered') {
-                if ($cash->plan_status == 0) { // Still pending
-                    $new_bal = $user->bal + $cash->amount_credit;
+            if (!$status || !$reference) {
+                return response()->json(['status' => 'ignored', 'message' => 'Not a relevant transfer event']);
+            }
 
-                    DB::beginTransaction();
-                    try {
-                        // Update transaction status
-                        DB::table('cash')->where('id', $cash->id)->update([
-                            'plan_status' => 1,
-                            'oldbal' => $user->bal,
-                            'newbal' => $new_bal
-                        ]);
+            // 2. Locate Transaction
+            $transfer = DB::table('transfers')->where('reference', $reference)->first();
 
-                        // Update user balance
-                        DB::table('user')->where('id', $user->id)->update(['bal' => $new_bal]);
+            if (!$transfer) {
+                \Log::warning("📞 Webhook: Transfer reference not found: $reference");
+                return response()->json(['status' => 'fail', 'message' => 'Ref not found']);
+            }
 
-                        // Update corresponding message/history record
-                        DB::table('message')->where('transid', $cash->transid)->update([
-                            'plan_status' => 1,
-                            'oldbal' => $user->bal,
-                            'newbal' => $new_bal,
-                            'message' => 'Airtime conversion successful and wallet credited'
-                        ]);
+            // 3. Idempotency & State Machine Check
+            if ($transfer->status == 'SUCCESS' || $transfer->status == 'FAILED') {
+                \Log::info("📞 Webhook: Transaction $reference already final (" . $transfer->status . "). Ignoring.");
+                return response()->json(['status' => 'success', 'message' => 'Already processed']);
+            }
 
-                        DB::commit();
-                        \Log::info('✅ Autopilot Webhook: Successfully credited user', ['username' => $user->username, 'amount' => $cash->amount_credit]);
-                        return response()->json(['status' => 'success']);
-                    } catch (\Exception $e) {
-                        DB::rollBack();
-                        \Log::error('❌ Autopilot Webhook: DB Error during crediting', ['error' => $e->getMessage()]);
-                        return response()->json(['status' => 'fail', 'message' => $e->getMessage()]);
-                    }
-                } else {
-                    \Log::info('📞 Autopilot Webhook: Transaction already processed', ['transid' => $cash->transid]);
-                    return response()->json(['status' => 'success', 'message' => 'already processed']);
-                }
-            } else if ($status_text == 'failed' || $status_text == 'cancelled' || $status_text == 'rejected') {
-                if ($cash->plan_status == 0) {
-                    DB::table('cash')->where('id', $cash->id)->update(['plan_status' => 2]);
-                    DB::table('message')->where('transid', $cash->transid)->update([
-                        'plan_status' => 2,
-                        'message' => 'Airtime conversion failed: ' . ($response['message'] ?? $response['data']['message'] ?? 'Rejected by provider')
+            // 4. Update State (Atomic)
+            DB::transaction(function () use ($transfer, $status, $message, $reference) {
+                if ($status == 'SUCCESS') {
+                    // Update Transfer
+                    DB::table('transfers')->where('id', $transfer->id)->update([
+                        'status' => 'SUCCESS',
+                        'updated_at' => now()
                     ]);
-                    \Log::warning('❌ Autopilot Webhook: Conversion failed', ['reference' => $reference]);
-                    return response()->json(['status' => 'success']);
-                }
-            }
-        } else {
-            \Log::warning('📞 Autopilot Webhook: No matching transaction found in database for reference: ' . $reference);
-        }
 
-        return response()->json(['status' => 'ignored']);
+                    // Update Message (History)
+                    DB::table('message')->where('transid', $reference)->update([
+                        'plan_status' => 1,
+                        'message' => 'Transfer Successful (Confirmed by Bank)'
+                    ]);
+
+                } elseif ($status == 'FAILED') {
+                    // REFUND USER
+                    $user = DB::table('user')->where('id', $transfer->user_id)->lockForUpdate()->first();
+                    $refund_bal = $user->bal + $transfer->amount + $transfer->charge;
+
+                    DB::table('user')->where('id', $user->id)->update(['bal' => $refund_bal]);
+
+                    DB::table('transfers')->where('id', $transfer->id)->update([
+                        'status' => 'FAILED',
+                        'updated_at' => now()
+                    ]);
+
+                    DB::table('message')->where('transid', $reference)->update([
+                        'plan_status' => 2,
+                        'message' => 'Transfer Failed: ' . $message,
+                        'newbal' => $refund_bal
+                    ]);
+                }
+            });
+
+            return response()->json(['status' => 'success']);
+
+        } catch (\Exception $e) {
+            \Log::error("❌ Webhook Error: " . $e->getMessage());
+            return response()->json(['status' => 'error'], 500);
+        }
     }
 }

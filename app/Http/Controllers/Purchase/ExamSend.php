@@ -272,7 +272,7 @@ class ExamSend extends Controller
                 'serviceID' => 'waec',
                 'phone' => $this->core()->app_phone,
                 'variation_code' => 'waecdirect',
-                'request_id' => Carbon::parse($this->system_date())->formatLocalized("%Y%m%d%H%M%S") . '_' . $data['transid']
+                'request_id' => Carbon::now('Africa/Lagos')->format('YmdHi') . substr(md5($data['transid']), 0, 8)
             );
             $endpoints = "https://vtpass.com/api/pay";
             $headers = [

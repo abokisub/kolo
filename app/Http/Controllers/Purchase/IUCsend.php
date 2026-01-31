@@ -107,23 +107,44 @@ class IUCsend extends Controller
             'billersCode' => $data['iuc'],
         );
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://vtpass.com/api/merchant-verify");
+        curl_setopt($ch, CURLOPT_URL, "https://sandbox.vtpass.com/api/merchant-verify");
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));  //Post Fields
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // Increased
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60); // Increased
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Fix for some local setups
         $headers = [
             'Authorization: Basic ' . $vtpass_token . '',
             'Content-Type: application/json',
         ];
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $request = curl_exec($ch);
+        $curl_errno = curl_errno($ch);
         curl_close($ch);
+
+        if ($curl_errno > 0) {
+            return null; // Curl error
+        }
+
         $response = (json_decode($request, true));
         if (!empty($response)) {
-            if (!empty($response['content']['Customer_Name'])) {
+            if (isset($response['content']['Customer_Name'])) {
                 return $response['content']['Customer_Name'];
             }
+            // Fallback for other potential response structures
+            if (isset($response['name']))
+                return $response['name'];
+            if (isset($response['customer_name']))
+                return $response['customer_name'];
         }
+    }
+
+    public static function Showmax($data)
+    {
+        // VTpass does not support merchant-verify for Showmax
+        // Return a generic message since validation is not available
+        return "Showmax Subscriber";
     }
 
 }

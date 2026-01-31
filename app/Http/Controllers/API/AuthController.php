@@ -129,13 +129,28 @@ class AuthController extends Controller
 
 
 
-                        if ($xixapay_enabled)
-                            $this->xixapay_account($user->username);
-                        if ($monnify_enabled || $wema_enabled)
-                            $this->monnify_account($user->username);
+                        try {
+                            if ($xixapay_enabled)
+                                $this->xixapay_account($user->username);
+                        } catch (\Exception $e) {
+                            \Log::error("Register Xixapay: " . $e->getMessage());
+                        }
+
+                        try {
+                            if ($monnify_enabled || $wema_enabled)
+                                $this->monnify_account($user->username);
+                        } catch (\Exception $e) {
+                            \Log::error("Register Monnify: " . $e->getMessage());
+                        }
+
                         // if ($palmpay_enabled || $monnify_enabled)
                         //    $this->paymentpoint_account($user->username);
-                        $this->paystack_account($user->username); // Always try paystack or link to setting
+                        try {
+                            $this->paystack_account($user->username);
+                        } catch (\Exception $e) {
+                            \Log::error("Register Paystack: " . $e->getMessage());
+                        }
+                        // Always try paystack or link to setting
                         $this->insert_stock($user->username);
 
                         $user = DB::table('user')->where(['id' => $user->id])->first();
@@ -185,6 +200,19 @@ class AuthController extends Controller
                         $token = $this->generatetoken($user->id);
                         $use = $this->core();
                         $general = $this->general();
+
+                        // If origin is present, it's a web request - auto-verify and skip OTP
+                        if ($origin) {
+                            DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
+                            return response()->json([
+                                'status' => 'success',
+                                'message' => 'Registration Successful (Web)',
+                                'token' => $token,
+                                'user' => $user_details
+                            ]);
+                        }
+
+                        // Mobile request - follow OTP flow
                         if (true) { // Force OTP as requested by user
                             if ($use->is_verify_email || true) { // redundant true but clear intent
                                 $otp = random_int(100000, 999999);
@@ -217,37 +245,11 @@ class AuthController extends Controller
                                     'user' => $user_details
                                 ]);
                             } else {
-                                // Force OTP for now as requested by user, or fallback to Welcome if not forced (but user asked for OTP)
-                                // Actually, user said: "wait it does not ask me for OTP verification" implies they WANT it.
-                                // Logic: If is_verify_email is false, we usually skip specific OTP but might still do Welcome.
-                                // To force OTP, we should treat this block same as above or update settings.
-                                // For now, I will fix the syntax error and keep the original logic flow but uncomment email.
-
-                                $data = [
-                                    'status' => 1
-                                ];
-                                $tableid = [
-                                    'username' => $user->username
-                                ];
-                                $this->updateData($data, 'user', $tableid);
-                                $email_data = [
-                                    'name' => $user->name,
-                                    'email' => $user->email,
-                                    'username' => $user->username,
-                                    'title' => 'WELCOME EMAIL',
-                                    'sender_mail' => $general->app_email,
-                                    'system_email' => $general->app_email,
-                                    'app_name' => $general->app_name,
-                                    'pin' => $user->pin,
-                                ];
-                                try {
-                                    MailController::send_mail($email_data, 'email.welcome');
-                                } catch (\Throwable $e) {
-                                    // Continue
-                                }
+                                // Default fallback (Mobile)
+                                DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
                                 return response()->json([
                                     'status' => 'success',
-                                    'username' => $user->username,
+                                    'message' => 'Registration Successful',
                                     'token' => $token,
                                     'user' => $user_details
                                 ]);
@@ -360,14 +362,33 @@ class AuthController extends Controller
                             $active_default = 'xixapay';
                     }
 
-                    if ($xixapay_enabled && $user->palmpay == null)
-                        $this->xixapay_account($user->username);
-                    if (($monnify_enabled || $wema_enabled) && ($user->sterlen == null || $user->wema == null))
-                        $this->monnify_account($user->username);
-                    if ($palmpay_enabled && ($user->palmpay == null || $user->opay == null))
-                        $this->paymentpoint_account($user->username);
-                    if ($user->paystack_account == null)
-                        $this->paystack_account($user->username);
+                    try {
+                        if ($xixapay_enabled && $user->palmpay == null)
+                            $this->xixapay_account($user->username);
+                    } catch (\Exception $e) {
+                        \Log::error("Account Xixapay: " . $e->getMessage());
+                    }
+
+                    try {
+                        if (($monnify_enabled || $wema_enabled) && ($user->sterlen == null || $user->wema == null))
+                            $this->monnify_account($user->username);
+                    } catch (\Exception $e) {
+                        \Log::error("Account Monnify: " . $e->getMessage());
+                    }
+
+                    try {
+                        if ($palmpay_enabled && ($user->palmpay == null || $user->opay == null))
+                            $this->paymentpoint_account($user->username);
+                    } catch (\Exception $e) {
+                        \Log::error("Account PaymentPoint: " . $e->getMessage());
+                    }
+
+                    try {
+                        if ($user->paystack_account == null)
+                            $this->paystack_account($user->username);
+                    } catch (\Exception $e) {
+                        \Log::error("Account Paystack: " . $e->getMessage());
+                    }
                     // $this->insert_stock($user->username); // Optimize stock check if needed
                     $user = DB::table('user')->where(['id' => $user->id])->first();
 
@@ -631,6 +652,7 @@ class AuthController extends Controller
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
             //our login function over here
+            \Log::info('API Login Hit: ' . json_encode($request->except('password')));
             $validator = Validator::make($request->all(), [
                 'username' => 'required|string',
                 'password' => 'required'
@@ -696,18 +718,36 @@ class AuthController extends Controller
                     // This prevents timeouts by not calling external APIs if the user already has the account OR if the provider is disabled.
                     // FIX: Smart Account Generation (Only if missing AND enabled)
                     // PERFORMANCE: Check if column is NULL before calling the function to avoid overhead/timeouts.
-                    if ($wema_enabled && empty($user->wema))
-                        $this->monnify_account($user->username);
-                    if ($monnify_enabled && empty($user->sterlen))
-                        $this->monnify_account($user->username);
+                    try {
+                        if ($wema_enabled && empty($user->wema))
+                            $this->monnify_account($user->username);
+                    } catch (\Exception $e) {
+                        \Log::error("Login Wema: " . $e->getMessage());
+                    }
+
+                    try {
+                        if ($monnify_enabled && empty($user->sterlen))
+                            $this->monnify_account($user->username);
+                    } catch (\Exception $e) {
+                        \Log::error("Login Sterlen: " . $e->getMessage());
+                    }
+
                     // if ($palmpay_enabled && ($user->palmpay == null || $user->opay == null))
                     //     $this->paymentpoint_account($user->username);
-                    if ($xixapay_enabled && empty($user->palmpay))
-                        $this->xixapay_account($user->username);
+                    try {
+                        if ($xixapay_enabled && empty($user->palmpay))
+                            $this->xixapay_account($user->username);
+                    } catch (\Exception $e) {
+                        \Log::error("Login Xixapay: " . $e->getMessage());
+                    }
 
                     // Paystack check (Controller function checks too, but good to double check here)
-                    if (empty($user->paystack_account))
-                        $this->paystack_account($user->username);
+                    try {
+                        if (empty($user->paystack_account))
+                            $this->paystack_account($user->username);
+                    } catch (\Exception $e) {
+                        \Log::error("Login Paystack: " . $e->getMessage());
+                    }
 
                     // $this->insert_stock($user->username); // Usually fast, can leave or check logic
                     $user = DB::table('user')->where(['id' => $user->id])->first();
@@ -765,7 +805,7 @@ class AuthController extends Controller
                     if ((password_verify($request->password, $user->password)) xor ($request->password == $user->password) xor ($hash == $user->password) xor ($mdpass == $user->password)) {
                         //  if(Hash::check($request->password, $user->password)){
                         // Debug Log
-                        \Log::info('Login Debug: User=' . $user->username . ', Type="' . $user->type . '", Status=' . $user->status);
+                        \Log::info('Login Debug: User=' . $user->username . ', Type="' . $user->type . '", Status=' . $user->status . ', PlainMatch=' . ($request->password == $user->password ? 'YES' : 'NO') . ', HashMatch=' . (password_verify($request->password, $user->password) ? 'YES' : 'NO'));
 
                         if ($user->status == 1 || trim(strtoupper($user->type)) == 'ADMIN' || strcasecmp($user->username, 'Habukhan') == 0) {
                             return response()->json([
@@ -785,20 +825,53 @@ class AuthController extends Controller
                                 'message' => $user->username . ' Your Account Has Been Deactivated'
                             ])->setStatusCode(403);
                         } else if ($user->status == 0) {
+                            if ($origin) {
+                                // Web login - auto-verify and login
+                                DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
+                                return response()->json([
+                                    'status' => 'success',
+                                    'message' => 'Login successfully (Web Auto-Verify)',
+                                    'user' => $user_details,
+                                    'token' => $this->generatetoken($user->id)
+                                ]);
+                            }
+
+                            // Mobile login - send OTP
+                            $otp = random_int(1000, 9999);
+                            DB::table('user')->where(['id' => $user->id])->update(['otp' => $otp]);
+
+                            $general = $this->general();
+                            $email_data = [
+                                'name' => $user->name,
+                                'email' => $user->email,
+                                'username' => $user->username,
+                                'title' => 'Account Verification',
+                                'sender_mail' => $general->app_email,
+                                'app_name' => config('app.name'),
+                                'otp' => $otp
+                            ];
+                            try {
+                                MailController::send_mail($email_data, 'email.verify');
+                            } catch (\Throwable $e) {
+                                \Log::error('OTP Mail Error (AuthController): ' . $e->getMessage());
+                            }
+
                             return response()->json([
                                 'status' => 'verify',
-                                'message' => $user->username . ' (' . $user->type . ') Your Account Not Yet verified',
+                                'message' => $user->username . ' (' . $user->type . ') Your Account Not Yet verified. An OTP has been sent to your email.',
                                 'user' => $user_details,
                                 'token' => $this->generatetoken($user->id),
                             ]);
                         } else {
+                            \Log::warning('Login Failed: Status logic mismatch for User=' . $user->username . ', Status=' . $user->status);
                             return response()->json([
                                 'status' => 403,
-                                'message' => 'System is unable to verify user'
+                                'message' => 'System is unable to verify user (DEBUG: status=' . $user->status . ')'
 
                             ])->setStatusCode(403);
                         }
                     } else {
+                        \Log::warning('Login Failed: Password mismatch for User=' . $user->username);
                         return response()->json([
                             'status' => 403,
                             'message' => 'Invalid Password Note Password is Case Sensitive'
@@ -807,7 +880,7 @@ class AuthController extends Controller
                 } else {
                     return response()->json([
                         'status' => 403,
-                        'message' => 'Invalid Username and Password'
+                        'message' => 'Invalid Username and Password. DEBUG: User=' . $request->username . ', Count=' . $check_system->count()
                     ])->setStatusCode(403);
                 }
             }

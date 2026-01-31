@@ -198,12 +198,18 @@ class ApiSending extends Controller
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
         if (isset($headers)) {
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         }
         $dataapi = curl_exec($ch);
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+        if ($dataapi === false) {
+            file_put_contents('curl_error.txt', curl_error($ch));
+        }
         file_put_contents('status.txt', $httpcode);
         file_put_contents('message.txt', $dataapi);
 
