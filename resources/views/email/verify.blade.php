@@ -1,86 +1,41 @@
-<!doctype html>
-<html lang="en-US">
+@extends('email.layouts.master')
 
-<head>
-    <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
-    <title> ACCOUNT VERIFICATION</title>
-    <meta name="description" content="Reset Password Email Template.">
-    <style type="text/css">
-        a:hover {
-            text-decoration: underline !important;
-        }
-    </style>
-</head>
+@section('content')
+    <div style="text-align: center;">
+        <h2 style="color: #333; margin-bottom: 20px;">{{ $title ?? 'Verification Code' }}</h2>
 
-<body marginheight="0" topmargin="0" marginwidth="0" style="margin: 0px; background-color: #f2f3f8;" leftmargin="0">
-    <!--100% body table-->
-    <table cellspacing="0" border="0" cellpadding="0" width="100%" bgcolor="#f2f3f8"
-        style="@import url(https://fonts.googleapis.com/css?family=Rubik:300,400,500,700|Open+Sans:300,400,600,700); font-family: Open Sans, sans-serif;">
-        <tr>
-            <td>
-                <table style="background-color: #f2f3f8; max-width:670px;  margin:0 auto;" width="100%" border="0"
-                    align="center" cellpadding="0" cellspacing="0">
-                    <tr>
-                        <td style="height:80px;">&nbsp;</td>
-                    </tr>
-                    <tr>
-                        <td style="text-align:center;">
-                            <a href="{{ config('app.app_url') }}" title="logo" target="_blank">
-                                <img width="200" src={{ config('app.app_url') . '/upload/welcome.png' }} title="logo"
-                                    alt="logo">
-                            </a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="height:20px;">&nbsp;</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0"
-                                style="max-width:670px;background:#fff; border-radius:3px; text-align:center;-webkit-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);-moz-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);box-shadow:0 6px 18px 0 rgba(0,0,0,.06);">
-                                <tr>
-                                    <td style="height:40px;">&nbsp;</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding:0 35px;">
-                                        <h1
-                                            style="color:#1e1e2d; font-weight:500; margin:0;font-size:32px;font-family:Rubik,sans-serif;">
-                                            ACCOUNT VERIFICATION</h1>
-                                        <span
-                                            style="display:inline-block; vertical-align:middle; margin:29px 0 26px; border-bottom:1px solid #cecece; width:100px;"></span>
-                                        <p style="color:#455056; font-size:15px;line-height:24px; margin:0;">
-                                            <span>{{ucfirst($username)}}</sapn> simply use the otp sent to you to verify
-                                                your account Note: Don't Send the OTP to anyone
-                                        </p>
+        <p style="font-size: 16px; margin-bottom: 30px;">
+            Hello <strong>{{ ucfirst($username) }}</strong>,<br>
+            To complete your request, please use the One-Time Password (OTP) below.
+        </p>
 
-                                        <a href="javascript:void(0);"
-                                            style="background:#20e277;text-decoration:none !important; font-weight:500; margin-top:35px; color:#fff;text-transform:uppercase; font-size:14px;padding:10px 24px;display:inline-block;border-radius:50px;">
-                                            <span>{{ $otp }}</span></a>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="height:40px;">&nbsp;</td>
-                                </tr>
-                            </table>
-                        </td>
-                    <tr>
-                        <td style="height:20px;">&nbsp;</td>
-                    </tr>
-                    <tr>
-                        <td style="text-align:center;">
-                            <p
-                                style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">
-                                &copy; <strong><span>{{ config('app.app_url') }}</span></strong></p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="height:80px;">&nbsp;</td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-    <!--/100% body table-->
-</body>
+        <div
+            style="background-color: #f0f4f8; padding: 20px; border-radius: 8px; display: inline-block; margin-bottom: 30px; letter-spacing: 5px; font-weight: bold; font-size: 32px; color: #0056b3;">
+            {{ $otp }}
+        </div>
 
-</html>
+        <div class="alert-warning" style="text-align: left;">
+            <strong>Warning:</strong> If you did not initiate this request, please ignore this email or contact support
+            immediately. Do not share this code with anyone, including our support staff.
+        </div>
+
+        <div class="metadata" style="text-align: left;">
+            <div class="metadata-item">
+                <span class="metadata-label">IP Address:</span>
+                <span>{{ $ip_address ?? 'Unknown' }}</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Device:</span>
+                <span>{{ $device ?? 'Unknown Device' }}</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Location:</span>
+                <span>{{ $location ?? 'Unknown Location' }}</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Time:</span>
+                <span>{{ date('d M Y, h:i A') }}</span>
+            </div>
+        </div>
+    </div>
+@endsection

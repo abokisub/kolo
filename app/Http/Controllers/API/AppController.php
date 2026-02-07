@@ -20,9 +20,16 @@ class AppController extends Controller
                 'setting' => $this->core(),
                 'feature' => $this->feature(),
                 'general' => $this->general(),
-                'bank' => DB::table('habukhan_key')->select('account_number', 'account_name', 'bank_name', 'min', 'max')->first()
+                'bank' => DB::table('habukhan_key')->select('account_number', 'account_name', 'bank_name', 'min', 'max')->first(),
+                'support' => [
+                    'support_ai_name' => 'Aboki',
+                    'support_call_name' => 'Aminiya',
+                    'support_phone' => $this->general()->app_phone ?? '+2348139123922',
+                    'support_whatsapp' => $this->general()->app_phone ?? '+2348139123922'
+                ]
             ]);
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -40,18 +47,31 @@ class AppController extends Controller
         ]);
     }
 
-    public function discountOther(Request $request)
+    public function getDiscountOther(Request $request)
     {
         $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
-            $settings = DB::table('settings')->select('monnify_charge', 'xixapay_charge')->first();
+            $settings = DB::table('settings')->select('monnify_charge', 'xixapay_charge', 'paystack_charge')->first();
+            $cardSettings = DB::table('card_settings')->where('id', 1)->first();
+
             return response()->json([
                 'status' => 'success',
                 'monnify_charge' => $settings->monnify_charge ?? '0',
-                'glode_charge' => $settings->xixapay_charge ?? '0' // Mapping xixapay_charge to glode_charge for frontend consistency if needed, or just return as is.
+                'xixapay_charge' => $settings->xixapay_charge ?? '0',
+                'glode_charge' => $settings->xixapay_charge ?? '0',
+                'paystack_charge' => $settings->paystack_charge ?? '0',
+                'vcard_ngn_fee' => $cardSettings->ngn_creation_fee ?? 500,
+                'vcard_usd_fee' => $cardSettings->usd_creation_fee ?? 3,
+                'vcard_usd_rate' => $cardSettings->ngn_rate ?? 1600,
+                'vcard_fund_fee' => $cardSettings->funding_fee_percent ?? 1,
+                'vcard_usd_failed_fee' => $cardSettings->usd_failed_tx_fee ?? 0.4,
+                'vcard_ngn_fund_fee' => $cardSettings->ngn_funding_fee_percent ?? 2,
+                'vcard_usd_fund_fee' => $cardSettings->usd_funding_fee_percent ?? 2,
+                'vcard_ngn_failed_fee' => $cardSettings->ngn_failed_tx_fee ?? 0,
             ]);
-        } else {
+        }
+        else {
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -59,7 +79,32 @@ class AppController extends Controller
         }
     }
 
-    public function getBankCharges(Request $request)
+    public function getDiscountSystem(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        $origin = $request->headers->get('origin');
+        if (!$origin || in_array($origin, $explode_url)) {
+            $settings = DB::table('settings')->first();
+            return response()->json([
+                'status' => 'success',
+                'version' => $settings->version ?? '1.0.0',
+                'update_url' => $settings->update_url ?? '',
+                'playstore_url' => $settings->playstore_url ?? '',
+                'appstore_url' => $settings->appstore_url ?? '',
+                'update_title' => $settings->app_update_title ?? '',
+                'update_desc' => $settings->app_update_desc ?? '',
+                'maintenance' => (bool)($settings->maintenance ?? false),
+            ]);
+        }
+        else {
+            return response()->json([
+                'status' => 403,
+                'message' => 'Unable to Authenticate System'
+            ])->setStatusCode(403);
+        }
+    }
+
+    public function getDiscountBanks(Request $request)
     {
         $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
@@ -74,11 +119,12 @@ class AppController extends Controller
                 'status' => 'success',
                 'data' => [
                     'transfer_charge_type' => $settings->transfer_charge_type ?? 'FLAT',
-                    'transfer_charge_value' => (float) ($settings->transfer_charge_value ?? 0),
-                    'transfer_charge_cap' => (float) ($settings->transfer_charge_cap ?? 0),
+                    'transfer_charge_value' => (float)($settings->transfer_charge_value ?? 0),
+                    'transfer_charge_cap' => (float)($settings->transfer_charge_cap ?? 0),
                 ]
             ]);
-        } else {
+        }
+        else {
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -96,32 +142,63 @@ class AppController extends Controller
                 'monnify_enabled',
                 'wema_enabled',
                 'xixapay_enabled',
-                'default_virtual_account'
+                'default_virtual_account',
+                'transfer_lock_all'
             )->first();
 
             return response()->json([
                 'status' => 'success',
                 'providers' => [
                     'palmpay' => [
-                        'enabled' => (bool) ($settings->palmpay_enabled ?? true),
+                        'enabled' => (bool)($settings->palmpay_enabled ?? true),
                         'is_default' => ($settings->default_virtual_account ?? 'palmpay') === 'palmpay'
                     ],
                     'monnify' => [
-                        'enabled' => (bool) ($settings->monnify_enabled ?? true),
+                        'enabled' => (bool)($settings->monnify_enabled ?? true),
                         'is_default' => ($settings->default_virtual_account ?? 'palmpay') === 'monnify'
                     ],
                     'wema' => [
-                        'enabled' => (bool) ($settings->wema_enabled ?? true),
+                        'enabled' => (bool)($settings->wema_enabled ?? true),
                         'is_default' => ($settings->default_virtual_account ?? 'palmpay') === 'wema'
                     ],
                     'xixapay' => [
-                        'enabled' => (bool) ($settings->xixapay_enabled ?? true),
+                        'enabled' => (bool)($settings->xixapay_enabled ?? true),
                         'is_default' => ($settings->default_virtual_account ?? 'palmpay') === 'xixapay'
                     ]
                 ],
-                'default_provider' => $settings->default_virtual_account ?? 'palmpay'
+                'default_provider' => $settings->default_virtual_account ?? 'palmpay',
+                'transfer_lock_all' => (bool)($settings->transfer_lock_all ?? false)
             ]);
-        } else {
+        }
+        else {
+            return response()->json([
+                'status' => 403,
+                'message' => 'Unable to Authenticate System'
+            ])->setStatusCode(403);
+        }
+    }
+
+    public function getDiscountCash(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        $origin = $request->headers->get('origin');
+        if (!$origin || in_array($origin, $explode_url)) {
+            $discount = DB::table('cash_discount')->first();
+            return response()->json([
+                'status' => 'success',
+                'cash' => [
+                    'mtn' => $discount->mtn ?? 80,
+                    'glo' => $discount->glo ?? 70,
+                    'airtel' => $discount->airtel ?? 70,
+                    'mobile' => $discount->mobile ?? 70,
+                    'mtn_status' => $discount->mtn_status ?? 1,
+                    'glo_status' => $discount->glo_status ?? 1,
+                    'airtel_status' => $discount->airtel_status ?? 1,
+                    'mobile_status' => $discount->mobile_status ?? 1,
+                ]
+            ]);
+        }
+        else {
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -147,7 +224,8 @@ class AppController extends Controller
                     'message' => $validator->errors()->first(),
                     'status' => 403
                 ])->setStatusCode(403);
-            } else {
+            }
+            else {
                 //api user dat need upgrade
                 $check_me = [
                     'username' => $request->username,
@@ -194,26 +272,30 @@ class AppController extends Controller
                                 'status' => 'success',
                                 'message' => 'Your Request has been received and it will be processed within 3-5 days'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'System is unable to send request now',
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Unable to get Admins',
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to verify User'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -241,7 +323,8 @@ class AppController extends Controller
                     'message' => $validator->errors()->first(),
                     'status' => 403
                 ])->setStatusCode(403);
-            } else {
+            }
+            else {
                 $check_me = [
                     'username' => $request->username,
                     'status' => 1
@@ -316,56 +399,65 @@ class AppController extends Controller
                                                     'status' => 'success',
                                                     'message' => 'Your Request has been received and it will be processed within 3-5 days',
                                                 ]);
-                                            } else {
+                                            }
+                                            else {
                                                 return response()->json([
                                                     'status' => 403,
                                                     'message' => 'System is unable to send request now',
                                                 ])->setStatusCode(403);
                                             }
-                                        } else {
+                                        }
+                                        else {
                                             return response()->json([
                                                 'status' => 403,
                                                 'message' => 'Unable to get Admins',
                                             ])->setStatusCode(403);
                                         }
-                                    } else {
+                                    }
+                                    else {
                                         return response()->json([
                                             'status' => 403,
                                             'message' => 'Service Currently Not Avialable For You Right Now'
                                         ])->setStatusCode(403);
                                     }
-                                } else {
+                                }
+                                else {
                                     return response()->json([
                                         'status' => 403,
                                         'message' => 'Please Try Again After Few Mins'
                                     ]);
                                 }
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Please Try Again After Few Mins'
                                 ]);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Insufficient Account Fund Your Wallet And Try Again ~ ₦' . number_format($user->bal, 2)
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'System Is Unable to Detect Price'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to verify User',
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -383,7 +475,8 @@ class AppController extends Controller
                     'message' => 'User ID Required',
                     'status' => 403
                 ])->setStatusCode(403);
-            } else {
+            }
+            else {
                 $check_me = [
                     'username' => $request->id,
                     'status' => 1
@@ -417,46 +510,53 @@ class AppController extends Controller
                                             'status' => 403,
                                             'message' => 'Account Upgraded To AWUF PACKAGE Successfully'
                                         ]);
-                                    } else {
+                                    }
+                                    else {
                                         $this->updateData(['bal' => $credit_user], 'user', ['username' => $user->username, 'id' => $user->id]);
                                         return response()->json([
                                             'status' => 403,
                                             'message' => 'Try Again Later'
                                         ])->setStatusCode(403);
                                     }
-                                } else {
+                                }
+                                else {
                                     $this->updateData(['bal' => $credit_user], 'user', ['username' => $user->username, 'id' => $user->id]);
                                     return response()->json([
                                         'status' => 403,
                                         'message' => 'Try Again Later'
                                     ])->setStatusCode(403);
                                 }
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'System Unavialable Right Now'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Insufficient Account, Fund Your Wallet And Try Again ~ ₦' . number_format($user->bal, 2)
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'System is unable to Detect Price Right Now'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to verify User',
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -477,7 +577,8 @@ class AppController extends Controller
                     'message' => 'User ID Required',
                     'status' => 403
                 ])->setStatusCode(403);
-            } else {
+            }
+            else {
                 $check_me = [
                     'username' => $request->id,
                     'status' => 1
@@ -511,46 +612,53 @@ class AppController extends Controller
                                             'status' => 403,
                                             'message' => 'Account Upgraded To AGENT PACKAGE Successfully'
                                         ]);
-                                    } else {
+                                    }
+                                    else {
                                         $this->updateData(['bal' => $credit_user], 'user', ['username' => $user->username, 'id' => $user->id]);
                                         return response()->json([
                                             'status' => 403,
                                             'message' => 'Try Again Later'
                                         ])->setStatusCode(403);
                                     }
-                                } else {
+                                }
+                                else {
                                     $this->updateData(['bal' => $credit_user], 'user', ['username' => $user->username, 'id' => $user->id]);
                                     return response()->json([
                                         'status' => 403,
                                         'message' => 'Try Again Later'
                                     ])->setStatusCode(403);
                                 }
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'System Unavialable Right Now'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Insufficient Account, Fund Your Wallet And Try Again ~ ₦' . number_format($user->bal, 2)
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'System is unable to Detect Price Right Now'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to verify User',
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -567,7 +675,8 @@ class AppController extends Controller
                 'status' => 'success',
                 'network' => DB::table('network')->select('network', 'network_vtu', 'network_share', 'network_sme', 'network_cg', 'network_g', 'plan_id', 'cash', 'data_card', 'recharge_card')->get()
             ]);
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -589,18 +698,23 @@ class AppController extends Controller
                         $habukhan = $user->first();
                         if ($habukhan->type == 'SMART') {
                             $user_type = strtolower($habukhan->type);
-                        } else if ($habukhan->type == 'AGENT') {
+                        }
+                        else if ($habukhan->type == 'AGENT') {
                             $user_type = strtolower($habukhan->type);
-                        } else if ($habukhan->type == 'AWUF') {
+                        }
+                        else if ($habukhan->type == 'AWUF') {
                             $user_type = strtolower($habukhan->type);
-                        } else if ($habukhan->type == 'API') {
+                        }
+                        else if ($habukhan->type == 'API') {
                             $user_type = strtolower($habukhan->type);
-                        } else {
+                        }
+                        else {
                             $user_type = 'special';
                         }
                         if ($network->network == '9MOBILE') {
                             $real_network = 'mobile';
-                        } else {
+                        }
+                        else {
                             $real_network = $network->network;
                         }
                         $check_for_vtu = strtolower($real_network) . "_vtu_" . $user_type;
@@ -614,26 +728,30 @@ class AppController extends Controller
                             'price_vtu' => $airtime_discount->$check_for_vtu,
                             'price_sns' => $airtime_discount->$check_for_sns
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Reload Your Browser'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     $network = DB::table('network')->where('plan_id', $type->id)->first();
                     return response()->json([
                         'status' => 'success',
                         'network' => $network,
                     ]);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'network plan id need'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -659,7 +777,8 @@ class AppController extends Controller
                             if ($delete_user->count() > 0) {
                                 $delete = DB::table('user')->where('username', $username)->delete();
                                 DB::table('wallet_funding')->where('username', $username)->delete();
-                            } else {
+                            }
+                            else {
                                 $delete = false;
                             }
                         }
@@ -668,32 +787,37 @@ class AppController extends Controller
                                 'status' => 'success',
                                 'message' => 'Account Deleted Successfully'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable To delete Account'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'User ID  Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -720,38 +844,44 @@ class AppController extends Controller
                                     'status' => 'success',
                                     'message' => 'Account Deleted Successfully'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Unable To delete Account'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'User Not Found'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'User ID  Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -779,10 +909,12 @@ class AppController extends Controller
                                 $users = $select_user->first();
                                 if ($users->profile_image !== null) {
                                     $profile_image[] = ['username' => $habukhan->username, 'id' => $habukhan->id, 'message' => $habukhan->message, 'date' => $habukhan->date, 'profile_image' => $users->profile_image, 'status' => $habukhan->habukhan];
-                                } else {
+                                }
+                                else {
                                     $profile_image[] = ['username' => $habukhan->username, 'id' => $habukhan->id, 'message' => $habukhan->message, 'date' => $habukhan->date, 'profile_image' => $users->username, 'status' => $habukhan->habukhan];
                                 }
-                            } else {
+                            }
+                            else {
                                 $profile_image[] = ['username' => $habukhan->username, 'id' => $habukhan->id, 'message' => $habukhan->message, 'date' => $habukhan->date, 'profile_image' => $habukhan->username, 'status' => $habukhan->habukhan];
                             }
                         }
@@ -791,19 +923,22 @@ class AppController extends Controller
                             'notif' => $profile_image
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -824,19 +959,22 @@ class AppController extends Controller
                     $habukhan_username = $habukhan->username;
                     // user request
                     DB::table('notif')->where('username', $habukhan_username)->delete();
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -854,7 +992,8 @@ class AppController extends Controller
                 'status' => 'success',
                 'cable' => DB::table('cable_result_lock')->first()
             ]);
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -872,21 +1011,24 @@ class AppController extends Controller
                     $bill_d = DB::table('bill_charge')->first();
                     if ($bill_d->direct == 1) {
                         $charges = $bill_d->bill;
-                    } else {
+                    }
+                    else {
                         $charges = ($request->id / 100) * $bill_d->bill;
                     }
                     return response()->json([
                         'status' => 'suucess',
                         'charges' => $charges
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'invalid amount'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -916,7 +1058,8 @@ class AppController extends Controller
 
                     if ($request->network == '9MOBILE') {
                         $network_name = 'mobile';
-                    } else {
+                    }
+                    else {
                         $network_name = strtolower($request->network);
                     }
                     $system_admin = DB::table('cash_discount')->first();
@@ -926,18 +1069,21 @@ class AppController extends Controller
                         'amount' => $credit,
                         'status' => 'success'
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'message' => 'Network Required'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Amount Required'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -953,7 +1099,8 @@ class AppController extends Controller
             return response()->json([
                 'amount' => $this->core()->bulk_sms
             ]);
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
         }
     }
@@ -965,8 +1112,102 @@ class AppController extends Controller
             return response()->json([
                 'price' => DB::table('result_charge')->first()
             ]);
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
+        }
+    }
+
+    public function getAppInfo(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        $origin = $request->headers->get('origin');
+        if (!$origin || in_array($origin, $explode_url)) {
+            $general = $this->general();
+            $faqs = DB::table('faqs')->where('status', 1)->get();
+
+            return response()->json([
+                'status' => 'success',
+                'contact' => [
+                    'phone' => $general->app_phone,
+                    'email' => $general->app_email,
+                    'whatsapp' => $general->app_whatsapp,
+                    'address' => $general->app_address,
+                    'facebook' => $general->facebook,
+                    'tiktok' => $general->tiktok,
+                    'instagram' => $general->instagram,
+
+                    // Support Identity
+                    'support_ai_name' => 'Aboki',
+                    'support_call_name' => 'Aminiya',
+                    'support_phone' => $general->app_phone,
+                    'support_whatsapp' => $general->app_whatsapp ?? $general->app_phone,
+                ],
+                'faqs' => $faqs
+            ]);
+        }
+        else {
+            return response()->json([
+                'status' => 403,
+                'message' => 'Unable to Authenticate System'
+            ])->setStatusCode(403);
+        }
+    }
+    public function emailReceipt(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required',
+            'transid' => 'required',
+            'pdf_base64' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()->first()], 400);
+        }
+
+        $userId = $this->verifyapptoken($request->user_id) ?? $this->verifytoken($request->user_id);
+        $user = DB::table('user')->where('id', $userId)->first();
+
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User not found or session expired'], 401);
+        }
+
+        try {
+            $pdfData = base64_decode($request->pdf_base64);
+            $general = $this->general();
+
+            $email_data = [
+                'name' => $user->name,
+                'email' => $user->email,
+                'username' => $user->username,
+                'title' => 'Your Purchase Receipt - ' . $request->transid,
+                'sender_mail' => $general->app_email,
+                'app_name' => config('app.name'),
+                'transid' => $request->transid,
+                'date' => now()->toDayDateTimeString(),
+            ];
+
+            $attachment = [
+                'data' => $pdfData,
+                'name' => 'Receipt_' . $request->transid . '.pdf',
+                'mime' => 'application/pdf'
+            ];
+
+            $sent = MailController::send_mail($email_data, 'email.receipt', $attachment);
+
+            if ($sent) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Receipt has been sent to your email: ' . $user->email
+                ]);
+            }
+
+            return response()->json(['status' => 'error', 'message' => 'Failed to send email. Please try again.'], 500);
+
+        }
+        catch (\Exception $e) {
+            \Log::error('Email Receipt Error: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'An internal error occurred.'], 500);
         }
     }
 }

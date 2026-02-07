@@ -25,7 +25,7 @@ class CreateGeneralTable extends Migration
                 $table->string('currency', 10)->default('NGN');
                 $table->string('currency_symbol', 5)->default('₦');
                 $table->string('timezone', 50)->default('Africa/Lagos');
-                $table->boolean('maintenance_mode')->default('false');
+                $table->boolean('maintenance_mode')->default(false);
                 $table->text('maintenance_message')->nullable();
             });
         }

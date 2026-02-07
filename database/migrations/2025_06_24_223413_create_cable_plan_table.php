@@ -19,7 +19,7 @@ class CreateCable_planTable extends Migration
             $table->string('plan_id', 50)->unique();
             $table->string('plan_name', 100);
             $table->decimal('plan_price', 10, 2);
-            $table->boolean('plan_status')->default('true');
+            $table->boolean('plan_status')->default(true);
         });
     }
 

@@ -15,9 +15,9 @@ class CreateCable_result_lockTable extends Migration
     {
         Schema::create('cable_result_lock', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->boolean('dstv')->default('false');
-            $table->boolean('gotv')->default('false');
-            $table->boolean('startimes')->default('false');
+            $table->boolean('dstv')->default(false);
+            $table->boolean('gotv')->default(false);
+            $table->boolean('startimes')->default(false);
         });
     }
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ReceiptService;
 
 
 class RechargeCard extends Controller
@@ -26,7 +27,8 @@ class RechargeCard extends Controller
             // Professional Refactor: Use client-provided request-id for idempotency if available
             if ($request->has('request-id')) {
                 $transid = $request->input('request-id');
-            } else {
+            }
+            else {
                 $transid = $this->purchase_ref('Recharge_card_');
             }
 
@@ -36,16 +38,19 @@ class RechargeCard extends Controller
                 $d_token = $check->first();
                 if (trim($d_token->pin) == trim($request->pin)) {
                     $accessToken = $d_token->apikey;
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Transaction Pin'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 $accessToken = 'null';
             }
-        } else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+        }
+        else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $system = config('app.name');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
@@ -54,32 +59,37 @@ class RechargeCard extends Controller
                     $det = $check->first();
                     if (trim($det->pin) == trim($request->pin)) {
                         $accessToken = $det->apikey;
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 'fail',
                             'message' => 'Invalid Transaction Pin'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Transaction Pin'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 // transaction pin not required
                 $check = DB::table('user')->where(['id' => $this->verifytoken($request->token)]);
                 if ($check->count() == 1) {
                     $det = $check->first();
                     $accessToken = $det->apikey;
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'An Error Occur'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             $system = "API";
             $d_token = $request->header('Authorization');
             $accessToken = trim(str_replace("Token", "", $d_token));
@@ -91,7 +101,8 @@ class RechargeCard extends Controller
                     'message' => $validator->errors()->first(),
                     'status' => 'fail'
                 ])->setStatusCode(403);
-            } else {
+            }
+            else {
                 $user_check = DB::table('user')->where(function ($query) use ($accessToken) {
                     $query->where('apikey', $accessToken)
                         ->orWhere('app_key', $accessToken)
@@ -102,13 +113,17 @@ class RechargeCard extends Controller
                     // declear user type
                     if ($user->type == 'SMART') {
                         $user_type = 'smart';
-                    } else if ($user->type == 'AGENT') {
+                    }
+                    else if ($user->type == 'AGENT') {
                         $user_type = 'agent';
-                    } else if ($user->type == 'AWUF') {
+                    }
+                    else if ($user->type == 'AWUF') {
                         $user_type = 'awuf';
-                    } else if ($user->type == 'API') {
+                    }
+                    else if ($user->type == 'API') {
                         $user_type = 'api';
-                    } else {
+                    }
+                    else {
                         $user_type = 'special';
                     }
                     if (DB::table('network')->where('plan_id', $request->network)->count() == 1) {
@@ -117,21 +132,7 @@ class RechargeCard extends Controller
                             if (DB::table('recharge_card_plan')->where(['network' => $network->network, 'plan_id' => $request->plan_type, 'plan_status' => 1])->count() == 1) {
                                 // user limit
                                 $recharge_card_plan = DB::table('recharge_card_plan')->where(['network' => $network->network, 'plan_id' => $request->plan_type])->first();
-                                $all_limit = DB::table('message')->where(['username' => $user->username])->where(function ($query) {
-                                    $query->where('role', '!=', 'credit');
-                                    $query->where('role', '!=', 'debit');
-                                    $query->where('role', '!=', 'upgrade');
-                                    $query->where('plan_status', '!=', 2);
-                                })->whereDate('habukhan_date', Carbon::today())->sum('amount');
-                                if ($this->core()->allow_limit == 1 && $user->kyc == 0) {
-                                    if ($all_limit + $recharge_card_plan->$user_type <= $user->user_limit) {
-                                        $limit_check_passed = true;
-                                    } else {
-                                        $limit_check_passed = false;
-                                    }
-                                } else {
-                                    $limit_check_passed = true;
-                                }
+                                $limit_check_passed = true;
                                 if ($limit_check_passed == true) {
                                     $recharge_card_price = $recharge_card_plan->$user_type * $request->quantity;
                                     if (DB::table('recharge_card')->where('transid', $transid)->count() == 0 && DB::table('message')->where('transid', $transid)->count() == 0) {
@@ -146,13 +147,15 @@ class RechargeCard extends Controller
                                                     $trans_history = [
                                                         'username' => $user->username,
                                                         'amount' => $recharge_card_price,
-                                                        'message' => $network->network . ' Recharge Card Printing On Process Quantity is ' . $request->quantity,
+                                                        'message' => '⏳ Processing ' . $network->network . ' Recharge Card printing (' . $request->quantity . ' units)...',
                                                         'oldbal' => $user->bal,
                                                         'newbal' => $debit,
                                                         'habukhan_date' => $this->system_date(),
                                                         'plan_status' => 0,
                                                         'transid' => $transid,
-                                                        'role' => 'recharge_card'
+                                                        'role' => 'recharge_card',
+                                                        'service_type' => 'RECHARGE_CARD',
+                                                        'transaction_channel' => 'EXTERNAL'
                                                     ];
 
                                                     $recharge_card_trans = [
@@ -180,7 +183,8 @@ class RechargeCard extends Controller
                                                         ];
                                                         if ($network->network == '9MOBILE') {
                                                             $vending = 'mobile';
-                                                        } else {
+                                                        }
+                                                        else {
                                                             $vending = strtolower($network->network);
                                                         }
                                                         $sender = new RechargeCardSend();
@@ -197,8 +201,33 @@ class RechargeCard extends Controller
                                                                     $sold_pin[] = $real_pin->pin;
                                                                     $sold_serial[] = $real_pin->serial;
                                                                 }
-                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1, 'message' => $network->network . ' Recharge Card Printing Successful']);
+
+                                                                $receiptService = new ReceiptService();
+                                                                $successMessage = $receiptService->getFullMessage('RECHARGE_CARD', [
+                                                                    'network' => $network->network,
+                                                                    'quantity' => $request->quantity,
+                                                                    'amount' => $recharge_card_price,
+                                                                    'reference' => $transid,
+                                                                    'status' => 'SUCCESS'
+                                                                ]);
+
+                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1, 'message' => $successMessage]);
                                                                 DB::table('recharge_card')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1]);
+
+                                                                // SEND NOTIFICATION
+                                                                try {
+                                                                    (new \App\Services\NotificationService())->sendRechargeCardNotification(
+                                                                        $user,
+                                                                        $recharge_card_price,
+                                                                        $network->network,
+                                                                        $request->quantity,
+                                                                        $transid
+                                                                    );
+                                                                }
+                                                                catch (\Exception $e) {
+                                                                    \Log::error("Recharge Card Notification Error: " . $e->getMessage());
+                                                                }
+
                                                                 return response()->json([
                                                                     'network' => $network->network,
                                                                     'request-id' => $transid,
@@ -216,11 +245,14 @@ class RechargeCard extends Controller
                                                                     'load_pin' => $recharge_card_plan->load_pin,
                                                                     'check_balance' => $recharge_card_plan->check_balance
                                                                 ]);
-                                                            } else {
+                                                            }
+                                                            else {
                                                                 // transaction fail
+                                                                $failMessage = "❌ Recharge Card Printing Failed\n\nYou attempted to print " . $network->network . " Recharge Cards but the transaction failed. Your wallet has been refunded.";
+
                                                                 DB::table('user')->where('id', $user->id)->update(['bal' => $refund]);
                                                                 // trans history
-                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user->bal, 'newbal' => $refund, 'message' => 'Recharge Card Transaction  fail ' . $network->network]);
+                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user->bal, 'newbal' => $refund, 'message' => $failMessage]);
                                                                 DB::table('recharge_card')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user->bal, 'newbal' => $refund]);
                                                                 return response()->json([
                                                                     'network' => $network->network,
@@ -235,7 +267,8 @@ class RechargeCard extends Controller
                                                                     'system' => $system,
                                                                 ]);
                                                             }
-                                                        } else {
+                                                        }
+                                                        else {
                                                             return response()->json([
                                                                 'network' => $network->network,
                                                                 'request-id' => $transid,
@@ -251,56 +284,65 @@ class RechargeCard extends Controller
                                                         }
                                                     }
                                                 }
-                                            } else {
+                                            }
+                                            else {
                                                 return response()->json([
                                                     'status' => 'fail',
                                                     'message' => 'Insufficient Account Kindly fund your wallet => ₦' . number_format($user->bal, 2)
                                                 ])->setStatusCode(403);
                                             }
-                                        } else {
+                                        }
+                                        else {
                                             return response()->json([
                                                 'status' => 'fail',
                                                 'message' => 'Insufficient Account Kindly fund your wallet => ₦' . number_format($user->bal, 2)
                                             ])->setStatusCode(403);
                                         }
-                                    } else {
+                                    }
+                                    else {
                                         return response()->json([
                                             'status' => 'fail',
                                             'message' => 'please try again later'
                                         ]);
                                     }
-                                } else {
+                                }
+                                else {
                                     return response()->json([
                                         'status' => 'fail',
                                         'message' => 'You have Reach Daily Transaction Limit Kindly Message the Admin To Upgrade Your Account'
                                     ])->setStatusCode(403);
                                 }
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 'fail',
                                     'message' => 'Invalid ' . $network->network . ' Recharge Card Plan Type'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 'fail',
                                 'message' => $network->network . 'Recharge Card Not Avalaible Now'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 'fail',
                             'message' => 'Invalid Network ID'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Authorization Token'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return response()->json([
                 'status' => 'fail',
                 'message' => 'Authorization Access Token Required'

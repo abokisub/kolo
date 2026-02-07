@@ -22,7 +22,7 @@ class CreateData_planTable extends Migration
             $table->integer('plan_day');
             $table->decimal('plan_price', 10, 2);
             $table->enum('plan_type', ['GIFTING', 'COOPERATE GIFTING', 'SME', 'DIRECT'])->default('DIRECT');
-            $table->boolean('plan_status')->default('true');
+            $table->boolean('plan_status')->default(true);
             $table->decimal('smart', 10, 2)->default(0.00);
             $table->decimal('agent', 10, 2)->default(0.00);
             $table->decimal('awuf', 10, 2)->default(0.00);

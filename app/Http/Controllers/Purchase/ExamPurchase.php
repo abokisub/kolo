@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ReceiptService;
 
 
 class ExamPurchase extends Controller
@@ -21,7 +22,8 @@ class ExamPurchase extends Controller
         // Professional Refactor: Use client-provided request-id for idempotency if available
         if ($request->has('request-id')) {
             $transid = $request->input('request-id');
-        } else {
+        }
+        else {
             $transid = $this->purchase_ref('RESULTCHECKER_');
         }
         if (config('app.habukhan_device_key') == $request->header('Authorization')) {
@@ -33,16 +35,19 @@ class ExamPurchase extends Controller
                 $d_token = $check->first();
                 if (trim($d_token->pin) == trim($request->pin)) {
                     $accessToken = $d_token->apikey;
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Transaction Pin'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 $accessToken = 'null';
             }
-        } else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+        }
+        else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $system = config('app.name');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
@@ -51,32 +56,37 @@ class ExamPurchase extends Controller
                     $det = $check->first();
                     if (trim($det->pin) == trim($request->pin)) {
                         $accessToken = $det->apikey;
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 'fail',
                             'message' => 'Invalid Transaction Pin'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Transaction Pin'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 // transaction pin not required
                 $check = DB::table('user')->where(['id' => $this->verifytoken($request->token)]);
                 if ($check->count() == 1) {
                     $det = $check->first();
                     $accessToken = $det->apikey;
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'An Error Occur'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             $system = "API";
             $d_token = $request->header('Authorization');
             $accessToken = trim(str_replace("Token", "", $d_token));
@@ -87,7 +97,8 @@ class ExamPurchase extends Controller
                     'message' => $validator->errors()->first(),
                     'status' => 'fail'
                 ])->setStatusCode(403);
-            } else {
+            }
+            else {
                 $user_check = DB::table('user')->where(function ($query) use ($accessToken) {
                     $query->where('apikey', $accessToken)
                         ->orWhere('app_key', $accessToken)
@@ -111,22 +122,7 @@ class ExamPurchase extends Controller
                                     if ($user->bal >= $exam_price) {
                                         $debit = $user->bal - $exam_price;
                                         $refund = $debit + $exam_price;
-                                        $all_limit = DB::table('message')->where(['username' => $user->username])->where(function ($query) {
-                                            $query->where('role', '!=', 'credit');
-                                            $query->where('role', '!=', 'debit');
-                                            $query->where('role', '!=', 'upgrade');
-                                            $query->where('plan_status', '!=', 2);
-                                        })->whereDate('habukhan_date', \Carbon\Carbon::today())->sum('amount');
-
-                                        if ($this->core()->allow_limit == 1 && $user->kyc == 0) {
-                                            if ($all_limit + $exam_price <= $user->user_limit) {
-                                                $habukhan_new_go = true;
-                                            } else {
-                                                $habukhan_new_go = false;
-                                            }
-                                        } else {
-                                            $habukhan_new_go = true;
-                                        }
+                                        $habukhan_new_go = true;
 
                                         if ($habukhan_new_go == true) {
                                             if (DB::table('user')->where(['id' => $user->id])->update(['bal' => $debit])) {
@@ -134,13 +130,15 @@ class ExamPurchase extends Controller
                                                 $trans_history = [
                                                     'username' => $user->username,
                                                     'amount' => $exam_price,
-                                                    'message' => strtoupper($exam_name) . ' Exam Pin Is On Process',
+                                                    'message' => '⏳ Processing ' . strtoupper($exam_name) . ' Exam PIN (' . $request->quantity . ' units)...',
                                                     'oldbal' => $user->bal,
                                                     'newbal' => $debit,
                                                     'habukhan_date' => $this->system_date(),
                                                     'plan_status' => 0,
                                                     'transid' => $transid,
-                                                    'role' => 'exam'
+                                                    'role' => 'exam',
+                                                    'service_type' => 'EDU_PIN',
+                                                    'transaction_channel' => 'EXTERNAL'
                                                 ];
                                                 $exam_history = [
                                                     'username' => $user->username,
@@ -163,9 +161,35 @@ class ExamPurchase extends Controller
                                                     ];
                                                     $response = ExamSend::$exam_vend($send_data);
                                                     if ($response == 'success') {
-                                                        DB::table('exam')->where('transid', $transid)->update(['plan_status' => 1]);
-                                                        DB::table('message')->where('transid', $transid)->update(['plan_status' => 1, 'message' => strtoupper($exam_name) . ' Exam Pin Generated']);
                                                         $sendbank = DB::table('exam')->where('transid', $transid)->first();
+                                                        $receiptService = new ReceiptService();
+                                                        $successMessage = $receiptService->getFullMessage('EDU_PIN', [
+                                                            'exam' => strtoupper($exam_name),
+                                                            'pin' => $sendbank->purchase_code ?? 'See History',
+                                                            'serial' => 'N/A',
+                                                            'amount' => $exam_price,
+                                                            'reference' => $transid,
+                                                            'status' => 'SUCCESS'
+                                                        ]);
+
+                                                        DB::table('exam')->where('transid', $transid)->update(['plan_status' => 1]);
+                                                        DB::table('message')->where('transid', $transid)->update(['plan_status' => 1, 'message' => $successMessage]);
+                                                        $sendbank = DB::table('exam')->where('transid', $transid)->first();
+
+                                                        // SEND NOTIFICATION
+                                                        try {
+                                                            (new \App\Services\NotificationService())->sendExamPinNotification(
+                                                                $user,
+                                                                $exam_price,
+                                                                strtoupper($exam_name),
+                                                                $request->quantity,
+                                                                $transid
+                                                            );
+                                                        }
+                                                        catch (\Exception $e) {
+                                                            \Log::error("Exam PIN Notification Error: " . $e->getMessage());
+                                                        }
+
                                                         return response()->json([
                                                             'username' => $user->username,
                                                             'amount' => $exam_price,
@@ -179,7 +203,8 @@ class ExamPurchase extends Controller
                                                             'request-id' => $transid,
                                                             'pin' => $sendbank->purchase_code
                                                         ]);
-                                                    } else if ($response == 'process') {
+                                                    }
+                                                    else if ($response == 'process') {
                                                         return response()->json([
                                                             'username' => $user->username,
                                                             'amount' => $exam_price,
@@ -191,10 +216,13 @@ class ExamPurchase extends Controller
                                                             'status' => 'process',
                                                             'request-id' => $transid,
                                                         ]);
-                                                    } else if ($response == 'fail') {
+                                                    }
+                                                    else if ($response == 'fail') {
+                                                        $failMessage = "❌ Exam PIN Purchase Failed\n\nYou attempted to purchase " . strtoupper($exam_name) . " but the transaction failed. Your wallet has been refunded.";
+
                                                         DB::table('user')->where(['username' => $user->username, 'id' => $user->id])->update(['bal' => $refund]);
                                                         DB::table('exam')->where('transid', $transid)->update(['plan_status' => 2, 'newbal' => $refund]);
-                                                        DB::table('message')->where('transid', $transid)->update(['plan_status' => 2, 'newbal' => $refund, 'message' => 'Transaction Fail']);
+                                                        DB::table('message')->where('transid', $transid)->update(['plan_status' => 2, 'newbal' => $refund, 'message' => $failMessage]);
                                                         return response()->json([
                                                             'username' => $user->username,
                                                             'amount' => $exam_price,
@@ -206,7 +234,8 @@ class ExamPurchase extends Controller
                                                             'status' => 'fail',
                                                             'request-id' => $transid,
                                                         ]);
-                                                    } else {
+                                                    }
+                                                    else {
                                                         return response()->json([
                                                             'username' => $user->username,
                                                             'amount' => $exam_price,
@@ -221,50 +250,58 @@ class ExamPurchase extends Controller
                                                     }
                                                 }
                                             }
-                                        } else {
+                                        }
+                                        else {
                                             return response()->json([
                                                 'status' => 'fail',
                                                 'message' => 'You have Reach Daily Transaction Limit Kindly Message the Admin To Upgrade Your Account'
                                             ])->setStatusCode(403);
                                         }
-                                    } else {
+                                    }
+                                    else {
                                         return response()->json([
                                             'status' => 'fail',
                                             'message' => 'Insufficient Account Kindly fund your wallet => ₦' . number_format($user->bal, 2)
                                         ])->setStatusCode(403);
                                     }
-                                } else {
+                                }
+                                else {
                                     return response()->json([
                                         'status' => 'fail',
                                         'message' => 'Insufficient Account Kindly fund your wallet => ₦' . number_format($user->bal, 2)
                                     ])->setStatusCode(403);
                                 }
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 'fail',
                                     'message' => 'Referrence ID Used'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 'fail',
                                 'message' => strtoupper($exam_name) . ' Not Available Right Now'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 'fail',
                             'message' => 'Invalid Exam ID'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Authorization Token'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return response()->json([
                 'status' => 'fail',
                 'message' => 'Authorization Token Required'

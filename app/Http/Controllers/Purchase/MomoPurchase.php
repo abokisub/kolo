@@ -34,6 +34,15 @@ class MomoPurchase extends Controller
             return response()->json(['status' => 'fail', 'message' => 'Insufficient Balance'], 400);
         }
 
+        // Apply Tier Limits via LimitService
+        $limitCheck = \App\Services\LimitService::checkLimit($user, $request->amount);
+        if (!$limitCheck['allowed']) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => $limitCheck['message']
+            ])->setStatusCode(403);
+        }
+
         $reference = $this->generateAutopilotReference();
         $payload = [
             'accountNumber' => $request->account_number,
@@ -45,6 +54,9 @@ class MomoPurchase extends Controller
 
         if (isset($response['status']) && $response['status'] == true) {
             DB::table('user')->where('id', $user->id)->decrement('bal', $request->amount);
+
+            // Record for Tier Limits 
+            \App\Services\LimitService::recordTransaction($user, $request->amount);
 
             // Insert history
             DB::table('message')->insert([

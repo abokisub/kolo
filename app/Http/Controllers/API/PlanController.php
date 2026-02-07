@@ -341,8 +341,10 @@ class PlanController extends Controller
     {
         $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
-            if (!empty($request->id)) {
-                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)]);
+            $requestId = $request->id ?? $request->route('id');
+            if (!empty($requestId)) {
+                $userId = $this->verifyapptoken($requestId) ?? $this->verifytoken($requestId);
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $userId]);
                 if ($check_user->count() == 1) {
                     $adex = $check_user->first();
                     // validate user type

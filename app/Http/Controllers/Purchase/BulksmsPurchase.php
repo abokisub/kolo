@@ -65,21 +65,7 @@ class BulksmsPurchase extends Controller
                                 'status' => 'fail'
                             ])->setStatusCode(403);
                         } else {
-                            $all_limit = DB::table('message')->where(['username' => $user->username])->where(function ($query) {
-                                $query->where('role', '!=', 'credit');
-                                $query->where('role', '!=', 'debit');
-                                $query->where('role', '!=', 'upgrade');
-                                $query->where('plan_status', '!=', 2);
-                            })->whereDate('habukhan_date', Carbon::today("Africa/Lagos"))->sum('amount');
-                            if ($this->core()->allow_limit == 1 && $user->kyc == 0) {
-                                if ($all_limit <= $user->user_limit) {
-                                    $habukhan_new_go = true;
-                                } else {
-                                    $habukhan_new_go = false;
-                                }
-                            } else {
-                                $habukhan_new_go = true;
-                            }
+                            $habukhan_new_go = true;
 
                             if ($habukhan_new_go == true) {
 

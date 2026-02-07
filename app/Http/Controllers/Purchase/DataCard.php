@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ReceiptService;
 
 
 class DataCard extends Controller
@@ -26,7 +27,8 @@ class DataCard extends Controller
             // Professional Refactor: Use client-provided request-id for idempotency if available
             if ($request->has('request-id')) {
                 $transid = $request->input('request-id');
-            } else {
+            }
+            else {
                 $transid = $this->purchase_ref('Data_card_');
             }
 
@@ -36,16 +38,19 @@ class DataCard extends Controller
                 $d_token = $check->first();
                 if (trim($d_token->pin) == trim($request->pin)) {
                     $accessToken = $d_token->apikey;
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Transaction Pin'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 $accessToken = 'null';
             }
-        } else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+        }
+        else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $system = config('app.name');
             if ($this->core()->allow_pin == 1) {
                 // transaction pin required
@@ -54,32 +59,37 @@ class DataCard extends Controller
                     $det = $check->first();
                     if (trim($det->pin) == trim($request->pin)) {
                         $accessToken = $det->apikey;
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 'fail',
                             'message' => 'Invalid Transaction Pin'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Transaction Pin'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 // transaction pin not required
                 $check = DB::table('user')->where(['id' => $this->verifytoken($request->token)]);
                 if ($check->count() == 1) {
                     $det = $check->first();
                     $accessToken = $det->apikey;
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'An Error Occur'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             $system = "API";
             $d_token = $request->header('Authorization');
             $accessToken = trim(str_replace("Token", "", $d_token));
@@ -91,20 +101,25 @@ class DataCard extends Controller
                     'message' => $validator->errors()->first(),
                     'status' => 'fail'
                 ])->setStatusCode(403);
-            } else {
+            }
+            else {
                 $user_check = DB::table('user')->where(['apikey' => $accessToken, 'status' => 1]);
                 if ($user_check->count() == 1) {
                     $user = $user_check->first();
                     // declear user type
                     if ($user->type == 'SMART') {
                         $user_type = 'smart';
-                    } else if ($user->type == 'AGENT') {
+                    }
+                    else if ($user->type == 'AGENT') {
                         $user_type = 'agent';
-                    } else if ($user->type == 'AWUF') {
+                    }
+                    else if ($user->type == 'AWUF') {
                         $user_type = 'awuf';
-                    } else if ($user->type == 'API') {
+                    }
+                    else if ($user->type == 'API') {
                         $user_type = 'api';
-                    } else {
+                    }
+                    else {
                         $user_type = 'special';
                     }
                     if (DB::table('network')->where('plan_id', $request->network)->count() == 1) {
@@ -113,21 +128,7 @@ class DataCard extends Controller
                             if (DB::table('data_card_plan')->where(['network' => $network->network, 'plan_id' => $request->plan_type])->count() == 1) {
                                 // user limit
                                 $data_card_plan = DB::table('data_card_plan')->where(['network' => $network->network, 'plan_id' => $request->plan_type, 'plan_status' => 1])->first();
-                                $all_limit = DB::table('message')->where(['username' => $user->username])->where(function ($query) {
-                                    $query->where('role', '!=', 'credit');
-                                    $query->where('role', '!=', 'debit');
-                                    $query->where('role', '!=', 'upgrade');
-                                    $query->where('plan_status', '!=', 2);
-                                })->whereDate('habukhan_date', Carbon::now())->sum('amount');
-                                if ($this->core()->allow_limit == 1 && $user->kyc == 0) {
-                                    if ($all_limit + $data_card_plan->$user_type <= $user->user_limit) {
-                                        $habukhan_new_go = true;
-                                    } else {
-                                        $habukhan_new_go = false;
-                                    }
-                                } else {
-                                    $habukhan_new_go = true;
-                                }
+                                $habukhan_new_go = true;
                                 if ($habukhan_new_go == true) {
                                     $data_card_price = $data_card_plan->$user_type * $request->quantity;
                                     if (DB::table('data_card')->where('transid', $transid)->count() == 0 && DB::table('message')->where('transid', $transid)->count() == 0) {
@@ -139,13 +140,15 @@ class DataCard extends Controller
                                                     $trans_history = [
                                                         'username' => $user->username,
                                                         'amount' => $data_card_price,
-                                                        'message' => $network->network . ' Data Card Printing On Process Quantity is ' . $request->quantity,
+                                                        'message' => '⏳ Processing ' . $network->network . ' Data Card printing (' . $request->quantity . ' units)...',
                                                         'oldbal' => $user->bal,
                                                         'newbal' => $debit,
                                                         'habukhan_date' => $this->system_date(),
                                                         'plan_status' => 0,
                                                         'transid' => $transid,
-                                                        'role' => 'data_card'
+                                                        'role' => 'data_card',
+                                                        'service_type' => 'DATA_CARD',
+                                                        'transaction_channel' => 'EXTERNAL'
                                                     ];
 
                                                     $data_card_trans = [
@@ -173,7 +176,8 @@ class DataCard extends Controller
                                                         ];
                                                         if ($network->network == '9MOBILE') {
                                                             $vending = 'mobile';
-                                                        } else {
+                                                        }
+                                                        else {
                                                             $vending = strtolower($network->network);
                                                         }
                                                         $habukhanm = new DataCardSend();
@@ -190,7 +194,18 @@ class DataCard extends Controller
                                                                     $sold_pin[] = $real_pin->pin;
                                                                     $sold_serial[] = $real_pin->serial;
                                                                 }
-                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1, 'message' => $network->network . ' Data Card Printing Successful']);
+
+                                                                $receiptService = new ReceiptService();
+                                                                $successMessage = $receiptService->getFullMessage('DATA_CARD', [
+                                                                    'network' => $network->network,
+                                                                    'plan' => $data_card_plan->name . $data_card_plan->plan_size,
+                                                                    'quantity' => $request->quantity,
+                                                                    'amount' => $data_card_price,
+                                                                    'reference' => $transid,
+                                                                    'status' => 'SUCCESS'
+                                                                ]);
+
+                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1, 'message' => $successMessage]);
                                                                 DB::table('data_card')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1]);
                                                                 return response()->json([
                                                                     'network' => $network->network,
@@ -209,11 +224,14 @@ class DataCard extends Controller
                                                                     'load_pin' => $data_card_plan->load_pin,
                                                                     'check_balance' => $data_card_plan->check_balance
                                                                 ]);
-                                                            } else {
+                                                            }
+                                                            else {
                                                                 // transaction fail
+                                                                $failMessage = "❌ Data Card Printing Failed\n\nYou attempted to print " . $network->network . " Data Cards but the transaction failed. Your wallet has been refunded.";
+
                                                                 DB::table('user')->where('id', $user->id)->update(['bal' => $refund]);
                                                                 // trans history
-                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user->bal, 'newbal' => $refund, 'message' => 'Data Card Transaction  fail ' . $network->network]);
+                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user->bal, 'newbal' => $refund, 'message' => $failMessage]);
                                                                 DB::table('data_card')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user->bal, 'newbal' => $refund]);
 
 
@@ -230,7 +248,8 @@ class DataCard extends Controller
                                                                     'system' => $system,
                                                                 ]);
                                                             }
-                                                        } else {
+                                                        }
+                                                        else {
                                                             return response()->json([
                                                                 'network' => $network->network,
                                                                 'request-id' => $transid,
@@ -246,56 +265,65 @@ class DataCard extends Controller
                                                         }
                                                     }
                                                 }
-                                            } else {
+                                            }
+                                            else {
                                                 return response()->json([
                                                     'status' => 'fail',
                                                     'message' => 'Insufficient Account Kindly fund your wallet => ₦' . number_format($user->bal, 2)
                                                 ])->setStatusCode(403);
                                             }
-                                        } else {
+                                        }
+                                        else {
                                             return response()->json([
                                                 'status' => 'fail',
                                                 'message' => 'Insufficient Account Kindly fund your wallet => ₦' . number_format($user->bal, 2)
                                             ])->setStatusCode(403);
                                         }
-                                    } else {
+                                    }
+                                    else {
                                         return response()->json([
                                             'status' => 'fail',
                                             'message' => 'please try again later'
                                         ]);
                                     }
-                                } else {
+                                }
+                                else {
                                     return response()->json([
                                         'status' => 'fail',
                                         'message' => 'You have Reach Daily Transaction Limit Kindly Message the Admin To Upgrade Your Account'
                                     ])->setStatusCode(403);
                                 }
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 'fail',
                                     'message' => 'Invalid ' . $network->network . ' Data Card Plan Type'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 'fail',
                                 'message' => $network->network . ' Data Card Not Avalaible Now'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 'fail',
                             'message' => 'Invalid Network ID'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Authorization Token'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return response()->json([
                 'status' => 'fail',
                 'message' => 'Authorization Access Token Required'

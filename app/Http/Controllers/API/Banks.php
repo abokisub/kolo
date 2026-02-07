@@ -59,94 +59,52 @@ class Banks extends Controller
                     $palmpay_enabled = true;
                 }
 
-                $banks_array = []; // Initialize array
+                $banks_array = [];
 
+                // 1. PalmPay
                 if (!is_null($auth_user->palmpay) && $palmpay_enabled) {
                     $banks_array[] = [
                         "name" => "PALMPAY",
                         "account" => $auth_user->palmpay,
-                        "accountType" => $auth_user->palmpay === null,
+                        "accountType" => false,
                         'charges' => $palmpay_charge . ' NAIRA',
                     ];
                 }
-                // Only add Wema if Paystack account is NOT present (to avoid duplicates)
-                if (!is_null($auth_user->wema) && $wema_enabled && is_null($auth_user->paystack_account)) {
+
+                // 2. Wema (using standardized paystack_account)
+                if (!is_null($auth_user->paystack_account) && $wema_enabled) {
                     $banks_array[] = [
                         "name" => "WEMA BANK",
-                        "account" => $auth_user->wema,
-                        "accountType" => $auth_user->wema === null,
-                        'charges' => $monnify_charge . '%',
-                    ];
-                }
-                if (!is_null($auth_user->paystack_account)) {
-                    $banks_array[] = [
-                        "name" => !empty($auth_user->paystack_bank) ? strtoupper($auth_user->paystack_bank) : "WEMA BANK",
                         "account" => $auth_user->paystack_account,
                         "accountType" => false,
                         'charges' => $paystack_charge . ' NAIRA',
                     ];
                 }
 
-                if (!is_null($auth_user->sb)) {
-                    $banks_array[] = [
-                        "name" => "GTBANK",
-                        "account" => $auth_user->sb,
-                        "accountType" => false,
-                        'charges' => '50 NAIRA',
-                    ];
+                // 3. Moniepoint (from standardized user_bank table)
+                if ($monnify_enabled) {
+                    $moniepoint = DB::table('user_bank')
+                        ->where('username', $auth_user->username)
+                        ->where('bank', 'MONIEPOINT')
+                        ->first();
+
+                    if ($moniepoint) {
+                        $banks_array[] = [
+                            "name" => "MONIEPOINT",
+                            "account" => $moniepoint->account_number,
+                            "accountType" => false,
+                            'charges' => $monnify_charge . '%',
+                        ];
+                    }
                 }
 
-                if (!is_null($auth_user->sterlen) && $monnify_enabled) {
+                // 4. Kolomoni MFB
+                if (!is_null($auth_user->kolomoni_mfb) && $xixapay_enabled) {
                     $banks_array[] = [
-                        "name" => "MONIEPOINT",
-                        "account" => $auth_user->sterlen,
+                        "name" => "KOLOMONI MFB",
+                        "account" => $auth_user->kolomoni_mfb,
                         "accountType" => false,
-                        'charges' => $monnify_charge . '%',
-                    ];
-                }
-
-                if (!is_null($auth_user->fed) && $monnify_enabled) {
-                    $banks_array[] = [
-                        "name" => "MONIEPOINT",
-                        "account" => $auth_user->fed,
-                        "accountType" => false,
-                        'charges' => $monnify_charge . '%',
-                    ];
-                }
-
-                if (!is_null($auth_user->opay) && $xixapay_enabled) {
-                    $banks_array[] = [
-                        "name" => "OPAY",
-                        "account" => $auth_user->opay,
-                        "accountType" => false,
-                        'charges' => $paymentpoint_charge . ' NAIRA',
-                    ];
-                }
-
-                if (!is_null($auth_user->rolex) && $xixapay_enabled) {
-                    $banks_array[] = [
-                        "name" => "FIDELITY/ROLEX",
-                        "account" => $auth_user->rolex,
-                        "accountType" => false,
-                        'charges' => $monnify_charge . '%',
-                    ];
-                }
-
-                if (!is_null($auth_user->pro)) {
-                    $banks_array[] = [
-                        "name" => "PROVIDUS",
-                        "account" => $auth_user->pro,
-                        "accountType" => false,
-                        'charges' => $monnify_charge . ' NAIRA',
-                    ];
-                }
-
-                if (!is_null($auth_user->safe)) {
-                    $banks_array[] = [
-                        "name" => "9PSB",
-                        "account" => $auth_user->safe,
-                        "accountType" => false,
-                        'charges' => '50 NAIRA',
+                        'charges' => $palmpay_charge . ' NAIRA',
                     ];
                 }
 

@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
+use App\Models\Beneficiary;
+use App\Services\ReceiptService;
+
 class DataPurchase extends Controller
 {
 
@@ -44,7 +47,8 @@ class DataPurchase extends Controller
             // Professional Refactor: Use client-provided request-id for idempotency if available
             if ($request->has('request-id')) {
                 $transid = $request->input('request-id');
-            } else {
+            }
+            else {
                 $transid = $this->purchase_ref('DATA_');
             }
 
@@ -82,7 +86,8 @@ class DataPurchase extends Controller
                 if (trim($d_token->pin) == trim($request->pin)) {
                     $accessToken = $d_token->apikey;
                     \Log::info('🚨 DATA PURCHASE DEBUG - PIN validation successful');
-                } else {
+                }
+                else {
                     \Log::error('🚨 DATA PURCHASE DEBUG - PIN validation failed:', [
                         'stored_pin' => $d_token->pin,
                         'sent_pin' => $request->pin,
@@ -94,7 +99,8 @@ class DataPurchase extends Controller
                         'message' => 'Invalid Transaction Pin'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 \Log::error('🚨 DATA PURCHASE DEBUG - User not found:', [
                     'user_id' => $request->user_id,
                     'verified_user_id' => $verified_user_id,
@@ -102,7 +108,8 @@ class DataPurchase extends Controller
                 ]);
                 $accessToken = 'null';
             }
-        } else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url) || $request->headers->get('origin') === $request->getSchemeAndHttpHost()) {
+        }
+        else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url) || $request->headers->get('origin') === $request->getSchemeAndHttpHost()) {
             \Log::info('🚨 DATA PURCHASE DEBUG - Using origin-based authentication');
             $validator = Validator::make($request->all(), [
                 'network' => 'required',
@@ -124,33 +131,38 @@ class DataPurchase extends Controller
                     $det = $check->first();
                     if (trim($det->pin) == trim($request->pin)) {
                         $accessToken = $det->apikey;
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 'fail',
                             'message' => 'Invalid Transaction Pin'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Invalid Transaction Pin'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 // transaction pin not required
                 $check = DB::table('user')->where(['id' => $this->verifytoken($request->token)]);
                 if ($check->count() == 1) {
                     $det = $check->first();
                     $accessToken = $det->apikey;
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'An Error Occur'
                     ])->setStatusCode(403);
                 }
             }
-            //
-        } else {
+        //
+        }
+        else {
             // New: Accept per-user API key in Authorization header (with or without 'Token ' prefix)
             $authHeader = $request->header('Authorization');
             if (strpos($authHeader, 'Token ') === 0) {
@@ -164,12 +176,15 @@ class DataPurchase extends Controller
                 'data_plan' => 'required',
                 'request-id' => 'required|unique:data,transid'
             ]);
-            $system = "API";
-            $id = "request-id";
-            $transid = $request->$id;
-            $d_token = $request->header('Authorization');
-            $accessToken = trim(str_replace("Token", "", $d_token));
+            $authHeader = $request->header('Authorization');
+            if (strpos($authHeader, 'Token ') === 0) {
+                $authHeader = substr($authHeader, 6);
+            }
+            $accessToken = trim($authHeader);
         }
+
+        $receiptService = new ReceiptService();
+
         if (isset($accessToken)) {
             $user = DB::table('user')->where(function ($query) use ($accessToken) {
                 $query->where('apikey', $accessToken)
@@ -181,13 +196,17 @@ class DataPurchase extends Controller
                     // declear user type
                     if ($user->type == 'SMART') {
                         $user_type = 'smart';
-                    } else if ($user->type == 'AGENT') {
+                    }
+                    else if ($user->type == 'AGENT') {
                         $user_type = 'agent';
-                    } else if ($user->type == 'AWUF') {
+                    }
+                    else if ($user->type == 'AWUF') {
                         $user_type = 'awuf';
-                    } else if ($user->type == 'API') {
+                    }
+                    else if ($user->type == 'API') {
                         $user_type = 'api';
-                    } else {
+                    }
+                    else {
                         $user_type = 'special';
                     }
                     if ($validator->fails()) {
@@ -195,7 +214,8 @@ class DataPurchase extends Controller
                             'message' => $validator->errors()->first(),
                             'status' => 'fail'
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         // now where transaction begins
                         if (DB::table('data')->where('transid', $transid)->count() == 0 && DB::table('message')->where('transid', $transid)->count() == 0) {
                             // declare all variable
@@ -218,47 +238,57 @@ class DataPurchase extends Controller
                                         if ($network_d->network == '9MOBILE') {
                                             $wallet_bal = "mobile_g_bal";
                                             $vending = "mobile_g";
-                                        } else {
+                                        }
+                                        else {
                                             $wallet_bal = strtolower($network_d->network) . "_g_bal";
                                             $vending = strtolower($network_d->network) . "_g";
                                         }
-                                    } else if ($plan_d->plan_type == 'COOPERATE GIFTING') {
+                                    }
+                                    else if ($plan_d->plan_type == 'COOPERATE GIFTING') {
                                         $habukhan_lock = "network_cg";
                                         if ($network_d->network == '9MOBILE') {
                                             $wallet_bal = "mobile_cg_bal";
                                             $vending = "mobile_cg";
-                                        } else {
+                                        }
+                                        else {
                                             $wallet_bal = strtolower($network_d->network) . "_cg_bal";
                                             $vending = strtolower($network_d->network) . "_cg";
                                         }
-                                    } else if ($plan_d->plan_type == 'SME') {
+                                    }
+                                    else if ($plan_d->plan_type == 'SME') {
                                         $habukhan_lock = "network_sme";
                                         if ($network_d->network == '9MOBILE') {
                                             $wallet_bal = "mobile_sme_bal";
                                             $vending = "mobile_sme";
-                                        } else {
+                                        }
+                                        else {
                                             $wallet_bal = strtolower($network_d->network) . "_sme_bal";
                                             $vending = strtolower($network_d->network) . "_sme";
                                         }
-                                    } else if ($plan_d->plan_type == 'SME 2') {
+                                    }
+                                    else if ($plan_d->plan_type == 'SME 2') {
                                         $habukhan_lock = "network_sme2";
                                         if ($network_d->network == '9MOBILE') {
                                             $wallet_bal = "mobile_sme2_bal";
                                             $vending = "mobile_sme2";
-                                        } else {
+                                        }
+                                        else {
                                             $wallet_bal = strtolower($network_d->network) . "_sme2_bal";
                                             $vending = strtolower($network_d->network) . "_sme2";
                                         }
-                                    } else if ($plan_d->plan_type == 'DATASHARE') {
+                                    }
+                                    else if ($plan_d->plan_type == 'DATASHARE') {
                                         $habukhan_lock = "network_datashare";
                                         if ($network_d->network == '9MOBILE') {
                                             $wallet_bal = "mobile_datashare_bal";
                                             $vending = "mobile_datashare";
-                                        } else {
+                                        }
+                                        else {
                                             $wallet_bal = strtolower($network_d->network) . "_datashare_bal";
                                             $vending = strtolower($network_d->network) . "_datashare";
                                         }
-                                    } else {
+                                    }
+                                    else {
                                         $habukhan_lock = null;
                                         $wallet_bal = null;
                                         $vending = null;
@@ -275,63 +305,57 @@ class DataPurchase extends Controller
                                                                 'status' => 'fail',
                                                                 'message' => 'This is not a MTN Number => ' . $phone
                                                             ])->setStatusCode(403);
-                                                        } else {
+                                                        }
+                                                        else {
                                                             $habukhan_bypass = true;
                                                         }
-                                                    } else if ($network_d->network == "GLO") {
+                                                    }
+                                                    else if ($network_d->network == "GLO") {
                                                         if (strpos(" 0805 0705 0905 0807 0907 0707 0817 0917 0717 0715 0815 0915 0811 0711 0911 ", $validate) == FALSE || strlen($phone) != 11) {
                                                             return response()->json([
                                                                 'status' => 'fail',
                                                                 'message' => 'This is not a GLO Number =>' . $phone
                                                             ])->setStatusCode(403);
-                                                        } else {
+                                                        }
+                                                        else {
                                                             $habukhan_bypass = true;
                                                         }
-                                                    } else if ($network_d->network == "AIRTEL") {
+                                                    }
+                                                    else if ($network_d->network == "AIRTEL") {
                                                         if (strpos(" 0904 0802 0902 0702 0808 0908 0708 0918 0818 0718 0812 0912 0712 0801 0701 0901 0907 0917 ", $validate) == FALSE || strlen($phone) != 11) {
                                                             return response()->json([
                                                                 'status' => 'fail',
                                                                 'message' => 'This is not a AIRTEL Number => ' . $phone
                                                             ])->setStatusCode(403);
-                                                        } else {
+                                                        }
+                                                        else {
                                                             $habukhan_bypass = true;
                                                         }
-                                                    } else if ($network_d->network == "9MOBILE") {
+                                                    }
+                                                    else if ($network_d->network == "9MOBILE") {
                                                         if (strpos(" 0809 0909 0709 0819 0919 0719 0817 0917 0717 0718 0918 0818 0808 0708 0908 ", $validate) == FALSE || strlen($phone) != 11) {
                                                             return response()->json([
                                                                 'status' => 'fail',
                                                                 'message' => 'This is not a 9MOBILE Number => ' . $phone
                                                             ])->setStatusCode(403);
-                                                        } else {
+                                                        }
+                                                        else {
                                                             $habukhan_bypass = true;
                                                         }
-                                                    } else {
+                                                    }
+                                                    else {
                                                         return response()->json([
                                                             'status' => 'fail',
                                                             'message' => 'Unable to get Network Name'
                                                         ])->setStatusCode(403);
                                                     }
-                                                } else {
+                                                }
+                                                else {
                                                     $habukhan_bypass = true;
                                                 }
                                                 // if bypassed
                                                 if ($habukhan_bypass == true) {
-                                                    // check user daly limit
-                                                    $all_limit = DB::table('message')->where(['username' => $user->username])->where(function ($query) {
-                                                        $query->where('role', '!=', 'credit');
-                                                        $query->where('role', '!=', 'debit');
-                                                        $query->where('role', '!=', 'upgrade');
-                                                        $query->where('plan_status', '!=', 2);
-                                                    })->whereDate('habukhan_date', Carbon::today("Africa/Lagos"))->sum('amount');
-                                                    if ($this->core()->allow_limit == 1 && $user->kyc == 0) {
-                                                        if ($all_limit + $plan_d->$user_type <= $user->user_limit) {
-                                                            $habukhan_new_go = true;
-                                                        } else {
-                                                            $habukhan_new_go = false;
-                                                        }
-                                                    } else {
-                                                        $habukhan_new_go = true;
-                                                    }
+                                                    $habukhan_new_go = true;
                                                     // re-check the account balance again 
                                                     DB::beginTransaction();
                                                     $user = DB::table('user')->where(['id' => $user->id])->lockForUpdate()->first();
@@ -344,7 +368,8 @@ class DataPurchase extends Controller
                                                                     if (isset($wallet_store->$vending) && $wallet_store->$vending == 1) {
                                                                         $vending_system = strtoupper($vending);
                                                                         $user_balance = $wallet_store->$wallet_bal ?? 0;
-                                                                    } else {
+                                                                    }
+                                                                    else {
                                                                         $vending_system = "wallet";
                                                                         $user_balance = $user->bal;
                                                                     }
@@ -357,7 +382,8 @@ class DataPurchase extends Controller
                                                                                     $debit = $user_balance - $plan_d->$user_type;
                                                                                     if ($vending_system == 'wallet') {
                                                                                         $habukhan_debit = DB::table('user')->where('id', $user->id)->update(['bal' => $debit]);
-                                                                                    } else {
+                                                                                    }
+                                                                                    else {
                                                                                         $habukhan_debit = DB::table('wallet_funding')->where('username', $user->username)->update([$wallet_bal => $debit]);
                                                                                     }
                                                                                     if ($habukhan_debit) {
@@ -365,14 +391,16 @@ class DataPurchase extends Controller
                                                                                         $trans_history = [
                                                                                             'username' => $user->username,
                                                                                             'amount' => $plan_d->$user_type,
-                                                                                            'message' => 'Transaction on process ' . $network_d->network . ' ' . $plan_d->plan_type . ' ' . $plan_d->plan_name . $plan_d->plan_size . ' to ' . $phone,
+                                                                                            'message' => "⏳ Processing " . $network_d->network . " " . $plan_d->plan_name . $plan_d->plan_size . " to " . $phone . "...",
                                                                                             'phone_account' => $phone,
                                                                                             'oldbal' => $user_balance,
                                                                                             'newbal' => $debit,
                                                                                             'habukhan_date' => $this->system_date(),
                                                                                             'plan_status' => 0,
                                                                                             'transid' => $transid,
-                                                                                            'role' => 'data'
+                                                                                            'role' => 'data',
+                                                                                            'service_type' => 'DATA',
+                                                                                            'transaction_channel' => 'EXTERNAL'
                                                                                         ];
                                                                                         $data_trans = [
                                                                                             'username' => $user->username,
@@ -407,36 +435,85 @@ class DataPurchase extends Controller
                                                                                             \Log::info('🚨 DATA VENDING RESPONSE:', ['response' => $response]);
                                                                                             if (!empty($response)) {
                                                                                                 if ($response == 'success') {
+                                                                                                    // --- SMART BENEFICIARY SAVE ---
+                                                                                                    try {
+                                                                                                        Beneficiary::updateOrCreate(
+                                                                                                        [
+                                                                                                            'user_id' => $user->id,
+                                                                                                            'service_type' => 'data',
+                                                                                                            'identifier' => $phone
+                                                                                                        ],
+                                                                                                        [
+                                                                                                            'network_or_provider' => $network_d->network,
+                                                                                                            'last_used_at' => Carbon::now(),
+                                                                                                        ]
+                                                                                                        );
+                                                                                                    }
+                                                                                                    catch (\Exception $e) {
+                                                                                                        \Log::error('Data Beneficiary Save Failed: ' . $e->getMessage());
+                                                                                                    }
+
                                                                                                     $data_response = DB::table('data')->where(['transid' => $transid])->first();
                                                                                                     if ($data_response->api_response != null) {
                                                                                                         $api_response = $data_response->api_response;
-                                                                                                    } else {
+                                                                                                    }
+                                                                                                    else {
                                                                                                         $api_response = null;
                                                                                                     }
 
                                                                                                     // fake real time response
                                                                                                     if ($network_d->network == 'AIRTEL') {
                                                                                                         $message = "You have been gifted " . $plan_d->plan_name . $plan_d->plan_size . ' of Data from ' . config('app.name') . ' Technology';
-                                                                                                    } else if ($network_d->network == 'MTN' && $plan_d->plan_type == 'SME') {
+                                                                                                    }
+                                                                                                    else if ($network_d->network == 'MTN' && $plan_d->plan_type == 'SME') {
                                                                                                         $message = "Dear Customer, You have successfully shared " . $plan_d->plan_name . $plan_d->plan_size . " Data to 234" . substr($phone, -10);
-                                                                                                    } else if ($network_d->network == 'MTN' && $plan_d->plan_type == 'COOPERATE GIFTING') {
+                                                                                                    }
+                                                                                                    else if ($network_d->network == 'MTN' && $plan_d->plan_type == 'COOPERATE GIFTING') {
                                                                                                         $message = "Dear Customer, You have gifted " . $plan_d->plan_name . $plan_d->plan_size . ", please dial *460*261# to check your balance. Thankyou.";
-                                                                                                    } else if ($network_d->network == 'MTN' && $plan_d->plan_type == 'GIFTING') {
+                                                                                                    }
+                                                                                                    else if ($network_d->network == 'MTN' && $plan_d->plan_type == 'GIFTING') {
                                                                                                         $message = "Yello! You have gifted " . $plan_d->plan_name . $plan_d->plan_size . " to 234" . substr($phone, -10) . ". Share link https://mtnapp.page.link/myMTNNGApp with 234" . substr($phone, -10) . " to download the new MyMTN app for exciting offers.";
-                                                                                                    } else if ($network_d->network == 'GLO') {
+                                                                                                    }
+                                                                                                    else if ($network_d->network == 'GLO') {
                                                                                                         $message = "You have successfully gifted " . $plan_d->plan_name . $plan_d->plan_size . ' Oneoff to 234' . substr($phone, -10);
-                                                                                                    } else {
+                                                                                                    }
+                                                                                                    else {
                                                                                                         $message = "You have been gifted " . $plan_d->plan_name . $plan_d->plan_size;
                                                                                                     }
+                                                                                                    $receiptService = new \App\Services\ReceiptService();
+                                                                                                    $successMessage = $receiptService->getFullMessage('DATA', [
+                                                                                                        'plan' => $plan_d->plan_name . $plan_d->plan_size,
+                                                                                                        'recipient' => $phone,
+                                                                                                        'reference' => $transid,
+                                                                                                        'status' => 'SUCCESS',
+                                                                                                        'provider' => $network_d->network
+                                                                                                    ]);
+
                                                                                                     // state success transaction
-                                                                                                    DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1, 'message' => $message]);
-                                                                                                    DB::table('data')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1,]);
+                                                                                                    DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1, 'message' => $successMessage]);
+                                                                                                    DB::table('data')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 1, ]);
+
+                                                                                                    // SEND NOTIFICATION
+                                                                                                    try {
+                                                                                                        (new \App\Services\NotificationService())->sendDataNotification(
+                                                                                                            $user,
+                                                                                                            $plan_d->$user_type,
+                                                                                                            $network_d->network,
+                                                                                                            $plan_d->plan_name . $plan_d->plan_size,
+                                                                                                            $phone,
+                                                                                                            $transid
+                                                                                                        );
+                                                                                                    }
+                                                                                                    catch (\Exception $e) {
+                                                                                                        \Log::error("Data Notification Error: " . $e->getMessage());
+                                                                                                    }
+
 
                                                                                                     if ($api_response) {
                                                                                                         $ch = curl_init();
                                                                                                         curl_setopt($ch, CURLOPT_URL, $user->webhook);
                                                                                                         curl_setopt($ch, CURLOPT_POST, 1);
-                                                                                                        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['status' => 'success', 'request-id' => $transid, 'response' => $api_response]));  //Post Fields
+                                                                                                        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['status' => 'success', 'request-id' => $transid, 'response' => $api_response])); //Post Fields
                                                                                                         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                                                                                                         curl_exec($ch);
                                                                                                         curl_close($ch);
@@ -458,7 +535,8 @@ class DataPurchase extends Controller
                                                                                                         'wallet_vending' => $vending_system,
                                                                                                         'response' => $api_response
                                                                                                     ]);
-                                                                                                } else if ($response == 'process') {
+                                                                                                }
+                                                                                                else if ($response == 'process') {
                                                                                                     return response()->json([
                                                                                                         'network' => $network_d->network,
                                                                                                         'request-id' => $transid,
@@ -473,13 +551,15 @@ class DataPurchase extends Controller
                                                                                                         'wallet_vending' => $vending_system,
                                                                                                         'plan_type' => $plan_d->plan_type,
                                                                                                     ]);
-                                                                                                } else if ($response == 'fail') {
+                                                                                                }
+                                                                                                else if ($response == 'fail') {
                                                                                                     $check_fail = DB::table('data')->where(['username' => $user->username, 'transid' => $transid])->first();
 
                                                                                                     if ($vending_system == 'wallet') {
                                                                                                         $admin_refund = DB::table('user')->where(['id' => $user->id])->first();
                                                                                                         $refund_bal = $admin_refund->bal;
-                                                                                                    } else {
+                                                                                                    }
+                                                                                                    else {
                                                                                                         $admin_refund = DB::table('wallet_funding')->where(['username' => $user->username])->first();
 
                                                                                                         $refund_bal = $admin_refund->$wallet_bal;
@@ -490,19 +570,23 @@ class DataPurchase extends Controller
                                                                                                         if ($vending_system == 'wallet') {
                                                                                                             $admin_refund = DB::table('user')->where(['id' => $user->id])->first();
                                                                                                             if (DB::table('user')->where(['id' => $user->id])->update(['bal' => $admin_refund->bal + $plan_d->$user_type])) {
+                                                                                                                $failMessage = "❌ Data Purchase Failed\n\nYou attempted to purchase " . $plan_d->plan_name . $plan_d->plan_size . " for {$phone} but the transaction failed. Your wallet has been refunded.";
                                                                                                                 // real transaction
                                                                                                                 DB::table('data')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user_balance, 'newbal' => $admin_refund->bal + $plan_d->$user_type]);
                                                                                                                 // trans history
-                                                                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user_balance, 'newbal' => $admin_refund->bal + $plan_d->$user_type, 'message' => 'Transaction  fail ' . $network_d->network . ' ' . $plan_d->plan_type . ' ' . $plan_d->plan_name . $plan_d->plan_size . ' to ' . $phone]);
+                                                                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user_balance, 'newbal' => $admin_refund->bal + $plan_d->$user_type, 'message' => $failMessage]);
                                                                                                             }
-                                                                                                        } else {
+                                                                                                        }
+                                                                                                        else {
 
                                                                                                             $admin_refund = DB::table('wallet_funding')->where(['username' => $user->username])->first();
                                                                                                             if (DB::table('wallet_funding')->where(['username' => $user->username])->update([$wallet_bal => $admin_refund->$wallet_bal + $plan_d->$user_type])) {
+                                                                                                                $failMessage = "❌ Data Purchase Failed\n\nYou attempted to purchase " . $plan_d->plan_name . $plan_d->plan_size . " for {$phone} but the transaction failed. Your wallet has been refunded.";
+
                                                                                                                 // real transaction
                                                                                                                 DB::table('data')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user_balance, 'newbal' => $admin_refund->$wallet_bal + $plan_d->$user_type]);
                                                                                                                 // trans history
-                                                                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user_balance, 'newbal' => $admin_refund->$wallet_bal + $plan_d->$user_type, 'message' => 'Transaction  fail ' . $network_d->network . ' ' . $plan_d->plan_type . ' ' . $plan_d->plan_name . $plan_d->plan_size . ' to ' . $phone]);
+                                                                                                                DB::table('message')->where(['username' => $user->username, 'transid' => $transid])->update(['plan_status' => 2, 'oldbal' => $user_balance, 'newbal' => $admin_refund->$wallet_bal + $plan_d->$user_type, 'message' => $failMessage]);
                                                                                                             }
                                                                                                         }
                                                                                                     }
@@ -511,7 +595,8 @@ class DataPurchase extends Controller
                                                                                                     $data_response = DB::table('data')->where(['transid' => $transid])->first();
                                                                                                     if ($data_response->api_response != null) {
                                                                                                         $api_response = $data_response->api_response;
-                                                                                                    } else {
+                                                                                                    }
+                                                                                                    else {
                                                                                                         $api_response = null;
                                                                                                     }
 
@@ -520,7 +605,7 @@ class DataPurchase extends Controller
                                                                                                         $ch = curl_init();
                                                                                                         curl_setopt($ch, CURLOPT_URL, $user->webhook);
                                                                                                         curl_setopt($ch, CURLOPT_POST, 1);
-                                                                                                        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['status' => 'fail', 'request-id' => $transid, 'response' => $api_response]));  //Post Fields
+                                                                                                        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['status' => 'fail', 'request-id' => $transid, 'response' => $api_response])); //Post Fields
                                                                                                         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                                                                                                         curl_exec($ch);
                                                                                                         curl_close($ch);
@@ -541,7 +626,8 @@ class DataPurchase extends Controller
                                                                                                         'wallet_vending' => $vending_system,
                                                                                                         'response' => $api_response
                                                                                                     ]);
-                                                                                                } else {
+                                                                                                }
+                                                                                                else {
                                                                                                     return response()->json([
                                                                                                         'network' => $network_d->network,
                                                                                                         'request-id' => $transid,
@@ -557,7 +643,8 @@ class DataPurchase extends Controller
                                                                                                         'plan_type' => $plan_d->plan_type,
                                                                                                     ]);
                                                                                                 }
-                                                                                            } else {
+                                                                                            }
+                                                                                            else {
                                                                                                 return response()->json([
                                                                                                     'network' => $network_d->network,
                                                                                                     'request-id' => $transid,
@@ -573,7 +660,8 @@ class DataPurchase extends Controller
                                                                                                     'plan_type' => $plan_d->plan_type,
                                                                                                 ]);
                                                                                             }
-                                                                                        } else {
+                                                                                        }
+                                                                                        else {
                                                                                             // // refund
                                                                                             // if ($vending_system == 'wallet') {
                                                                                             //     DB::table('user')->where('id', $user->id)->update(['bal' =>  $admin_refund->bal + $plan_d->$user_type]);
@@ -588,117 +676,136 @@ class DataPurchase extends Controller
                                                                                                 'message' => 'Server Down Try Again Later'
                                                                                             ])->setStatusCode(403);
                                                                                         }
-                                                                                    } else {
+                                                                                    }
+                                                                                    else {
                                                                                         return response()->json([
                                                                                             'status' => 'fail',
                                                                                             'message' => 'Unable To Debit User Account'
                                                                                         ])->setStatusCode(403);
                                                                                     }
-                                                                                } else {
+                                                                                }
+                                                                                else {
                                                                                     return response()->json([
                                                                                         'status' => 'fail',
                                                                                         'message' => 'Insufficient Account Kindly Fund Your ' . ($vending_system == 'wallet' ? '' : $vending_system) . ' Wallet => ₦' . number_format($user_balance, 2)
                                                                                     ])->setStatusCode(403);
                                                                                 }
-                                                                            } else {
+                                                                            }
+                                                                            else {
                                                                                 return response()->json([
                                                                                     'status' => 'fail',
                                                                                     'message' => 'Insufficient Account Kindly Fund Your ' . ($vending_system == 'wallet' ? '' : $vending_system) . ' Wallet => ₦' . number_format($user_balance, 2)
                                                                                 ])->setStatusCode(403);
                                                                             }
-                                                                        } else {
+                                                                        }
+                                                                        else {
                                                                             return response()->json([
                                                                                 'status' => 'fail',
                                                                                 'message' => 'Invalid Account Balance'
                                                                             ])->setStatusCode(403);
                                                                         }
-                                                                    } else {
+                                                                    }
+                                                                    else {
                                                                         return response()->json([
                                                                             'status' => 'fail',
                                                                             'message' => 'Unable to Detect Amount'
                                                                         ])->setStatusCode(403);
                                                                     }
-                                                                } else {
+                                                                }
+                                                                else {
                                                                     return response()->json([
                                                                         'status' => 'fail',
                                                                         'message' => 'Unable to Get Wallet Store Balance'
                                                                     ])->setStatusCode(403);
                                                                 }
-                                                            } else {
+                                                            }
+                                                            else {
                                                                 return response()->json([
                                                                     'status' => 'fail',
                                                                     'message' => 'Unable to Get Vending Store'
                                                                 ])->setStatusCode(403);
                                                             }
-                                                        } else {
+                                                        }
+                                                        else {
                                                             return response()->json([
                                                                 'status' => 'fail',
                                                                 'message' => 'Try and Login To Our Website First'
                                                             ])->setStatusCode(403);
                                                         }
-                                                    } else {
+                                                    }
+                                                    else {
                                                         return response()->json([
                                                             'status' => 'fail',
                                                             'message' => 'You have Reach Daily Transaction Limit Kindly Message the Admin To Upgrade Your Account'
                                                         ])->setStatusCode(403);
                                                     }
-                                                } else {
+                                                }
+                                                else {
                                                     return response()->json([
                                                         'status' => 'fail',
                                                         'message' => 'Unable to Bypass Number'
                                                     ])->setStatusCode(403);
                                                 }
-                                            } else {
+                                            }
+                                            else {
                                                 return response()->json([
                                                     'status' => 'fail',
                                                     'message' => 'Invalid Phone Number ' . $phone
                                                 ])->setStatusCode(403);
                                             }
-                                        } else {
+                                        }
+                                        else {
                                             return response()->json([
                                                 'status' => 'fail',
                                                 'message' => $network_d->network . " " . $plan_d->plan_type . " is not available right now"
                                             ])->setStatusCode(403);
                                         }
-                                    } else {
+                                    }
+                                    else {
                                         return response()->json([
                                             'status' => 'fail',
                                             'message' => 'Unable to detect lock service'
                                         ])->setStatusCode(403);
                                     }
-                                } else {
+                                }
+                                else {
                                     return response()->json([
                                         'status' => 'fail',
                                         'message' => 'Invalid Data Plan ID and Network'
                                     ])->setStatusCode(403);
                                 }
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 'fail',
                                     'message' => 'Network ID invalid'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 'fail',
                                 'message' => 'Request ID Exits Before'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Phone Number Blocked'
                     ])->setStatusCode(403);
                 }
 
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 'fail',
                     'message' => 'Invalid AccessToken Or Access Denial'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return response()->json([
                 'status' => 'fail',
                 'message' => 'AccessToken Required'

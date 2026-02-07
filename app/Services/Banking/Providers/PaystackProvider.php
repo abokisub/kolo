@@ -38,14 +38,14 @@ class PaystackProvider implements BankingProviderInterface
         do {
             $response = Http::timeout(120) // Increased for slow connections
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->secretKey,
-                    'Content-Type' => 'application/json'
-                ])
+                'Authorization' => 'Bearer ' . $this->secretKey,
+                'Content-Type' => 'application/json'
+            ])
                 ->get('https://api.paystack.co/bank', [
-                    'country' => 'nigeria',
-                    'perPage' => $perPage,
-                    'page' => $page
-                ]);
+                'country' => 'nigeria',
+                'perPage' => $perPage,
+                'page' => $page
+            ]);
 
             if (!$response->successful()) {
                 throw new \Exception('Failed to fetch banks from Paystack (Page ' . $page . '): ' . $response->body());
@@ -72,7 +72,9 @@ class PaystackProvider implements BankingProviderInterface
                 'paystack_code' => $bank['code'] // Store explicitly for Paystack
             ];
         })
-            ->filter(fn($bank) => $bank['active'] === true)
+            ->filter(function ($bank) {
+            return $bank['active'] === true;
+        })
             ->values()
             ->toArray();
     }
@@ -87,9 +89,9 @@ class PaystackProvider implements BankingProviderInterface
             'Authorization' => 'Bearer ' . $this->secretKey,
             'Content-Type' => 'application/json'
         ])->get("https://api.paystack.co/bank/resolve", [
-                    'account_number' => $accountNumber,
-                    'bank_code' => $bankCode
-                ]);
+            'account_number' => $accountNumber,
+            'bank_code' => $bankCode
+        ]);
 
         if ($response->successful()) {
             $data = $response->json();
@@ -123,12 +125,12 @@ class PaystackProvider implements BankingProviderInterface
             'Authorization' => 'Bearer ' . $this->secretKey,
             'Content-Type' => 'application/json'
         ])->post($recipientUrl, [
-                    "type" => "nuban",
-                    "name" => $details['account_name'],
-                    "account_number" => $details['account_number'],
-                    "bank_code" => $details['bank_code'],
-                    "currency" => "NGN"
-                ]);
+            "type" => "nuban",
+            "name" => $details['account_name'],
+            "account_number" => $details['account_number'],
+            "bank_code" => $details['bank_code'],
+            "currency" => "NGN"
+        ]);
 
         if (!$recipientResponse->successful()) {
             return [
@@ -144,12 +146,12 @@ class PaystackProvider implements BankingProviderInterface
             'Authorization' => 'Bearer ' . $this->secretKey,
             'Content-Type' => 'application/json'
         ])->post($url, [
-                    "source" => "balance",
-                    "reason" => $details['narration'] ?? 'Transfer',
-                    "amount" => $details['amount'] * 100, // Paystack is in Kobo
-                    "recipient" => $recipientCode,
-                    "reference" => $details['reference']
-                ]);
+            "source" => "balance",
+            "reason" => $details['narration'] ?? 'Transfer',
+            "amount" => $details['amount'] * 100, // Paystack is in Kobo
+            "recipient" => $recipientCode,
+            "reference" => $details['reference']
+        ]);
 
         if ($transferResponse->successful()) {
             return [
@@ -160,9 +162,20 @@ class PaystackProvider implements BankingProviderInterface
             ];
         }
 
+        $responseData = $transferResponse->json();
+        $errorMessage = $responseData['message'] ?? $transferResponse->body();
+
+        // Handle specific balance/liquidity errors with friendly messages
+        if (str_contains($errorMessage, 'Insufficient Funds') ||
+        str_contains($errorMessage, 'Low Liquidity') ||
+        str_contains($errorMessage, 'balance') ||
+        $transferResponse->status() === 400 && str_contains($errorMessage, 'Transfer failed')) {
+            $errorMessage = "Service temporarily unavailable due to low provider liquidity. Please try again later.";
+        }
+
         return [
             'status' => 'fail',
-            'message' => 'Transfer failed: ' . ($transferResponse->json()['message'] ?? $transferResponse->body())
+            'message' => 'Transfer failed: ' . $errorMessage
         ];
     }
     public function getBalance(): float
@@ -203,4 +216,3 @@ class PaystackProvider implements BankingProviderInterface
         ];
     }
 }
-

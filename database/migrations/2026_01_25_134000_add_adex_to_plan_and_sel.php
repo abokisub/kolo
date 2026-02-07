@@ -12,11 +12,21 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('data_plan', function (Blueprint $table) {
-            $table->string('adex1')->nullable();
-            $table->string('adex2')->nullable();
-            $table->string('adex3')->nullable();
-            $table->string('adex4')->nullable();
-            $table->string('adex5')->nullable();
+            if (!Schema::hasColumn('data_plan', 'adex1')) {
+                $table->string('adex1')->nullable();
+            }
+            if (!Schema::hasColumn('data_plan', 'adex2')) {
+                $table->string('adex2')->nullable();
+            }
+            if (!Schema::hasColumn('data_plan', 'adex3')) {
+                $table->string('adex3')->nullable();
+            }
+            if (!Schema::hasColumn('data_plan', 'adex4')) {
+                $table->string('adex4')->nullable();
+            }
+            if (!Schema::hasColumn('data_plan', 'adex5')) {
+                $table->string('adex5')->nullable();
+            }
         });
 
         // Insert Adex into sel table if not exists

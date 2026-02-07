@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use App\Models\Beneficiary;
 
 class TransferPurchase extends Controller
 {
@@ -57,16 +58,19 @@ class TransferPurchase extends Controller
                 $user = $check->first();
                 if (trim($user->pin) == trim($request->pin)) {
                     $accessToken = $user->apikey;
-                } else {
+                }
+                else {
                     return response()->json(['status' => 'fail', 'message' => 'Invalid Transaction Pin'])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json(['status' => 'fail', 'message' => 'User not found or blocked'])->setStatusCode(403);
             }
 
             $system = "APP";
 
-        } else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+        }
+        else if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             // WEB AUTH
             $validator = Validator::make($request->all(), [
                 'amount' => 'required|numeric|gt:0',
@@ -90,13 +94,16 @@ class TransferPurchase extends Controller
                     $user = $check->first();
                     if (trim($user->pin) == trim($request->pin)) {
                         $accessToken = $user->apikey;
-                    } else {
+                    }
+                    else {
                         return response()->json(['status' => 'fail', 'message' => 'Invalid Transaction Pin'])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json(['status' => 'fail', 'message' => 'User not found'])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 // Pin not required config
                 $check = DB::table('user')->where(['id' => $this->verifytoken($request->token)]);
                 if ($check->count() == 1) {
@@ -106,7 +113,8 @@ class TransferPurchase extends Controller
             }
             $system = config('app.name');
 
-        } else {
+        }
+        else {
             // API AUTH
             $validator = Validator::make($request->all(), [
                 'amount' => 'required|numeric|gt:0',
@@ -132,7 +140,8 @@ class TransferPurchase extends Controller
 
             if ($check->count() == 1) {
                 $user = $check->first();
-            } else {
+            }
+            else {
                 return response()->json(['status' => 'fail', 'message' => 'Invalid Authorization Token'])->setStatusCode(403);
             }
             $system = "API";
@@ -140,6 +149,15 @@ class TransferPurchase extends Controller
 
         if (!isset($user) || !$user) {
             return response()->json(['status' => 'fail', 'message' => 'Authentication Failed'])->setStatusCode(403);
+        }
+
+        // Apply Tier Limits via LimitService
+        $limitCheck = \App\Services\LimitService::checkLimit($user, $request->amount);
+        if (!$limitCheck['allowed']) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => $limitCheck['message']
+            ])->setStatusCode(403);
         }
 
         // 1. Calculate Charges (Prepare Data OUTSIDE transaction if possible to minimize lock time)
@@ -167,6 +185,10 @@ class TransferPurchase extends Controller
                 $new_wallet = $lockedUser->bal - $total_deduction;
                 DB::table('user')->where('id', $lockedUser->id)->update(['bal' => $new_wallet]);
 
+                // Resolve Bank Name for reliable display
+                $bank = DB::table('unified_banks')->where('code', $request->bank_code)->first();
+                $bank_name = $bank ? $bank->name : null;
+
                 // Record Transaction (PENDING)
                 DB::table('transfers')->insert([
                     'user_id' => $lockedUser->id,
@@ -174,6 +196,7 @@ class TransferPurchase extends Controller
                     'amount' => $amount,
                     'charge' => $charge,
                     'bank_code' => $request->bank_code,
+                    'bank_name' => $bank_name,
                     'account_number' => $request->account_number,
                     'account_name' => $request->account_name,
                     'narration' => $request->narration ?? 'Transfer',
@@ -232,17 +255,56 @@ class TransferPurchase extends Controller
                         'message' => 'Successfully transferred ₦' . number_format($amount) . ' to ' . $request->account_name . ' (' . $request->account_number . ')'
                     ]);
 
+                    // Record for Tier Limits
+                    \App\Services\LimitService::recordTransaction($user, $amount);
+
+                    // --- SAVE BENEFICIARY (SOURCE OF TRUTH) ---
+                    // Only save on success or pending (provider accepted it)
+                    try {
+                        Beneficiary::updateOrCreate(
+                        [
+                            'user_id' => $user->id,
+                            'service_type' => 'transfer_external',
+                            'identifier' => $request->account_number
+                        ],
+                        [
+                            'network_or_provider' => $routerResponse['bank_name'] ?? 'Bank',
+                            'name' => $request->account_name,
+                            'is_favorite' => filter_var($request->save_beneficiary, FILTER_VALIDATE_BOOLEAN) ? 1 : 0,
+                            'last_used_at' => Carbon::now(),
+                        ]
+                        );
+                    }
+                    catch (\Exception $e) {
+                        // Don't fail the transaction if saving beneficiary fails
+                        Log::error('Failed to save beneficiary: ' . $e->getMessage());
+                    }
+
+                    // SEND DEBIT NOTIFICATION
+                    try {
+                        (new \App\Services\NotificationService())->sendDebitNotification(
+                            $user,
+                            $amount,
+                            'Transfer to ' . $request->account_name
+                        );
+                    }
+                    catch (\Exception $e) {
+                        Log::error("Debit Notification Failed: " . $e->getMessage());
+                    }
+
                     return response()->json([
                         'status' => 'success',
                         'message' => 'Transfer Successful',
                         'reference' => $transid
                     ]);
 
-                } else {
+                }
+                else {
                     throw new \Exception($routerResponse['message'] ?? 'Provider Error');
                 }
 
-            } catch (\Exception $e) {
+            }
+            catch (\Exception $e) {
                 // 3. REFUND ON FAILURE
                 Log::error("TransferPurchase: API Call Failed, refunding user. Error: " . $e->getMessage());
 
@@ -263,13 +325,51 @@ class TransferPurchase extends Controller
                     ]);
                 });
 
+                // SEND REFUND NOTIFICATION
+                try {
+                    (new \App\Services\NotificationService())->sendExternalCreditNotification(
+                        $user,
+                        $transactionResult['total_deduction'],
+                        $transid
+                    );
+                }
+                catch (\Exception $ex) {
+                    Log::error("Refund Notification Failed: " . $ex->getMessage());
+                }
+
+                $msg = $e->getMessage();
+                $userMsg = "Transfer Failed. Funds returned.";
+
+                if (str_contains($msg, 'does not exist')) {
+                    $userMsg = "Failed: The receiving bank rejected the transaction. Please checking the details.";
+                }
+                elseif (str_contains($msg, 'Insufficient Funds') || str_contains($msg, 'Low Liquidity')) {
+                    $userMsg = "Service temporarily unavailable (Low Balance). Please try again later.";
+                }
+                elseif (str_contains($msg, 'Connection timed out') || str_contains($msg, 'resolve host')) {
+                    $userMsg = "Network Error. Please try again.";
+                }
+                elseif (str_contains($msg, '{')) {
+                    // Try to extract "message" field if it's a JSON string
+                    $json = json_decode(substr($msg, strpos($msg, '{')), true);
+                    if (isset($json['message'])) {
+                        $userMsg = "Failed: " . $json['message'];
+                    }
+                }
+                else {
+                    $cleanMsg = strip_tags($msg);
+                    if (strlen($cleanMsg) < 100)
+                        $userMsg = "Failed: " . $cleanMsg;
+                }
+
                 return response()->json([
                     'status' => 'fail',
-                    'message' => 'Transfer failed: ' . $e->getMessage() . '. Funds have been returned to your wallet.'
+                    'message' => $userMsg
                 ])->setStatusCode(400);
             }
 
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             Log::error('TransferRequest Exception: ' . $e->getMessage());
             return response()->json(['status' => 'fail', 'message' => 'Internal Server Error'])->setStatusCode(500);
         }

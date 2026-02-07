@@ -15,10 +15,10 @@ class CreateNetwork_smeTable extends Migration
     {
         Schema::create('network_sme', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->boolean('mtn')->default('false');
-            $table->boolean('glo')->default('false');
-            $table->boolean('airtel')->default('false');
-            $table->boolean('mobile')->default('false');
+            $table->boolean('mtn')->default(false);
+            $table->boolean('glo')->default(false);
+            $table->boolean('airtel')->default(false);
+            $table->boolean('mobile')->default(false);
         });
     }
 

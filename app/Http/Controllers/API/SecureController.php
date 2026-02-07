@@ -29,73 +29,85 @@ class SecureController extends Controller
     {
         if ($this->verifyOrigin($request)) {
             if (!empty($request->id)) {
-                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifyapptoken($request->id)])->where(function ($query) {
                     $query->where('type', 'ADMIN');
                 });
                 if ($check_user->count() > 0) {
                     // network vtu
                     if ($request->mtn_vtu == true || $request->mtn_vtu == 1) {
                         $mtn_vtu = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_vtu = 0;
                     }
                     if ($request->glo_vtu == true || $request->glo_vtu == 1) {
                         $glo_vtu = 1;
-                    } else {
+                    }
+                    else {
                         $glo_vtu = 0;
                     }
                     if ($request->airtel_vtu == true || $request->airtel_vtu == 1) {
                         $airtel_vtu = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_vtu = 0;
                     }
                     if ($request->mobile_vtu == true || $request->mobile_vtu == 1) {
                         $mobile_vtu = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_vtu = 0;
                     }
 
                     // airtime share and sell
                     if ($request->mtn_share == true || $request->mtn_share == 1) {
                         $mtn_share = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_share = 0;
                     }
                     if ($request->glo_share == true || $request->glo_share == 1) {
                         $glo_share = 1;
-                    } else {
+                    }
+                    else {
                         $glo_share = 0;
                     }
                     if ($request->airtel_share == true || $request->airtel_share == 1) {
                         $airtel_share = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_share = 0;
                     }
                     if ($request->mobile_share == true || $request->mobile_share == 1) {
                         $mobile_share = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_share = 0;
                     }
 
                     // airtime 2 cash
                     if ($request->mtn_cash == true || $request->mtn_cash == 1) {
                         $mtn_cash = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_cash = 0;
                     }
                     if ($request->glo_cash == true || $request->glo_cash == 1) {
                         $glo_cash = 1;
-                    } else {
+                    }
+                    else {
                         $glo_cash = 0;
                     }
                     if ($request->mobile_cash == true || $request->mobile_cash == 1) {
                         $mobile_cash = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_cash = 0;
                     }
                     if ($request->airtel_cash == true || $request->airtel_cash == 1) {
                         $airtel_cash = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_cash = 0;
                     }
                     $mtn_data = [
@@ -126,19 +138,22 @@ class SecureController extends Controller
                         'status' => 'success',
                         'message' => 'Updated'
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -157,64 +172,76 @@ class SecureController extends Controller
                     // data sme
                     if ($request->mtn_sme == true || $request->mtn_sme == 1) {
                         $mtn_sme = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_sme = 0;
                     }
                     if ($request->glo_sme == true || $request->glo_sme == 1) {
                         $glo_sme = 1;
-                    } else {
+                    }
+                    else {
                         $glo_sme = 0;
                     }
                     if ($request->airtel_sme == true || $request->airtel_sme == 1) {
                         $airtel_sme = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_sme = 0;
                     }
                     if ($request->mobile_sme == true || $request->mobile_sme == 1) {
                         $mobile_sme = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_sme = 0;
                     }
                     // sme 2
                     if ($request->mtn_sme2 == true || $request->mtn_sme2 == 1) {
                         $mtn_sme2 = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_sme2 = 0;
                     }
                     if ($request->glo_sme2 == true || $request->glo_sme2 == 1) {
                         $glo_sme2 = 1;
-                    } else {
+                    }
+                    else {
                         $glo_sme2 = 0;
                     }
                     if ($request->airtel_sme2 == true || $request->airtel_sme2 == 1) {
                         $airtel_sme2 = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_sme2 = 0;
                     }
                     if ($request->mobile_sme2 == true || $request->mobile_sme2 == 1) {
                         $mobile_sme2 = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_sme2 = 0;
                     }
                     // data cg
                     if ($request->mtn_cg == true || $request->mtn_cg == 1) {
                         $mtn_cg = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_cg = 0;
                     }
                     if ($request->glo_cg == true || $request->glo_cg == 1) {
                         $glo_cg = 1;
-                    } else {
+                    }
+                    else {
                         $glo_cg = 0;
                     }
                     if ($request->airtel_cg == true || $request->airtel_cg == 1) {
                         $airtel_cg = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_cg = 0;
                     }
                     if ($request->mobile_cg == true || $request->mobile_cg == 1) {
                         $mobile_cg = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_cg = 0;
                     }
 
@@ -222,44 +249,52 @@ class SecureController extends Controller
 
                     if ($request->mtn_g == true || $request->mtn_g == 1) {
                         $mtn_g = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_g = 0;
                     }
                     if ($request->glo_g == true || $request->glo_g == 1) {
                         $glo_g = 1;
-                    } else {
+                    }
+                    else {
                         $glo_g = 0;
                     }
                     if ($request->airtel_g == true || $request->airtel_g == 1) {
                         $airtel_g = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_g = 0;
                     }
                     if ($request->mobile_g == true || $request->mobile_g == 1) {
                         $mobile_g = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_g = 0;
                     }
 
                     // datashare
                     if ($request->mtn_datashare == true || $request->mtn_datashare == 1) {
                         $mtn_datashare = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_datashare = 0;
                     }
                     if ($request->glo_datashare == true || $request->glo_datashare == 1) {
                         $glo_datashare = 1;
-                    } else {
+                    }
+                    else {
                         $glo_datashare = 0;
                     }
                     if ($request->airtel_datashare == true || $request->airtel_datashare == 1) {
                         $airtel_datashare = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_datashare = 0;
                     }
                     if ($request->mobile_datashare == true || $request->mobile_datashare == 1) {
                         $mobile_datashare = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_datashare = 0;
                     }
 
@@ -314,19 +349,22 @@ class SecureController extends Controller
                         'status' => 'success',
                         'message' => 'Updated'
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -345,22 +383,26 @@ class SecureController extends Controller
                     // network vtu
                     if ($request->dstv == true || $request->dstv == 1) {
                         $dstv = 1;
-                    } else {
+                    }
+                    else {
                         $dstv = 0;
                     }
                     if ($request->startime == true || $request->startime == 1) {
                         $startime = 1;
-                    } else {
+                    }
+                    else {
                         $startime = 0;
                     }
                     if ($request->gotv == true || $request->gotv == 1) {
                         $gotv = 1;
-                    } else {
+                    }
+                    else {
                         $gotv = 0;
                     }
                     if ($request->showmax == true || $request->showmax == 1) {
                         $showmax = 1;
-                    } else {
+                    }
+                    else {
                         $showmax = 0;
                     }
 
@@ -377,25 +419,29 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'Updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'messgae' => 'Unable to update'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -414,17 +460,20 @@ class SecureController extends Controller
                     // network vtu
                     if ($request->waec == true || $request->waec == 1) {
                         $waec = 1;
-                    } else {
+                    }
+                    else {
                         $waec = 0;
                     }
                     if ($request->neco == true || $request->neco == 1) {
                         $neco = 1;
-                    } else {
+                    }
+                    else {
                         $neco = 0;
                     }
                     if ($request->nabteb == true || $request->nabteb == 1) {
                         $nabteb = 1;
-                    } else {
+                    }
+                    else {
                         $nabteb = 0;
                     }
 
@@ -439,25 +488,29 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'Updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'messgae' => 'Unable to update'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -469,91 +522,121 @@ class SecureController extends Controller
     {
         if ($this->verifyOrigin($request)) {
             if (!empty($request->id)) {
-                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifyapptoken($request->id)])->where(function ($query) {
                     $query->where('type', 'ADMIN');
                 });
                 if ($check_user->count() > 0) {
                     // network vtu
                     if ($request->monnify_atm == true || $request->monnify_atm == 1) {
                         $monnify_atm = 1;
-                    } else {
+                    }
+                    else {
                         $monnify_atm = 0;
                     }
                     if ($request->monnify == true || $request->monnify == 1) {
                         $monnify = 1;
-                    } else {
+                    }
+                    else {
                         $monnify = 0;
                     }
                     if ($request->referral == true || $request->referral == 1) {
                         $referral = 1;
-                    } else {
+                    }
+                    else {
                         $referral = 0;
                     }
                     if ($request->bank_transfer == true || $request->bank_transfer == 1) {
                         $bank_transfer = 1;
-                    } else {
+                    }
+                    else {
                         $bank_transfer = 0;
                     }
                     if ($request->paystack == true || $request->paystack == 1) {
                         $paystack = 1;
-                    } else {
+                    }
+                    else {
                         $paystack = 0;
                     }
                     if ($request->is_verify_email == true || $request->is_verify_email == 1) {
                         $is_verify_email = 1;
-                    } else {
+                    }
+                    else {
                         $is_verify_email = 0;
                     }
                     if ($request->is_feature == true || $request->is_feature == 1) {
                         $is_feature = 1;
-                    } else {
+                    }
+                    else {
                         $is_feature = 0;
                     }
                     if ($request->wema == true || $request->wema == 1) {
                         $wema = 1;
-                    } else {
+                    }
+                    else {
                         $wema = 0;
                     }
-                    if ($request->rolex == true || $request->rolex == 1) {
-                        $rolex = 1;
-                    } else {
-                        $rolex = 0;
+                    if ($request->kolomoni_mfb == true || $request->kolomoni_mfb == 1) {
+                        $kolomoni_mfb = 1;
+                    }
+                    else {
+                        $kolomoni_mfb = 0;
                     }
                     if ($request->fed == true || $request->fed == 1) {
                         $fed = 1;
-                    } else {
+                    }
+                    else {
                         $fed = 0;
                     }
                     if ($request->str == true || $request->str == 1) {
                         $str = 1;
-                    } else {
+                    }
+                    else {
                         $str = 0;
                     }
                     if ($request->bulksms == true || $request->bulksms == 1) {
                         $bulksms = 1;
-                    } else {
+                    }
+                    else {
                         $bulksms = 0;
                     }
                     if ($request->allow_pin == true || $request->allow_pin == 1) {
                         $allow_pin = 1;
-                    } else {
+                    }
+                    else {
                         $allow_pin = 0;
                     }
                     if ($request->bill == true || $request->bill == 1) {
                         $bill_lock = 1;
-                    } else {
+                    }
+                    else {
                         $bill_lock = 0;
                     }
                     if ($request->allow_limit == true || $request->allow_limit == 1) {
                         $allow_limit = 1;
-                    } else {
+                    }
+                    else {
                         $allow_limit = 0;
                     }
 
                     if ($request->stock == true || $request->stock == 1) {
                         $stock = 1;
-                    } else {
+                    }
+                    else {
                         $stock = 0;
+                    }
+
+                    if ($request->card_ngn_lock == true || $request->card_ngn_lock == 1) {
+                        $card_ngn_lock = 1;
+                    }
+                    else {
+                        $card_ngn_lock = 0;
+                    }
+
+                    if ($request->card_usd_lock == true || $request->card_usd_lock == 1) {
+                        $card_usd_lock = 1;
+                    }
+                    else {
+                        $card_usd_lock = 0;
                     }
 
                     $data = [
@@ -563,7 +646,7 @@ class SecureController extends Controller
                         'is_verify_email' => $is_verify_email,
                         'is_feature' => $is_feature,
                         'wema' => $wema,
-                        'rolex' => $rolex,
+                        'kolomoni_mfb' => $kolomoni_mfb,
                         'fed' => $fed,
                         'str' => $str,
                         'bulksms' => $bulksms,
@@ -572,7 +655,9 @@ class SecureController extends Controller
                         'bank_transfer' => $bank_transfer,
                         'paystack' => $paystack,
                         'allow_limit' => $allow_limit,
-                        'stock' => $stock
+                        'stock' => $stock,
+                        'card_ngn_lock' => $card_ngn_lock,
+                        'card_usd_lock' => $card_usd_lock,
                     ];
 
                     if (DB::table('settings')->update($data)) {
@@ -580,25 +665,29 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'Updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'messgae' => 'Unable to update'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -624,26 +713,30 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'Data Plan Deleted'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Data Plan Id Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -692,7 +785,8 @@ class SecureController extends Controller
                     // plan status
                     if ($request->plan_status == true || $request->plan_status == 1) {
                         $plan_status = 1;
-                    } else {
+                    }
+                    else {
                         $plan_status = 0;
                     }
                     if ($main_validator->fails()) {
@@ -700,14 +794,16 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         //  plan id
                         $check_plans = DB::table('data_plan');
                         if ($check_plans->count() > 0) {
                             $last_plan_id = $check_plans->orderBy('id', 'desc')->first();
                             $plan_id_get = $last_plan_id->plan_id;
                             $plan_id = $plan_id_get + 1;
-                        } else {
+                        }
+                        else {
                             $plan_id = 1;
                         }
                         // insertind data here
@@ -769,33 +865,38 @@ class SecureController extends Controller
                                     'status' => 'success',
                                     'message' => 'Data Plan Inserted'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Try Again Later Or Contact Habukhan Developers'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'message' => 'Try Again Later Or Contact Habukhan Developers',
                                 'status' => 403
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -821,33 +922,38 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if (DB::table('data_plan')->where('plan_id', $request->plan_id)->count() == 1) {
                             return response()->json([
                                 'status' => 'success',
                                 'plan' => DB::table('data_plan')->where('plan_id', $request->plan_id)->first()
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Invalid Plan ID'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -898,7 +1004,8 @@ class SecureController extends Controller
                     // plan status
                     if ($request->plan_status == true || $request->plan_status == 1) {
                         $plan_status = 1;
-                    } else {
+                    }
+                    else {
                         $plan_status = 0;
                     }
                     if ($main_validator->fails()) {
@@ -906,12 +1013,14 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } elseif (DB::table('data_plan')->where('plan_id', $request->plan_id)->count() !== 1) {
+                    }
+                    elseif (DB::table('data_plan')->where('plan_id', $request->plan_id)->count() !== 1) {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Invalid  Pla ID'
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         // update plan id
                         $data = [
                             'network' => $request->network,
@@ -969,27 +1078,31 @@ class SecureController extends Controller
                                 'status' => 'success',
                                 'message' => 'Updated Success'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'You Didnt Make any Changes'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1015,26 +1128,30 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'Cable Plan Deleted'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Cable Plan Id Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1060,33 +1177,38 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if (DB::table('cable_plan')->where('plan_id', $request->plan_id)->count() == 1) {
                             return response()->json([
                                 'status' => 'success',
                                 'plan' => DB::table('cable_plan')->where('plan_id', $request->plan_id)->first()
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Invalid Plan ID'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1116,7 +1238,8 @@ class SecureController extends Controller
                     // plan status
                     if ($request->plan_status == true || $request->plan_status == 1) {
                         $plan_status = 1;
-                    } else {
+                    }
+                    else {
                         $plan_status = 0;
                     }
                     if ($main_validator->fails()) {
@@ -1124,14 +1247,16 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         //  plan id
                         $check_plans = DB::table('cable_plan');
                         if ($check_plans->count() > 0) {
                             $last_plan_id = $check_plans->orderBy('id', 'desc')->first();
                             $plan_id_get = $last_plan_id->plan_id;
                             $plan_id = $plan_id_get + 1;
-                        } else {
+                        }
+                        else {
                             $plan_id = 1;
                         }
                         // insertind data here
@@ -1156,33 +1281,38 @@ class SecureController extends Controller
                                     'status' => 'success',
                                     'message' => 'Cable Plan Inserted'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Try Again Later Or Contact Habukhan Developers'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'message' => 'Try Again Later Or Contact Habukhan Developers',
                                 'status' => 403
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1213,7 +1343,8 @@ class SecureController extends Controller
                     // plan status
                     if ($request->plan_status == true || $request->plan_status == 1) {
                         $plan_status = 1;
-                    } else {
+                    }
+                    else {
                         $plan_status = 0;
                     }
                     if ($main_validator->fails()) {
@@ -1221,12 +1352,14 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else if (DB::table('cable_plan')->where('plan_id', $request->plan_id)->count() !== 1) {
+                    }
+                    else if (DB::table('cable_plan')->where('plan_id', $request->plan_id)->count() !== 1) {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Invalid Plan ID'
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         // insertind data here
                         $data = [
                             'cable_name' => $request->cable_name,
@@ -1248,27 +1381,31 @@ class SecureController extends Controller
                                 'status' => 'success',
                                 'message' => 'Update Success'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'message' => 'No Changes Made',
                                 'status' => 403
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1294,26 +1431,30 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'Disco Plan Deleted'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Disco Plan Id Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1339,33 +1480,38 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if (DB::table('bill_plan')->where('plan_id', $request->plan_id)->count() == 1) {
                             return response()->json([
                                 'status' => 'success',
                                 'plan' => DB::table('bill_plan')->where('plan_id', $request->plan_id)->first()
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Invalid Plan ID'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1393,7 +1539,8 @@ class SecureController extends Controller
                     // plan status
                     if ($request->plan_status == true || $request->plan_status == 1) {
                         $plan_status = 1;
-                    } else {
+                    }
+                    else {
                         $plan_status = 0;
                     }
                     if ($main_validator->fails()) {
@@ -1401,14 +1548,16 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         //  plan id
                         $check_plans = DB::table('bill_plan');
                         if ($check_plans->count() > 0) {
                             $last_plan_id = $check_plans->orderBy('id', 'desc')->first();
                             $plan_id_get = $last_plan_id->plan_id;
                             $plan_id = $plan_id_get + 1;
-                        } else {
+                        }
+                        else {
                             $plan_id = 1;
                         }
                         // insertind data here
@@ -1430,33 +1579,38 @@ class SecureController extends Controller
                                     'status' => 'success',
                                     'message' => 'Bill Plan Inserted'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Try Again Later Or Contact Habukhan Developers'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'message' => 'Try Again Later Or Contact Habukhan Developers',
                                 'status' => 403
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1485,7 +1639,8 @@ class SecureController extends Controller
                     // plan status
                     if ($request->plan_status == true || $request->plan_status == 1) {
                         $plan_status = 1;
-                    } else {
+                    }
+                    else {
                         $plan_status = 0;
                     }
                     if ($main_validator->fails()) {
@@ -1493,7 +1648,8 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         // insertind data here
                         $data = [
                             'disco_name' => $request->disco_name,
@@ -1513,27 +1669,31 @@ class SecureController extends Controller
                                     'status' => 'success',
                                     'message' => 'Updated'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'No Changes Made'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'message' => 'Invalid Plan ID',
                                 'status' => 403
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1558,33 +1718,38 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if (DB::table('network')->where('plan_id', $request->plan_id)->count() == 1) {
                             return response()->json([
                                 'status' => 'success',
                                 'plan' => DB::table('network')->where('plan_id', $request->plan_id)->first()
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Invalid Plan ID'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1614,7 +1779,8 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         // insertind data here
                         $data = [
                             'habukhan_id' => $request->habukhan_id,
@@ -1630,27 +1796,31 @@ class SecureController extends Controller
                                     'status' => 'success',
                                     'message' => 'Updated'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'No Changes Made'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'message' => 'Invalid Plan ID',
                                 'status' => 403
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1684,20 +1854,23 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'No Changes Made'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1731,20 +1904,23 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'No Changes Made'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1773,26 +1949,30 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'No Changes Made'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1821,26 +2001,30 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'No Changes Made'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1883,20 +2067,23 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'No Changes Made'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1941,20 +2128,23 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'No Changes Made'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1979,33 +2169,38 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if (DB::table('stock_result_pin')->where('plan_id', $request->plan_id)->count() == 1) {
                             return response()->json([
                                 'status' => 'success',
                                 'plan' => DB::table('stock_result_pin')->where('plan_id', $request->plan_id)->first()
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Invalid Plan ID'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2033,12 +2228,14 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         // plan status
 
                         if ($request->plan_status == true || $request->plan_status == 1) {
                             $plan_status = 1;
-                        } else {
+                        }
+                        else {
                             $plan_status = 0;
                         }
                         $pin = explode(',', $request->pin);
@@ -2056,7 +2253,8 @@ class SecureController extends Controller
                                             $last_plan_id = $check_plans->orderBy('id', 'desc')->first();
                                             $plan_id_get = $last_plan_id->plan_id;
                                             $plan_id = $plan_id_get + 1;
-                                        } else {
+                                        }
+                                        else {
                                             $plan_id = 1;
                                         }
                                         $data = [
@@ -2069,7 +2267,8 @@ class SecureController extends Controller
                                             'plan_id' => $plan_id
                                         ];
                                         $this->inserting_data('stock_result_pin', $data);
-                                    } else {
+                                    }
+                                    else {
                                         return response()->json([
                                             'status' => 403,
                                             'message' => 'Result Pin Added Already'
@@ -2079,20 +2278,23 @@ class SecureController extends Controller
                             }
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2117,26 +2319,30 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'Result Checker Pin Deleted'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Plan Id Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2165,16 +2371,19 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else if (DB::table('stock_result_pin')->where('plan_id', $request->plan_id)->count() != 1) {
+                    }
+                    else if (DB::table('stock_result_pin')->where('plan_id', $request->plan_id)->count() != 1) {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Invalid Plan ID'
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         // plan status
                         if ($request->plan_status == true || $request->plan_status == 1) {
                             $plan_status = 1;
-                        } else {
+                        }
+                        else {
                             $plan_status = 0;
                         }
 
@@ -2186,20 +2395,23 @@ class SecureController extends Controller
                         ];
                         DB::table('stock_result_pin')->where('plan_id', $request->plan_id)->update($data);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2220,20 +2432,23 @@ class SecureController extends Controller
                         'status' => 'success',
                         'stock' => DB::table('wallet_funding')->where('username', $username)->first()
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2252,17 +2467,20 @@ class SecureController extends Controller
                     // mtn status
                     if ($request->mtn_sme == true || $request->mtn_sme == 1) {
                         $mtn_sme = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_sme = 0;
                     }
                     if ($request->mtn_cg == true || $request->mtn_cg == 1) {
                         $mtn_cg = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_cg = 0;
                     }
                     if ($request->mtn_g == true || $request->mtn_g == 1) {
                         $mtn_g = 1;
-                    } else {
+                    }
+                    else {
                         $mtn_g = 0;
                     }
 
@@ -2270,50 +2488,59 @@ class SecureController extends Controller
 
                     if ($request->glo_sme == true || $request->glo_sme == 1) {
                         $glo_sme = 1;
-                    } else {
+                    }
+                    else {
                         $glo_sme = 0;
                     }
                     if ($request->glo_cg == true || $request->glo_cg == 1) {
                         $glo_cg = 1;
-                    } else {
+                    }
+                    else {
                         $glo_cg = 0;
                     }
                     if ($request->glo_g == true || $request->glo_g == 1) {
                         $glo_g = 1;
-                    } else {
+                    }
+                    else {
                         $glo_g = 0;
                     }
 
                     // airtel status
                     if ($request->airtel_sme == true || $request->airtel_sme == 1) {
                         $airtel_sme = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_sme = 0;
                     }
                     if ($request->airtel_cg == true || $request->airtel_cg == 1) {
                         $airtel_cg = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_cg = 0;
                     }
                     if ($request->airtel_g == true || $request->airtel_g == 1) {
                         $airtel_g = 1;
-                    } else {
+                    }
+                    else {
                         $airtel_g = 0;
                     }
                     //9mobile status
                     if ($request->mobile_sme == true || $request->mobile_sme == 1) {
                         $mobile_sme = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_sme = 0;
                     }
                     if ($request->mobile_cg == true || $request->mobile_cg == 1) {
                         $mobile_cg = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_cg = 0;
                     }
                     if ($request->mobile_g == true || $request->mobile_g == 1) {
                         $mobile_g = 1;
-                    } else {
+                    }
+                    else {
                         $mobile_g = 0;
                     }
                     $data = [
@@ -2336,20 +2563,23 @@ class SecureController extends Controller
                         'status' => 'success',
                         'message' => 'update success'
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2377,13 +2607,15 @@ class SecureController extends Controller
                                 'message' => $validator->errors()->first(),
                                 'status' => 403
                             ])->setStatusCode(403);
-                        } else {
+                        }
+                        else {
                             $profile_image = $request->file('profile_image');
                             $profile_image_name = $request->username . '_' . $profile_image->getClientOriginalName();
                             $save_here = 'profile_image';
                             $path = url('') . '/' . $request->file('profile_image')->storeAs($save_here, $profile_image_name);
                         }
-                    } else {
+                    }
+                    else {
                         $path = $request->profile_image;
                     }
                     if ($main_validator->fails()) {
@@ -2391,7 +2623,8 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'address' => $request->address,
                             'about' => $request->about,
@@ -2404,20 +2637,23 @@ class SecureController extends Controller
                             'message' => 'Updated success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2445,7 +2681,8 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $hash = substr(sha1(md5($request->oldPassword)), 3, 10);
                         $mdpass = md5($request->oldPassword);
                         if ((password_verify($request->oldPassword, $habukhan->password)) xor ($request->oldPassword == $habukhan->password) xor ($hash == $habukhan->password) xor ($mdpass == $habukhan->password)) {
@@ -2455,27 +2692,31 @@ class SecureController extends Controller
                                 'status' => 'success',
                                 'message' => 'password updated'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Incorrect Old Password'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2502,34 +2743,39 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if (($request->oldpin == $habukhan->pin)) {
                             DB::table('user')->where(['username' => $username, 'id' => $habukhan->id])->update(['pin' => $request->newpin]);
                             return response()->json([
                                 'status' => 'success',
                                 'message' => 'Transaction Pin updated'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Incorrect Old Transaction Pin'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2555,34 +2801,39 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if (($adex->pin == null || $adex->pin == '')) {
                             DB::table('user')->where(['username' => $username, 'id' => $adex->id])->update(['pin' => $request->newpin]);
                             return response()->json([
                                 'status' => 'success',
                                 'message' => 'Transaction Pin Created'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'You Are Not Authorized Kindly Reload the Page'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2609,7 +2860,8 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         // monnify verify account details
 
                         $send_request = "https://api.monnify.com/api/v1/disbursements/account/validate?accountNumber=$request->account_number&bankCode=$request->bank_code";
@@ -2622,40 +2874,46 @@ class SecureController extends Controller
                                         'status' => 'success',
                                         'message' => 'Updated Success'
                                     ]);
-                                } else {
+                                }
+                                else {
                                     DB::table('user_bank')->insert(['bank' => $request->bank_name, 'bank_name' => $json_response['responseBody']['accountName'], 'bank_code' => $request->bank_code, 'account_number' => $request->account_number, 'username' => $username, 'date' => $this->system_date()]);
                                     return response()->json([
                                         'status' => 'success',
                                         'message' => 'Updated Success'
                                     ]);
                                 }
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Inavlid Account Details'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Inavlid Account Details'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2678,26 +2936,30 @@ class SecureController extends Controller
                             'status' => 'success',
                             'bank' => DB::table('user_bank')->where('username', $username)->first()
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'not yet availabale'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2729,19 +2991,23 @@ class SecureController extends Controller
                         if ($check_gb == 'MB') {
                             $mb = rtrim($plans, "MB");
                             $gb = $mb / 1024;
-                        } elseif ($check_gb == 'GB') {
+                        }
+                        elseif ($check_gb == 'GB') {
                             $gb = rtrim($plans, "GB");
-                        } elseif ($check_gb == 'TB') {
+                        }
+                        elseif ($check_gb == 'TB') {
                             $tb = rtrim($plans, 'TB');
                             $gb = ceil($tb * 1024);
-                        } else {
+                        }
+                        else {
                             $gb = 0;
                         }
                         $total_gb += $gb;
                     }
                     if ($total_gb >= 1024) {
                         $calculate_gb = $total_gb / 1024 . 'TB';
-                    } else {
+                    }
+                    else {
                         $calculate_gb = $total_gb . 'GB';
                     }
                     return response()->json([
@@ -2749,20 +3015,23 @@ class SecureController extends Controller
                         'data_purchased_amount' => $total_amount,
                         'data_purchased_volume' => $calculate_gb
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'invalid user id'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2780,20 +3049,23 @@ class SecureController extends Controller
                     return response()->json([
                         'stock_balance' => DB::table('wallet_funding')->where(['username' => $user->username])->get()
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'invalid user id'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2811,7 +3083,8 @@ class SecureController extends Controller
                 'status' => 'success',
                 'app' => DB::table('app_download')->get()
             ]);
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2837,24 +3110,35 @@ class SecureController extends Controller
                             'tiktok' => $request->tiktok
                         ];
                         DB::table('general')->update($update);
+
+                        $settingsUpdate = [
+                            'playstore_url' => $request->playstore_url,
+                            'appstore_url' => $request->appstore_url,
+                            'app_update_title' => $request->update_title,
+                            'app_update_desc' => $request->update_desc
+                        ];
+                        DB::table('settings')->update($settingsUpdate);
                         return response()->json([
                             'status' => 'success',
                             'message' => 'updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Reload the Browser'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return redirect(config('app.error_500'));
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to Authenticate System'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
@@ -2873,7 +3157,8 @@ class SecureController extends Controller
                     if ($user->status == 1 and $user->type == 'ADMIN') {
                         if ($request->notfi_show == 1 || $request->notif_show == true) {
                             $plan_status = 1;
-                        } else {
+                        }
+                        else {
                             $plan_status = 0;
                         }
                         $data = [
@@ -2885,20 +3170,23 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'message'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Reload the Browser'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return redirect(config('app.error_500'));
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to Authenticate System'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
@@ -2921,26 +3209,30 @@ class SecureController extends Controller
                                 'status' => 'success',
                                 'message' => 'successful'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'invalid'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Reload the Browser'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return redirect(config('app.error_500'));
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to Authenticate System'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
@@ -2968,20 +3260,23 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'successful'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Reload the Browser'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return redirect(config('app.error_500'));
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to Authenticate System'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
@@ -3005,26 +3300,30 @@ class SecureController extends Controller
                                 'status' => 'success',
                                 'message' => 'successful'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'invalid'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Reload the Browser'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return redirect(config('app.error_500'));
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to Authenticate System'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
@@ -3052,20 +3351,23 @@ class SecureController extends Controller
                             'status' => 'success',
                             'message' => 'successful'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Reload the Browser'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return redirect(config('app.error_500'));
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to Authenticate System'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
@@ -3098,27 +3400,31 @@ class SecureController extends Controller
                         ];
                         if (DB::table('habukhan_key')->count() == 0) {
                             DB::table('habukhan_key')->insert($data);
-                        } else {
+                        }
+                        else {
                             DB::table('habukhan_key')->update($data);
                         }
                         return response()->json([
                             'status' => 'success',
                             'message' => 'updated'
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Reload the Browser'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return redirect(config('app.error_500'));
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to Authenticate System'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
@@ -3149,13 +3455,19 @@ class SecureController extends Controller
                     'app_phone' => $this->general()->app_phone
                 ];
                 MailController::send_mail($email_data, 'email.reset-password');
-            } else {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'OTP Sent Successfully'
+                ]);
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Invalid Email Address'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -3179,7 +3491,8 @@ class SecureController extends Controller
                         'message' => $main_validator->errors()->first(),
                         'status' => 403
                     ])->setStatusCode(403);
-                } else {
+                }
+                else {
                     $password = password_hash($request->password, PASSWORD_DEFAULT, array('cost' => 16));
                     DB::table('user')->where(['username' => $user->username, 'id' => $user->id])->update(['otp' => null, 'password' => $password]);
                     return response()->json([
@@ -3187,13 +3500,15 @@ class SecureController extends Controller
                         'message' => 'password reseted'
                     ]);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Link Expired'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -3216,7 +3531,8 @@ class SecureController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $email_data = [
                             'name' => $request->refemail,
                             'email' => $request->refemail,
@@ -3231,20 +3547,23 @@ class SecureController extends Controller
                         ];
                         MailController::send_mail($email_data, 'email.invite');
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Invalid Email Address'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,

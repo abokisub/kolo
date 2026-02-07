@@ -71,10 +71,28 @@ class AccountVerification extends Controller
                 } catch (\Exception $e) {
                     Log::error('Account Verification Error: ' . $e->getMessage());
 
+                    $msg = $e->getMessage();
+
+                    // Sanitize HTML/System Errors
+                    if (str_contains($msg, '<!DOCTYPE') || str_contains($msg, '<html') || str_contains($msg, 'cURL error')) {
+                        $userMessage = "Temporary Service Error. Please try again later.";
+                    } elseif (str_contains($msg, 'Selected bank does not exist')) {
+                        $userMessage = "The selected bank does not appear to match this account number.";
+                    } elseif (str_contains($msg, 'resolve host')) {
+                        $userMessage = "Network Connection Error. Please verify your internet.";
+                    } else {
+                        // Strip any potential HTML tags just in case
+                        $userMessage = strip_tags($msg);
+                        // Limit length
+                        if (strlen($userMessage) > 100) {
+                            $userMessage = "Verification failed. Please check account details.";
+                        }
+                    }
+
                     return response()->json([
                         'status' => 'fail',
-                        'message' => 'Unable to verify account: ' . $e->getMessage()
-                    ], 500);
+                        'message' => $userMessage
+                    ], 200); // Return 200 so app handles it as a "soft" failure (showing red text) instead of crashing
                 }
             } else {
                 return response()->json(['status' => 'fail', 'message' => 'Authentication required'], 403);

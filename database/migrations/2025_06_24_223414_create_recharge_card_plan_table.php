@@ -19,7 +19,7 @@ class CreateRecharge_card_planTable extends Migration
             $table->string('plan_id', 50)->unique();
             $table->decimal('amount', 10, 2);
             $table->decimal('plan_price', 10, 2);
-            $table->boolean('plan_status')->default('true');
+            $table->boolean('plan_status')->default(true);
         });
     }
 

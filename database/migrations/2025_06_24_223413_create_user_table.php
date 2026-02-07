@@ -26,8 +26,8 @@ class CreateUserTable extends Migration
             $table->string('ref', 12)->nullable();
             $table->enum('type', ['SMART', 'AGENT', 'AWUF', 'API', 'ADMIN'])->default('SMART');
             $table->timestamp('date');
-            $table->boolean('kyc')->default('false');
-            $table->boolean('status')->default('false');
+            $table->boolean('kyc')->default(false);
+            $table->boolean('status')->default(false);
             $table->integer('user_limit')->default(0);
             $table->string('pin', 4)->nullable();
             $table->string('profile_image', 255)->nullable();

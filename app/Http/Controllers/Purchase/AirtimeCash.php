@@ -95,6 +95,15 @@ class AirtimeCash extends Controller
                     if (DB::table('block')->where(['number' => $request->sender_number])->count() == 0) {
                         if (DB::table('cash')->where('transid', $transid)->count() == 0 and DB::table('message')->where('transid', $transid)->count() == 0) {
                             $phone = $request->sender_number;
+                            // check network lock
+                            $net_lock = DB::table('network')->where('network', $request->network)->first();
+                            if (!$net_lock || $net_lock->cash != 1) {
+                                return response()->json([
+                                    'status' => 'fail',
+                                    'message' => 'Airtime conversion is currently locked for ' . $request->network
+                                ])->setStatusCode(403);
+                            }
+
                             // check number
                             if ($request->bypass == false || $request->bypass == 'false') {
                                 $validate = substr($phone, 0, 4);
@@ -147,14 +156,8 @@ class AirtimeCash extends Controller
                             if (substr($phone, 0, 1) == 0) {
                                 // if bypassed
                                 if ($habukhan_bypass == true) {
-                                    // check user daly limit
-                                    $all_limit = DB::table('message')->where(['username' => $user->username])->where(function ($query) {
-                                        $query->where('role', '!=', 'credit');
-                                        $query->where('role', '!=', 'debit');
-                                        $query->where('role', '!=', 'upgrade');
-                                        $query->where('plan_status', '!=', 2);
-                                    })->whereDate('habukhan_date', Carbon::now())->sum('amount');
-                                    if ($all_limit <= $user->user_limit) {
+                                    $habukhan_new_go = true;
+                                    if ($habukhan_new_go) {
                                         if ((strtolower($request->payment_type) == 'wallet') xor strtolower($request->payment_type) == 'bank') {
                                             if ($request->network == '9MOBILE') {
                                                 $network_name = 'mobile';
@@ -284,8 +287,8 @@ class AirtimeCash extends Controller
         }
 
         $network = DB::table('network')->where('network', $request->network)->first();
-        if (!$network) {
-            return response()->json(['status' => 'fail', 'message' => 'Invalid Network'], 400);
+        if (!$network || $network->cash != 1) {
+            return response()->json(['status' => 'fail', 'message' => 'Airtime conversion is currently unavailable for this network'], 400);
         }
 
         // Autopilot A2C API strictly requires 11-digit local format starting with 0
@@ -366,6 +369,9 @@ class AirtimeCash extends Controller
             return response()->json(['status' => 'fail', 'message' => 'Transaction not found'], 400);
         }
         $network = DB::table('network')->where('network', $cash->network)->first();
+        if (!$network || $network->cash != 1) {
+            return response()->json(['status' => 'fail', 'message' => 'Airtime conversion is currently unavailable for this network'], 400);
+        }
 
         // Autopilot A2C API strictly requires 11-digit local format starting with 0
         $phone = $cash->sender_number;
@@ -390,9 +396,21 @@ class AirtimeCash extends Controller
             ]);
         }
 
+        // Extensive Logging for debugging "Random Errors"
+        \Log::info("A2C Execute Response (" . $request->transid . "): " . json_encode($response));
+
+        $msg = $response['data']['message'] ?? $response['message'] ?? 'Airtime conversion failed';
+
+        // Map provider errors to user-friendly messages
+        if (str_contains(strtolower($msg), 'pin') || str_contains(strtolower($msg), 'unauthorized') || str_contains(strtolower($msg), 'authentication failed')) {
+            $msg = 'Incorrect Share & Sell PIN. Please check and try again.';
+        } elseif (str_contains(strtolower($msg), 'insufficient')) {
+            $msg = 'Insufficient airtime balance on the provided number.';
+        }
+
         return response()->json([
             'status' => 'fail',
-            'message' => $response['data']['message'] ?? $response['message'] ?? 'Airtime conversion failed'
+            'message' => $msg
         ], 400);
     }
 }

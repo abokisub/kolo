@@ -17,7 +17,7 @@ class CreateFeatureTable extends Migration
             $table->bigIncrements('id');
             $table->string('name', 100);
             $table->text('description')->nullable();
-            $table->boolean('status')->default('true');
+            $table->boolean('status')->default(true);
         });
     }
 

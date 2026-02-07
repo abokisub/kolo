@@ -1,198 +1,33 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+@extends('email.layouts.master')
 
-<head>
-    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-    <meta content="width=device-width, initial-scale=1" name="viewport">
-    <title>welcome email</title><!-- Designed by adex developer 07013397088 -->
-    <!-- Robot header image designed by adex developer 07013397088-->
-    <style type="text/css">
-        @import url(https://fonts.googleapis.com/css?family=Nunito);
+@section('content')
+    <div style="text-align: center;">
+        <h1 style="color: #0056b3; margin-bottom: 10px;">Welcome to {{ config('app.name') }}!</h1>
+        <p style="font-size: 18px; color: #555;">We're thrilled to have you on board.</p>
+    </div>
 
-        /* Take care of image borders and formatting */
+    <p>Hello <strong>{{ $username }}</strong>,</p>
 
-        img {
-            max-width: 600px;
-            outline: none;
-            text-decoration: none;
-            -ms-interpolation-mode: bicubic;
-        }
+    <p>Your account has been successfully created. You can now access a world of seamless financial services right at your
+        fingertips.</p>
 
-        html {
-            margin: 0;
-            padding: 0;
-        }
+    <div style="background-color: #f8f9fa; border-left: 4px solid #0056b3; padding: 15px; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #0056b3;">Your Login Credentials</h3>
+        <p style="margin-bottom: 5px;"><strong>Username:</strong> {{ $username }}</p>
+        <p style="margin-bottom: 0;"><strong>Transaction PIN:</strong> {{ $pin }}</p>
+        <small style="display: block; margin-top: 10px; color: #dc3545;">*Please change your PIN immediately after logging
+            in for security.</small>
+    </div>
 
-        a {
-            text-decoration: none;
-            border: 0;
-            outline: none;
-            color: #bbbbbb;
-        }
+    <h3 style="color: #333;">What you can do with {{ config('app.name') }}:</h3>
+    <ul style="line-height: 1.8; color: #444;">
+        <li>⚡ <strong>Instant Transfers:</strong> Send money to any bank account instantly.</li>
+        <li>💡 <strong>Pay Bills:</strong> Airtime, Data, Electricity, and TV subscriptions.</li>
+        <li>🔒 <strong>Secure Wallet:</strong> Your funds are safe and insured.</li>
+        <li>🎁 <strong>Earn Rewards:</strong> Refer friends and earn bonuses.</li>
+    </ul>
 
-        a img {
-            border: none;
-        }
-
-        /* General styling */
-
-        td,
-        h1,
-        h2,
-        h3 {
-            font-family: Helvetica, Arial, sans-serif;
-            font-weight: 400;
-        }
-
-        td {
-            text-align: center;
-        }
-
-        body {
-            -webkit-font-smoothing: antialiased;
-            -webkit-text-size-adjust: none;
-            width: 100%;
-            height: 100%;
-            color: #666;
-            background: #fff;
-            font-size: 16px;
-            height: 100vh;
-            width: 100%;
-            padding: 0px;
-            margin: 0px;
-        }
-
-        table {
-            border-collapse: collapse !important;
-        }
-
-        .headline {
-            color: #444;
-            font-size: 36px;
-        }
-
-        .force-full-width {
-            width: 100% !important;
-        }
-    </style>
-    <style media="screen" type="text/css">
-        @media screen {
-
-            td,
-            h1,
-            h2,
-            h3 {
-                font-family: "Nunito", "Helvetica Neue", "Arial", "sans-serif" !important;
-            }
-        }
-    </style>
-    <style media="only screen and (max-width: 480px)" type="text/css">
-        /* Mobile styles */
-        @media only screen and (max-width: 480px) {
-
-            table[class="w320"] {
-                width: 320px !important;
-            }
-        }
-    </style>
-    <style type="text/css"></style>
-
-</head>
-
-<body bgcolor="#fff" class="body"
-    style="padding:20px; margin:0; display:block; background:#ffffff; -webkit-text-size-adjust:none">
-    <table align="center" cellpadding="0" cellspacing="0" height="100%" width="100%">
-        <tbody>
-            <tr>
-                <td align="center" bgcolor="#fff" class="" valign="top" width="100%">
-                    <center class="">
-                        <table cellpadding="0" cellspacing="0" class="w320" style="margin: 0 auto;" width="600">
-                            <tbody>
-                                <tr>
-                                    <td align="center" class="" valign="top">
-                                        <table cellpadding="0" cellspacing="0" style="margin: 0 auto;" width="100%">
-                                        </table>
-                                        <table bgcolor="#fff" cellpadding="0" cellspacing="0" class=""
-                                            style="margin: 0 auto; width: 100%; margin-top: 100px;">
-                                            <tbody style="margin-top: 15px;">
-                                                <tr class="">
-                                                    <td class="">
-                                                        <img alt="web image" class="" height="155"
-                                                            src={{ config('app.app_url') . '/upload/welcome.png' }}
-                                                            width="155">
-                                                    </td>
-                                                </tr>
-                                                <tr class="">
-                                                    <td class="headline">Welcome to {{ config('app.name') }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>
-                                                        <center class="">
-                                                            <table cellpadding="0" cellspacing="0" class=""
-                                                                style="margin: 0 auto;" width="75%">
-                                                                <tbody class="">
-                                                                    <tr class="">
-                                                                        <td class=""
-                                                                            style="color:#444; font-weight: 400;">
-                                                                            <br><br>
-                                                                            Hello, {{ $username }}, <br><br>
-                                                                            welcome to {{ config('app.name') }} we are
-                                                                            really excited to have you to join our
-                                                                            community! This email will help you get
-                                                                            started. Please save it for your
-                                                                            records</em><br>
-                                                                            <br>
-                                                                            <p>please feel free to reach us on the
-                                                                                contact below if you have any questions
-                                                                                or if there is anything else we can help
-                                                                                with.</p>
-                                                                            <br>
-                                                                            Your login credentials are provided below:
-                                                                            <br>
-                                                                            <span style="font-weight:bold;">Username:
-                                                                                &nbsp;</span><span
-                                                                                style="font-weight:lighter;"
-                                                                                class="">{{ $username }}</span>
-                                                                            <br>
-                                                                            <span style="font-weight:bold;">Transaction
-                                                                                Pn: &nbsp;</span><span
-                                                                                style="font-weight:lighter;"
-                                                                                class="">{{ $pin }}</span>
-                                                                            <br>
-                                                                            <br><br>
-                                                                            <br>
-                                                                        </td>
-                                                                    </tr>
-                                                                </tbody>
-                                                            </table>
-                                                        </center>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-
-                                        <table bgcolor="#fff" cellpadding="0" cellspacing="0" class="force-full-width"
-                                            style="margin: 0 auto; margin-bottom: 5px:">
-                                            <tbody>
-                                                <tr>
-                                                    <td class="" style="color:#444;
-                    ">
-                                                        <p>for more information email us @ {{ $system_email }}
-                                                        </p>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </center>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</body>
-
-</html>
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{{ config('app.app_url') }}" class="btn">Login to Dashboard</a>
+    </div>
+@endsection

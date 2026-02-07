@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Facades\Excel;
 // use App\Jobs\ProcessKudaWithdrawal;
 
 use Illuminate\Support\Facades\Validator;
+use App\Services\FirebaseService;
 
 class PaymentController extends Controller
 {
@@ -21,8 +22,8 @@ class PaymentController extends Controller
         // Retrieve the raw payload from the request
         $payload = $request->getContent();
 
-        // Define the secret key
-        $secret = "3d47f078e1dc246f65a200104b9cefeae5caf0719b6614cfa072aec60835bfea6f450e1c1568bbbdd2a4b804bf2ac437e9abe7dea8b402c4af9be3ba";
+        // Define the secret key from environment
+        $secret = env('XIXAPAY_SECRET_KEY');
 
         // Retrieve the XixaPay signature from the request headers
         $xixapay_signature = $request->header('xixapay');
@@ -86,12 +87,7 @@ class PaymentController extends Controller
         DB::table('user')->where(['id' => $user->id])->update(['bal' => $user->bal + $credit]);
 
         // Insert notifications and messages
-        DB::table('notif')->insert([
-            'username' => $user->username,
-            'message' => 'Account Credited By Automated Bank Transfer ₦' . number_format($credit, 2),
-            'date' => $this->system_date(),
-            'habukhan' => 0
-        ]);
+        (new \App\Services\NotificationService())->sendExternalCreditNotification($user, $credit, $transid);
 
         DB::table('message')->insert([
             'username' => $user->username,
@@ -106,24 +102,23 @@ class PaymentController extends Controller
             'role' => 'credit'
         ]);
 
-        // Send FCM notification if applicable
-        if ($user->app_token != null) {
-            $fcmUrl = 'https://fcm.googleapis.com/fcm/send';
-            $data = [
-                "to" => $user->app_token,
-                "priority" => "high",
-                "notification" => [
-                    "title" => config('app.name'),
-                    "body" => "You have received a payment of ₦" . number_format($credit, 2),
-                    "sound" => "default",
-                    "badge" => DB::table('notif')->where(['username' => $user->username, 'habukhan' => 0])->count(),
-                ],
-            ];
-            Http::withHeaders([
-                'Authorization' => 'key=' . config('app.fire_base_key'),
-                'Content-Type' => 'application/json',
-            ])->post($fcmUrl, $data);
-        }
+        // Send Email Receipt
+        $email_data = [
+            'email' => $user->email,
+            'username' => $user->username,
+            'title' => 'Wallet Funding Success',
+            'amount' => $amount_paid,
+            'charges' => $charges,
+            'newbal' => $user->bal + $credit,
+            'transid' => $transid,
+            'date' => $this->system_date(),
+            'mes' => "Your wallet has been credited with ₦" . number_format($credit, 2) . " via PalmPay/Kolomoni (Xixapay)."
+        ];
+        MailController::send_mail($email_data, 'email.purchase');
+
+        // Send FCM notification if applicable (Modern Admin SDK)
+
+
 
         // Handle referral
         if ($this->core()->referral == 1 && $user->ref) {
@@ -172,7 +167,8 @@ class PaymentController extends Controller
                         'message' => $main_validator->errors()->first(),
                         'status' => 403
                     ])->setStatusCode(403);
-                } else {
+                }
+                else {
                     $send_request = "https://api.monnify.com/api/v1/disbursements/account/validate?accountNumber=$request->account_number&bankCode=$request->bank_code";
                     $json_response = json_decode(@file_get_contents($send_request), true);
                     if (!empty($json_response)) {
@@ -206,26 +202,30 @@ class PaymentController extends Controller
                             }
 
                             DB::table('request')->insert(['username' => $user->username, 'message' => $user->username . " Transferred  ₦" . number_format($request->amount_sent, 2) . " to your bank account. Reference is => " . $transid, 'date' => $this->system_date(), 'transid' => $transid, 'status' => 0, 'title' => 'MANUAL BANK TRANSFER']);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Inavlid Account Details'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Inavlid Account Details'
                         ])->setStatusCode(403);
                     }
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 'fail',
                     'message' => 'Reload the browser and try again'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -250,7 +250,8 @@ class PaymentController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $post_data = array(
                             "amount" => $request->amount,
                             "customerName" => $user->username,
@@ -266,7 +267,7 @@ class PaymentController extends Controller
                         $ch = curl_init();
                         curl_setopt($ch, CURLOPT_URL, $url);
                         curl_setopt($ch, CURLOPT_POST, 1);
-                        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_data));  //send requrest to monnify
+                        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_data)); //send requrest to monnify
                         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                         $headers = [
                             'Authorization: Basic ' . base64_encode($habukhan_key->mon_app_key . ':' . $habukhan_key->mon_sk_key),
@@ -298,32 +299,37 @@ class PaymentController extends Controller
                                     'status' => 'success',
                                     'redirect' => $response['responseBody']['checkoutUrl']
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 'fail',
                                     'message' => 'Try Again Later'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 'fail',
                                 'message' => 'Monnify Server Down'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Reload the browser and try again'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 'fail',
                     'message' => 'Reload the browser and try again'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -347,16 +353,17 @@ class PaymentController extends Controller
                 curl_setopt(
                     $ch,
                     CURLOPT_HTTPHEADER,
-                    [
-                        "Authorization: Basic " . $base_monnify,
-                    ]
+                [
+                    "Authorization: Basic " . $base_monnify,
+                ]
                 );
                 $json = curl_exec($ch);
                 curl_close($ch);
                 $result = json_decode($json, true);
                 if (isset($result['responseBody']['accessToken'])) {
                     $accessToken = $result['responseBody']['accessToken'];
-                } else {
+                }
+                else {
                     $accessToken = null;
                 }
                 $curl = curl_init();
@@ -382,12 +389,7 @@ class PaymentController extends Controller
                         $user = DB::table('user')->where(['username' => $deposit_trans->username, 'status' => 1])->first();
                         DB::table('deposit')->where(['monify_ref' => $request->paymentReference, 'status' => 0])->update(['status' => 1, 'oldbal' => $user->bal, 'newbal' => $user->bal + $credit]);
                         DB::table('user')->where(['username' => $user->username, 'id' => $user->id])->update(['bal' => $user->bal + $credit]);
-                        DB::table('notif')->insert([
-                            'username' => $user->username,
-                            'message' => 'Account Credited By Monnify ATM ₦' . number_format($credit, 2),
-                            'date' => $this->system_date(),
-                            'habukhan' => 0
-                        ]);
+                        (new \App\Services\NotificationService())->sendExternalCreditNotification($user, $credit, $deposit_trans->transid);
                         DB::table('message')->insert([
                             'username' => $user->username,
                             'amount' => $credit,
@@ -418,33 +420,34 @@ class PaymentController extends Controller
                                             'transid' => $this->purchase_ref('EARNING_'),
                                             'role' => 'credit'
                                         ]);
-                                        DB::table('notif')->insert([
-                                            'username' => $user_ref->username,
-                                            'message' => 'Referral Earning From ' . ucfirst($user->username),
-                                            'date' => $this->system_date(),
-                                            'habukhan' => 0
-                                        ]);
+                                        (new \App\Services\NotificationService())->sendExternalCreditNotification($user_ref, $credit_ref, $this->purchase_ref('EARNING_'));
                                     }
                                 }
                             }
                         }
                         return redirect(config('app.app_url') . '/dashboard');
-                    } else if (strtolower($trans_status) == 'expired') {
+                    }
+                    else if (strtolower($trans_status) == 'expired') {
                         DB::table('deposit')->where(['monify_ref' => $request->paymentReference, 'status' => 0])->update(['status' => 2]);
-                        return redirect(config('app.app_url') . '/dashboard');
-                    } else if (strtolower($trans_status) == 'failed') {
-                        DB::table('deposit')->where(['monify_ref' => $request->paymentReference, 'status' => 0])->update(['status' => 2]);
-                        return redirect(config('app.app_url') . '/dashboard');
-                    } else {
                         return redirect(config('app.app_url') . '/dashboard');
                     }
-                } else {
+                    else if (strtolower($trans_status) == 'failed') {
+                        DB::table('deposit')->where(['monify_ref' => $request->paymentReference, 'status' => 0])->update(['status' => 2]);
+                        return redirect(config('app.app_url') . '/dashboard');
+                    }
+                    else {
+                        return redirect(config('app.app_url') . '/dashboard');
+                    }
+                }
+                else {
                     return redirect(config('app.app_url') . '/dashboard');
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
         }
     }
@@ -466,12 +469,7 @@ class PaymentController extends Controller
                         $user = DB::table('user')->where(['username' => $deposit_trans->username, 'status' => 1])->first();
                         DB::table('deposit')->where(['monify_ref' => $payment_ref, 'status' => 0])->update(['status' => 1, 'oldbal' => $user->bal, 'newbal' => $user->bal + $credit]);
                         DB::table('user')->where(['username' => $user->username, 'id' => $user->id])->update(['bal' => $user->bal + $credit]);
-                        DB::table('notif')->insert([
-                            'username' => $user->username,
-                            'message' => 'Account Credited By Monnify ATM ₦' . number_format($credit, 2),
-                            'date' => $this->system_date(),
-                            'habukhan' => 0
-                        ]);
+                        (new \App\Services\NotificationService())->sendExternalCreditNotification($user, $credit, $deposit_trans->transid);
                         DB::table('message')->insert([
                             'username' => $user->username,
                             'amount' => $credit,
@@ -502,21 +500,17 @@ class PaymentController extends Controller
                                             'transid' => $this->purchase_ref('EARNING_'),
                                             'role' => 'credit'
                                         ]);
-                                        DB::table('notif')->insert([
-                                            'username' => $user_ref->username,
-                                            'message' => 'Referral Earning From ' . ucfirst($user->username),
-                                            'date' => $this->system_date(),
-                                            'habukhan' => 0
-                                        ]);
+                                        (new \App\Services\NotificationService())->sendExternalCreditNotification($user_ref, $credit_ref, $this->purchase_ref('EARNING_'));
                                     }
                                 }
                             }
                         }
-                    } else {
+                    }
+                    else {
                         if (
-                            DB::table('user')->where(['status' => 1])->where(function ($query) use ($customer_name) {
-                                $query->orWhere('username', $customer_name['name'])->orWhere('email', $customer_name['email']);
-                            })->count() == 1
+                        DB::table('user')->where(['status' => 1])->where(function ($query) use ($customer_name) {
+                            $query->orWhere('username', $customer_name['name'])->orWhere('email', $customer_name['email']);
+                        })->count() == 1
                         ) {
                             $user = DB::table('user')->where(['status' => 1])->where(function ($query) use ($customer_name) {
                                 $query->orWhere('username', $customer_name['name'])->orWhere('email', $customer_name['email']);
@@ -544,12 +538,7 @@ class PaymentController extends Controller
                                 'monify_ref' => $payment_ref
                             ]);
                             DB::table('user')->where(['username' => $user->username, 'id' => $user->id])->update(['bal' => $user->bal + $credit]);
-                            DB::table('notif')->insert([
-                                'username' => $user->username,
-                                'message' => 'Account Credited By Automated Bank Transfer ₦' . number_format($credit, 2),
-                                'date' => $this->system_date(),
-                                'habukhan' => 0
-                            ]);
+                            (new \App\Services\NotificationService())->sendExternalCreditNotification($user, $credit, $transid);
                             DB::table('message')->insert([
                                 'username' => $user->username,
                                 'amount' => $credit,
@@ -581,29 +570,42 @@ class PaymentController extends Controller
                                                 'transid' => $this->purchase_ref('EARNING_'),
                                                 'role' => 'credit'
                                             ]);
-                                            DB::table('notif')->insert([
-                                                'username' => $user_ref->username,
-                                                'message' => 'Referral Earning From ' . ucfirst($user->username),
-                                                'date' => $this->system_date(),
-                                                'habukhan' => 0
-                                            ]);
+                                            (new \App\Services\NotificationService())->sendExternalCreditNotification($user_ref, $credit_ref, $this->purchase_ref('EARNING_'));
                                         }
                                     }
                                 }
                             }
 
-                            //referral
-                        } else {
+                            // Send Email Receipt
+                            $email_data = [
+                                'email' => $user->email,
+                                'username' => $user->username,
+                                'title' => 'Wallet Funding Success',
+                                'amount' => $amount_paid,
+                                'charges' => $charges,
+                                'newbal' => $user->bal + $credit,
+                                'transid' => $transid,
+                                'date' => $this->system_date(),
+                                'mes' => "Your wallet has been credited with ₦" . number_format($credit, 2) . " via Monnify Automated Bank Transfer."
+                            ];
+                            MailController::send_mail($email_data, 'email.purchase');
+
+                        //referral
+                        }
+                        else {
                             return view('error.error');
                         }
                     }
-                } else {
+                }
+                else {
                     return view('error.error');
                 }
-            } else {
+            }
+            else {
                 return view('error.error');
             }
-        } else {
+        }
+        else {
             return view('error.error');
         }
     }
@@ -624,7 +626,8 @@ class PaymentController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if ($this->core()->paystack == 1) {
 
                             $postdata = array(
@@ -644,7 +647,7 @@ class PaymentController extends Controller
                             $ch = curl_init();
                             curl_setopt($ch, CURLOPT_URL, "https://api.paystack.co/transaction/initialize");
                             curl_setopt($ch, CURLOPT_POST, 1);
-                            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));  //send requrest to monnify
+                            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata)); //send requrest to monnify
                             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                             $headers = [
                                 "Authorization: Bearer " . $habukhan_key->psk,
@@ -677,38 +680,44 @@ class PaymentController extends Controller
                                         'status' => 'success',
                                         'redirect' => $response['data']['authorization_url']
                                     ]);
-                                } else {
+                                }
+                                else {
                                     return response()->json([
                                         'status' => 'fail',
                                         'message' => 'Please Try Again Later'
                                     ])->setStatusCode(403);
                                 }
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 'fail',
                                     'message' => 'Please Try Again Later'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 'fail',
                                 'message' => 'paystack Server Down'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 'fail',
                         'message' => 'Reload the browser and try again'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 'fail',
                     'message' => 'Reload the browser and try again'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -745,12 +754,7 @@ class PaymentController extends Controller
                         $user = DB::table('user')->where(['username' => $deposit_trans->username, 'status' => 1])->first();
                         DB::table('deposit')->where(['monify_ref' => $request->trxref, 'status' => 0])->update(['status' => 1, 'oldbal' => $user->bal, 'newbal' => $user->bal + $credit]);
                         DB::table('user')->where(['username' => $user->username, 'id' => $user->id])->update(['bal' => $user->bal + $credit]);
-                        DB::table('notif')->insert([
-                            'username' => $user->username,
-                            'message' => 'Account Credited By Paystack ₦' . number_format($credit, 2),
-                            'date' => $this->system_date(),
-                            'habukhan' => 0
-                        ]);
+                        (new \App\Services\NotificationService())->sendWalletCreditNotification($user, $credit, 'Paystack', $deposit_trans->transid);
                         DB::table('message')->insert([
                             'username' => $user->username,
                             'amount' => $credit,
@@ -792,18 +796,36 @@ class PaymentController extends Controller
                             }
                         }
 
+                        // Send Email Receipt
+                        $email_data = [
+                            'email' => $user->email,
+                            'username' => $user->username,
+                            'title' => 'Wallet Funding Success',
+                            'amount' => $deposit_trans->amount,
+                            'charges' => $deposit_trans->charges,
+                            'newbal' => $user->bal + $credit,
+                            'transid' => $deposit_trans->transid,
+                            'date' => $this->system_date(),
+                            'mes' => "Your wallet has been credited with ₦" . number_format($credit, 2) . " via Paystack."
+                        ];
+                        MailController::send_mail($email_data, 'email.purchase');
+
                         return redirect(config('app.app_url') . '/dashboard/app');
-                    } else {
+                    }
+                    else {
                         DB::table('deposit')->where(['monify_ref' => $request->trxref, 'status' => 0])->update(['status' => 2]);
                         return redirect(config('app.app_url') . '/dashboard/app');
                     }
-                } else {
+                }
+                else {
                     return redirect(config('app.app_url') . '/dashboard/app');
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
         }
     }
@@ -882,13 +904,16 @@ class PaymentController extends Controller
                             }
                         }
                     }
-                } else {
+                }
+                else {
                     return view('error.error');
                 }
-            } else {
+            }
+            else {
                 return view('error.error');
             }
-        } else {
+        }
+        else {
             return view('error.error');
         }
     }
@@ -935,7 +960,8 @@ class PaymentController extends Controller
                     'transid' => $this->purchase_ref('validate_bvn_'),
                     'role' => 'debit'
                 ]);
-            } else {
+            }
+            else {
                 return response()->json(['status' => 'fail', 'message' => 'Insufficient Account Balance, Please Kindly Fund Your Wallet And Try Again'], 403);
             }
         }
@@ -969,12 +995,14 @@ class PaymentController extends Controller
                                 ]);
                                 file_put_contents('monnify_bvn_check.txt', json_encode($response->json()));
                             }
-                            if ($check->monify_ref == null & $check->rolex != null) {
-                                DB::table('user')->where('id', $check->id)->update(['rolex' => null, 'sterlen' => null, 'fed' => null, 'wema' => null, 'autofund' => null]);
+                            if ($check->monify_ref == null& $check->kolomoni_mfb != null) {
+                                DB::table('user')->where('id', $check->id)->update(['kolomoni_mfb' => null, 'paystack_account' => null, 'autofund' => null]);
+                                DB::table('user_bank')->where('username', $check->username)->whereIn('bank', ['MONIEPOINT'])->delete();
                             }
 
                             return response()->json(['status' => 'success', 'message' => 'BVN matches with date of birth. KYC Updated'], 200);
-                        } else {
+                        }
+                        else {
                             DB::table('user')->where('id', $check->id)->update(['is_bvn_fail' => 1]);
                             return response()->json(['status' => 'fail', 'message' => 'BVN does not match with date of birth.'], 403);
                         }
@@ -1016,15 +1044,16 @@ class PaymentController extends Controller
                 'secret_key' => '',
                 'Content-Type' => 'application/json',
             ])->post('https://api.crystalpay.finance/business/v1/dynamic-account', [
-                        "firstname" => $check->name,
-                        "lastname" => $check->username,
-                        "email" => $check->email,
-                        "dynamic_account_package" => "101",
-                        "webhookurl" => "https://web.hook.url",
-                        "expiresat" => "60",
-                        "amount" => $request->data['amount']
-                    ]);
-        } catch (\Exception $e) {
+                "firstname" => $check->name,
+                "lastname" => $check->username,
+                "email" => $check->email,
+                "dynamic_account_package" => "101",
+                "webhookurl" => "https://web.hook.url",
+                "expiresat" => "60",
+                "amount" => $request->data['amount']
+            ]);
+        }
+        catch (\Exception $e) {
             return response()->json(['status' => 'fail', 'message' => 'Unable to gnenerate dynamic account number. kindly try again'], 403);
         }
         if ($create_dynamic->successful()) {
@@ -1051,7 +1080,8 @@ class PaymentController extends Controller
             Excel::import(new MonnifyImport, $filePath);
 
             return response()->json(['message' => 'Import successful']);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -1068,7 +1098,8 @@ class PaymentController extends Controller
                     $user = DB::table('user')->where(['kuda' => $account_number_here, 'status' => 1])->first();
                     if ($amount_paid < 10000) {
                         $charges = 30;
-                    } else {
+                    }
+                    else {
                         $charges = 50;
                     }
                     $transid = $this->purchase_ref('Kuda_AUTOMATED_');
@@ -1109,23 +1140,17 @@ class PaymentController extends Controller
                     ]);
 
                     if ($user->app_token != null) {
-                        $fcmUrl = 'https://fcm.googleapis.com/fcm/send';
-
-                        $data = [
-                            "to" => $user->app_token,
-                            "priority" => "high",
-
-                            "notification" => [
-                                "title" => config('app.name'),
-                                "body" => "You have received a payment of ₦" . number_format($credit, 2),
-                                "sound" => "default",
-                                "badge" => DB::table('notif')->where(['username' => $user->username, 'habukhan' => 0])->count(),
-                            ],
-                        ];
-                        $response = Http::withHeaders([
-                            'Authorization' => 'key=' . config('app.fire_base_key'),
-                            'Content-Type' => 'application/json',
-                        ])->post($fcmUrl, $data);
+                        $firebase = new FirebaseService();
+                        $firebase->sendNotification(
+                            $user->app_token,
+                            config('app.name'),
+                            "You have received a payment of ₦" . number_format($credit, 2),
+                        [
+                            'type' => 'transaction',
+                            'action' => 'deposit',
+                            'channel_id' => 'high_importance_channel'
+                        ]
+                        );
                     }
                     // referral
                     if ($this->core()->referral == 1) {
@@ -1194,10 +1219,12 @@ class PaymentController extends Controller
                     if ($payment_type == 7) {
                         $charges = 40;
                         $type = "Safehaven";
-                    } else if ($payment_type == 101) {
+                    }
+                    else if ($payment_type == 101) {
                         $charges = 50;
                         $type = "SafeHaven (Dynamic Funding)";
-                    } else {
+                    }
+                    else {
                         $charges = ($amount_paid / 100) * 1.1;
                         $type = "Access";
                     }

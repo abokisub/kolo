@@ -18,7 +18,7 @@ class CreateNotifTable extends Migration
             $table->string('username', 12);
             $table->text('message');
             $table->string('title', 100);
-            $table->boolean('status')->default('false');
+            $table->boolean('status')->default(false);
             $table->timestamp('date');
         });
     }

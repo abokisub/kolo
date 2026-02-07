@@ -58,18 +58,21 @@ class AuthController extends Controller
                     'message' => $validator->errors()->first(),
                     'status' => 403
                 ])->setStatusCode(403);
-            } else if (substr($request->phone, 0, 1) != '0') {
+            }
+            else if (substr($request->phone, 0, 1) != '0') {
                 return response()->json([
                     'message' => 'Invalid Phone Number',
                     'status' => 403
                 ])->setStatusCode(403);
-            } else
+            }
+            else
                 if ($request->ref != null && $check_ref == 0) {
                     return response()->json([
                         'message' => 'Invalid Referral Username You can Leave the Referral Username Box Empty',
                         'status' => '403'
                     ])->setStatusCode(403);
-                } else {
+                }
+                else {
                     $user = new User();
                     $user->name = $request->name;
                     $user->username = $request->username;
@@ -108,7 +111,9 @@ class AuthController extends Controller
                             $xixapay_enabled = $settings->xixapay_enabled ?? true;
                             $palmpay_enabled = $settings->palmpay_enabled ?? true;
                             $default_virtual_account = $settings->default_virtual_account ?? 'palmpay';
-                        } catch (\Exception $e) {
+                            $default_virtual_account = ($default_virtual_account == 'palmpay') ? 'xixapay' : $default_virtual_account; // Migration for name change if needed
+                        }
+                        catch (\Exception $e) {
                             $monnify_enabled = false;
                             $wema_enabled = false;
                             $xixapay_enabled = false;
@@ -132,14 +137,16 @@ class AuthController extends Controller
                         try {
                             if ($xixapay_enabled)
                                 $this->xixapay_account($user->username);
-                        } catch (\Exception $e) {
+                        }
+                        catch (\Exception $e) {
                             \Log::error("Register Xixapay: " . $e->getMessage());
                         }
 
                         try {
                             if ($monnify_enabled || $wema_enabled)
                                 $this->monnify_account($user->username);
-                        } catch (\Exception $e) {
+                        }
+                        catch (\Exception $e) {
                             \Log::error("Register Monnify: " . $e->getMessage());
                         }
 
@@ -147,7 +154,8 @@ class AuthController extends Controller
                         //    $this->paymentpoint_account($user->username);
                         try {
                             $this->paystack_account($user->username);
-                        } catch (\Exception $e) {
+                        }
+                        catch (\Exception $e) {
                             \Log::error("Register Paystack: " . $e->getMessage());
                         }
                         // Always try paystack or link to setting
@@ -173,19 +181,19 @@ class AuthController extends Controller
                             'fed' => $monnify_enabled ? $user->fed : null,
                             'wema' => $wema_enabled ? $user->wema : null,
                             'opay' => $xixapay_enabled ? $user->palmpay : null,
-                            'rolex' => null,
+                            'kolomoni_mfb' => $xixapay_enabled ? $user->kolomoni_mfb : null,
                             'palmpay' => null,
 
                             // Polyfill for Frontend 'Generating...' issue
                             'account_number' => ($active_default == 'wema') ? ($wema_enabled ? $user->paystack_account : null) :
-                                (($active_default == 'monnify') ? ($monnify_enabled ? $user->sterlen : null) :
-                                    (($active_default == 'xixapay') ? ($xixapay_enabled ? $user->palmpay : null) :
-                                        null)),
+                            (($active_default == 'monnify') ? ($monnify_enabled ? $user->sterlen : null) :
+                            (($active_default == 'xixapay') ? ($xixapay_enabled ? $user->palmpay : null) :
+                            null)),
 
                             'bank_name' => ($active_default == 'wema') ? 'Wema Bank' :
-                                (($active_default == 'monnify') ? 'Moniepoint' :
-                                    (($active_default == 'xixapay') ? 'Palmpay' :
-                                        null)),
+                            (($active_default == 'monnify') ? 'Moniepoint' :
+                            (($active_default == 'xixapay') ? 'PalmPay' :
+                            null)),
 
                             'paystack_account' => $user->paystack_account,
                             'paystack_bank' => $user->paystack_bank,
@@ -194,7 +202,8 @@ class AuthController extends Controller
                             'about' => $user->about,
                             'apikey' => $user->apikey,
                             'default_account' => $active_default,
-                            'is_bvn' => $user->bvn == null ? false : true
+                            'is_bvn' => $user->bvn == null ? false : true,
+                            'theme' => DB::table('user_settings')->where('user_id', $user->id)->value('theme') ?? 'light'
                         ];
 
                         $token = $this->generatetoken($user->id);
@@ -213,50 +222,10 @@ class AuthController extends Controller
                         }
 
                         // Mobile request - follow OTP flow
-                        if (true) { // Force OTP as requested by user
-                            if ($use->is_verify_email || true) { // redundant true but clear intent
-                                $otp = random_int(100000, 999999);
-                                $data = [
-                                    'otp' => $otp
-                                ];
-                                $tableid = [
-                                    'username' => $user->username
-                                ];
-                                $this->updateData($data, 'user', $tableid);
-                                $email_data = [
-                                    'name' => $user->name,
-                                    'email' => $user->email,
-                                    'username' => $user->username,
-                                    'title' => 'Account Verification',
-                                    'pin' => $user->pin,
-                                    'app_name' => config('app.name'),
-                                    'otp' => $otp
-                                ];
-                                try {
-                                    MailController::send_mail($email_data, 'email.verify');
-                                } catch (\Throwable $e) {
-                                    // Continue even if email fails
-                                }
-                                return response()->json([
-                                    'status' => 'verify',
-                                    'requires_otp' => true,
-                                    'username' => $user->username,
-                                    'token' => $token,
-                                    'user' => $user_details
-                                ]);
-                            } else {
-                                // Default fallback (Mobile)
-                                DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
-                                return response()->json([
-                                    'status' => 'success',
-                                    'message' => 'Registration Successful',
-                                    'token' => $token,
-                                    'user' => $user_details
-                                ]);
-                            }
-                        } else {
+                        if ($use->is_verify_email) {
+                            $otp = random_int(100000, 999999);
                             $data = [
-                                'status' => 1,
+                                'otp' => $otp
                             ];
                             $tableid = [
                                 'username' => $user->username
@@ -266,35 +235,45 @@ class AuthController extends Controller
                                 'name' => $user->name,
                                 'email' => $user->email,
                                 'username' => $user->username,
-                                'title' => 'WELCOME EMAIL',
-                                'sender_mail' => $general->app_email,
-                                'system_email' => $general->app_email,
-                                'app_name' => $general->app_name,
+                                'title' => 'Account Verification',
                                 'pin' => $user->pin,
+                                'app_name' => config('app.name'),
+                                'otp' => $otp
                             ];
                             try {
-                                MailController::send_mail($email_data, 'email.welcome');
-                            } catch (\Throwable $e) {
-                                // Continue
+                                MailController::send_mail($email_data, 'email.verify');
+                            }
+                            catch (\Throwable $e) {
+                            // Continue even if email fails
                             }
                             return response()->json([
-                                'status' => 'success',
+                                'status' => 'verify',
+                                'requires_otp' => true,
                                 'username' => $user->username,
                                 'token' => $token,
                                 'user' => $user_details
                             ]);
                         }
-
-                    } else {
-                        return response()->json(
-                            [
-                                'status' => 403,
-                                'message' => 'Unable to Register User Please Try Again Later',
-                            ]
-                        )->setStatusCode(403);
+                        else {
+                            // Default fallback (Mobile)
+                            DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
+                            return response()->json([
+                                'status' => 'success',
+                                'message' => 'Registration Successful',
+                                'token' => $token,
+                                'user' => $user_details
+                            ]);
+                        }
+                    }
+                    else {
+                        return response()->json([
+                            'status' => 403,
+                            'message' => 'Unable to Register User. Please try again later.',
+                        ])->setStatusCode(403);
                     }
                 }
-        } else {
+        }
+        else {
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -327,12 +306,14 @@ class AuthController extends Controller
                         $monnify_enabled = $settings->monnify_enabled ?? true;
                         // Wema is separate direct wema
                         $wema_enabled = $settings->wema_enabled ?? true;
-                        // Xixapay provides OPay (rolex/opay columns)
+                        // Xixapay provides OPay (kolomoni_mfb/opay columns)
                         $xixapay_enabled = $settings->xixapay_enabled ?? true;
                         // Palmpay is separate
                         $palmpay_enabled = $settings->palmpay_enabled ?? true;
                         $default_virtual_account = $settings->default_virtual_account ?? 'palmpay';
-                    } catch (\Exception $e) {
+                        $default_virtual_account = ($default_virtual_account == 'palmpay') ? 'xixapay' : $default_virtual_account; // Migration for name change if needed
+                    }
+                    catch (\Exception $e) {
                         $monnify_enabled = true;
                         $wema_enabled = true;
                         $xixapay_enabled = true;
@@ -365,32 +346,37 @@ class AuthController extends Controller
                     try {
                         if ($xixapay_enabled && $user->palmpay == null)
                             $this->xixapay_account($user->username);
-                    } catch (\Exception $e) {
+                    }
+                    catch (\Exception $e) {
                         \Log::error("Account Xixapay: " . $e->getMessage());
                     }
 
                     try {
-                        if (($monnify_enabled || $wema_enabled) && ($user->sterlen == null || $user->wema == null))
+                        if (($monnify_enabled || $wema_enabled) && ($user->paystack_account == null || DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->count() == 0))
                             $this->monnify_account($user->username);
-                    } catch (\Exception $e) {
+                    }
+                    catch (\Exception $e) {
                         \Log::error("Account Monnify: " . $e->getMessage());
                     }
 
                     try {
                         if ($palmpay_enabled && ($user->palmpay == null || $user->opay == null))
                             $this->paymentpoint_account($user->username);
-                    } catch (\Exception $e) {
+                    }
+                    catch (\Exception $e) {
                         \Log::error("Account PaymentPoint: " . $e->getMessage());
                     }
 
                     try {
                         if ($user->paystack_account == null)
                             $this->paystack_account($user->username);
-                    } catch (\Exception $e) {
+                    }
+                    catch (\Exception $e) {
                         \Log::error("Account Paystack: " . $e->getMessage());
                     }
                     // $this->insert_stock($user->username); // Optimize stock check if needed
                     $user = DB::table('user')->where(['id' => $user->id])->first();
+                    $moniepoint_acc = DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first()->account_number ?? null;
 
                     $user_details = [
                         'username' => $user->username,
@@ -404,38 +390,40 @@ class AuthController extends Controller
                         'pin' => $user->pin,
                         'profile_image' => $user->profile_image,
                         // Only show if enabled
-                        'sterlen' => $monnify_enabled ? $user->sterlen : null,
-                        'fed' => $monnify_enabled ? $user->fed : null,
-                        'wema' => $wema_enabled ? $user->wema : null,
-                        'opay' => $xixapay_enabled ? $user->palmpay : null,
-                        'rolex' => null,
-                        'palmpay' => null,
+                        'sterlen' => $moniepoint_acc,
+                        'fed' => null,
+                        'wema' => $user->paystack_account,
+                        'opay' => $xixapay_enabled ? $user->opay : null,
+                        'kolomoni_mfb' => $user->kolomoni_mfb,
+                        'palmpay' => $user->palmpay,
 
                         // Polyfill for Frontend 'Generating...' issue
-                        'account_number' => ($monnify_enabled && !empty($user->sterlen)) ? $user->sterlen : (
-                            ($default_virtual_account == 'wema') ? ($wema_enabled ? $user->paystack_account : null) :
-                            (($default_virtual_account == 'monnify') ? ($monnify_enabled ? $user->sterlen : null) :
-                                (($default_virtual_account == 'xixapay') ? ($xixapay_enabled ? $user->palmpay : null) :
-                                    null))
-                        ),
+                        'account_number' => ($monnify_enabled && !empty($moniepoint_acc)) ? $moniepoint_acc : (
+                        ($active_default == 'wema') ? $user->paystack_account :
+                        (($active_default == 'monnify') ? $moniepoint_acc :
+                        (($active_default == 'xixapay') ? $user->palmpay :
+                        null))
+                    ),
 
                         // Keep Paystack independent or link to another setting if needed
-                        'bank_name' => ($monnify_enabled && !empty($user->sterlen)) ? 'Moniepoint' : (
-                            ($default_virtual_account == 'wema') ? 'Wema Bank' :
-                            (($default_virtual_account == 'monnify') ? 'Moniepoint' :
-                                (($default_virtual_account == 'xixapay') ? 'Palmpay' :
-                                    'Palmpay'))
-                        ),
+                        'bank_name' => ($monnify_enabled && !empty($moniepoint_acc)) ? 'Moniepoint' : (
+                        ($active_default == 'wema') ? 'Wema Bank' :
+                        (($active_default == 'monnify') ? 'Moniepoint' :
+                        (($active_default == 'xixapay') ? 'PalmPay' :
+                        'PalmPay'))
+                    ),
 
                         'paystack_account' => $user->paystack_account,
                         'paystack_bank' => $user->paystack_bank,
+                        'kolomoni' => $user->kolomoni_mfb, // Alias for frontend
                         'vdf' => $user->vdf,
                         'address' => $user->address,
                         'webhook' => $user->webhook,
                         'about' => $user->about,
                         'apikey' => $user->apikey,
                         'default_account' => $active_default,
-                        'is_bvn' => $user->bvn == null ? false : true
+                        'is_bvn' => $user->bvn == null ? false : true,
+                        'theme' => DB::table('user_settings')->where('user_id', $user->id)->value('theme') ?? 'light'
                     ];
 
                     if ($user->status == 0) {
@@ -445,7 +433,8 @@ class AuthController extends Controller
                             'message' => 'Account Not Yet Verified',
                             'user' => $user_details
                         ]);
-                    } else if ($user->status == 1) {
+                    }
+                    else if ($user->status == 1) {
                         //set up the user over here
 
 
@@ -454,35 +443,41 @@ class AuthController extends Controller
                             'message' => 'account verified',
                             'user' => $user_details
                         ]);
-                    } else if ($user->status == '2') {
+                    }
+                    else if ($user->status == '2') {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Account Banned'
                         ])->setStatusCode(403);
-                    } elseif ($user->status == '3') {
+                    }
+                    elseif ($user->status == '3') {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Account Deactivated'
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Unable to Get User'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Allowed',
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'AccessToken Expired'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -521,7 +516,8 @@ class AuthController extends Controller
                     $xixapay_enabled = $settings->xixapay_enabled ?? true;
                     $palmpay_enabled = $settings->palmpay_enabled ?? true;
                     $default_virtual_account = $settings->default_virtual_account ?? 'palmpay';
-                } catch (\Exception $e) {
+                }
+                catch (\Exception $e) {
                     $monnify_enabled = true;
                     $wema_enabled = true;
                     $xixapay_enabled = true;
@@ -570,7 +566,7 @@ class AuthController extends Controller
                     'fed' => $monnify_enabled ? $user->fed : null,
                     'wema' => $wema_enabled ? $user->wema : null,
                     'opay' => $xixapay_enabled ? $user->opay : null,
-                    'rolex' => $xixapay_enabled ? $user->rolex : null,
+                    'kolomoni_mfb' => $xixapay_enabled ? $user->kolomoni_mfb : null,
                     'palmpay' => $palmpay_enabled ? $user->palmpay : null,
 
                     'paystack_account' => $user->paystack_account,
@@ -582,7 +578,8 @@ class AuthController extends Controller
                     'apikey' => $user->apikey,
                     'default_account' => $active_default,
                     'account_name' => isset($user->account_name) ? $user->account_name : null,
-                    'is_bvn' => $user->bvn == null ? false : true
+                    'is_bvn' => $user->bvn == null ? false : true,
+                    'theme' => DB::table('user_settings')->where('user_id', $user->id)->value('theme') ?? 'light'
                 ];
                 if ($user->otp == $request->code) {
                     //if success
@@ -613,7 +610,8 @@ class AuthController extends Controller
                         'user' => $user_details,
                         'token' => $this->generatetoken($user->id)
                     ]);
-                } else {
+                }
+                else {
                     // Fix for Connection Error/Timeout Retry Issue
                     // If the previous request succeeded in DB but failed to return response (timeout),
                     // the user is already verified (status == 1) but OTP is null.
@@ -631,13 +629,15 @@ class AuthController extends Controller
                         'message' => 'Invalid OTP'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to verify user'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -664,7 +664,8 @@ class AuthController extends Controller
                     'status' => 403,
                     'message' => $validator->errors()->first()
                 ])->setStatusCode(403);
-            } else {
+            }
+            else {
                 $check_system = User::where('username', $request->username);
                 if ($check_system->count() == 1) {
                     $user = $check_system->get()[0];
@@ -684,7 +685,9 @@ class AuthController extends Controller
                         $xixapay_enabled = $settings->xixapay_enabled ?? true;
                         $palmpay_enabled = $settings->palmpay_enabled ?? true;
                         $default_virtual_account = $settings->default_virtual_account ?? 'palmpay';
-                    } catch (\Exception $e) {
+                        $default_virtual_account = ($default_virtual_account == 'palmpay') ? 'xixapay' : $default_virtual_account; // Migration for name change if needed
+                    }
+                    catch (\Exception $e) {
                         $monnify_enabled = true;
                         $wema_enabled = true;
                         $xixapay_enabled = true;
@@ -715,42 +718,41 @@ class AuthController extends Controller
                     }
 
                     // FIX: Smart Account Generation (Only if missing AND enabled)
-                    // This prevents timeouts by not calling external APIs if the user already has the account OR if the provider is disabled.
-                    // FIX: Smart Account Generation (Only if missing AND enabled)
-                    // PERFORMANCE: Check if column is NULL before calling the function to avoid overhead/timeouts.
-                    try {
-                        if ($wema_enabled && empty($user->wema))
-                            $this->monnify_account($user->username);
-                    } catch (\Exception $e) {
-                        \Log::error("Login Wema: " . $e->getMessage());
-                    }
+                    // DISABLED DURING LOGIN: This prevents 30s timeouts by not calling external APIs synchronously.
+                    // Accounts can be fetched/generated on the Wallet screen or via background jobs.
+                    /*
+                     try {
+                     if ($wema_enabled && empty($user->paystack_account))
+                     $this->monnify_account($user->username);
+                     }
+                     catch (\Exception $e) {
+                     \Log::error("Login Wema: " . $e->getMessage());
+                     }
+                     try {
+                     if ($monnify_enabled && DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->count() == 0)
+                     $this->monnify_account($user->username);
+                     }
+                     catch (\Exception $e) {
+                     \Log::error("Login Sterlen: " . $e->getMessage());
+                     }
+                     try {
+                     if ($xixapay_enabled && empty($user->palmpay))
+                     $this->xixapay_account($user->username);
+                     }
+                     catch (\Exception $e) {
+                     \Log::error("Login Xixapay: " . $e->getMessage());
+                     }
+                     try {
+                     if (empty($user->paystack_account))
+                     $this->paystack_account($user->username);
+                     }
+                     catch (\Exception $e) {
+                     \Log::error("Login Paystack: " . $e->getMessage());
+                     }
+                     */
 
-                    try {
-                        if ($monnify_enabled && empty($user->sterlen))
-                            $this->monnify_account($user->username);
-                    } catch (\Exception $e) {
-                        \Log::error("Login Sterlen: " . $e->getMessage());
-                    }
-
-                    // if ($palmpay_enabled && ($user->palmpay == null || $user->opay == null))
-                    //     $this->paymentpoint_account($user->username);
-                    try {
-                        if ($xixapay_enabled && empty($user->palmpay))
-                            $this->xixapay_account($user->username);
-                    } catch (\Exception $e) {
-                        \Log::error("Login Xixapay: " . $e->getMessage());
-                    }
-
-                    // Paystack check (Controller function checks too, but good to double check here)
-                    try {
-                        if (empty($user->paystack_account))
-                            $this->paystack_account($user->username);
-                    } catch (\Exception $e) {
-                        \Log::error("Login Paystack: " . $e->getMessage());
-                    }
-
-                    // $this->insert_stock($user->username); // Usually fast, can leave or check logic
                     $user = DB::table('user')->where(['id' => $user->id])->first();
+                    $moniepoint_acc = DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first()->account_number ?? null;
 
                     $user_details = [
                         'username' => $user->username,
@@ -765,32 +767,33 @@ class AuthController extends Controller
                         'profile_image' => $user->profile_image,
 
                         // Conditionals
-                        'sterlen' => $monnify_enabled ? $user->sterlen : null,
-                        'fed' => $monnify_enabled ? $user->fed : null,
-                        'wema' => $wema_enabled ? $user->wema : null,
+                        'sterlen' => $moniepoint_acc,
+                        'fed' => null,
+                        'wema' => $user->paystack_account,
                         'opay' => $xixapay_enabled ? $user->palmpay : null,
-                        'rolex' => null,
+                        'kolomoni_mfb' => $xixapay_enabled ? $user->kolomoni_mfb : null,
                         'palmpay' => null,
 
                         // Polyfill for Frontend 'Generating...' issue
                         // LOGIC: Prefer Moniepoint (sterlen) if available, otherwise follow default settings.
-                        'account_number' => ($monnify_enabled && !empty($user->sterlen)) ? $user->sterlen : (
-                            ($default_virtual_account == 'wema') ? ($wema_enabled ? $user->paystack_account : null) :
-                            (($default_virtual_account == 'monnify') ? ($monnify_enabled ? $user->sterlen : null) :
-                                (($default_virtual_account == 'xixapay') ? ($xixapay_enabled ? $user->palmpay : null) :
-                                    null))
-                        ),
+                        'account_number' => ($monnify_enabled && !empty($moniepoint_acc)) ? $moniepoint_acc : (
+                        ($active_default == 'wema') ? $user->paystack_account :
+                        (($active_default == 'monnify') ? $moniepoint_acc :
+                        (($active_default == 'xixapay') ? $user->palmpay :
+                        null))
+                    ),
 
                         // Keep Paystack independent or link to another setting if needed
-                        'bank_name' => ($monnify_enabled && !empty($user->sterlen)) ? 'Moniepoint' : (
-                            ($default_virtual_account == 'wema') ? 'Wema Bank' :
-                            (($default_virtual_account == 'monnify') ? 'Moniepoint' :
-                                (($default_virtual_account == 'xixapay') ? 'Palmpay' :
-                                    'Palmpay'))
-                        ),
+                        'bank_name' => ($monnify_enabled && !empty($moniepoint_acc)) ? 'Moniepoint' : (
+                        ($active_default == 'wema') ? 'Wema Bank' :
+                        (($active_default == 'monnify') ? 'Moniepoint' :
+                        (($active_default == 'xixapay') ? 'PalmPay' :
+                        'PalmPay'))
+                    ),
 
                         'paystack_account' => $user->paystack_account,
                         'paystack_bank' => $user->paystack_bank,
+                        'kolomoni' => $user->kolomoni_mfb, // Alias for frontend
                         'vdf' => $user->vdf,
                         'address' => $user->address,
                         'webhook' => $user->webhook,
@@ -798,14 +801,21 @@ class AuthController extends Controller
                         'apikey' => $user->apikey,
                         'default_account' => $active_default,
                         'account_name' => isset($user->account_name) ? $user->account_name : null,
-                        'is_bvn' => $user->bvn == null ? false : true
+                        'is_bvn' => $user->bvn == null ? false : true,
+                        'theme' => DB::table('user_settings')->where('user_id', $user->id)->value('theme') ?? 'light'
                     ];
                     $hash = substr(sha1(md5($request->password)), 3, 10);
                     $mdpass = md5($request->password);
-                    if ((password_verify($request->password, $user->password)) xor ($request->password == $user->password) xor ($hash == $user->password) xor ($mdpass == $user->password)) {
-                        //  if(Hash::check($request->password, $user->password)){
-                        // Debug Log
-                        \Log::info('Login Debug: User=' . $user->username . ', Type="' . $user->type . '", Status=' . $user->status . ', PlainMatch=' . ($request->password == $user->password ? 'YES' : 'NO') . ', HashMatch=' . (password_verify($request->password, $user->password) ? 'YES' : 'NO'));
+                    $is_bcrypt_match = password_verify($request->password, $user->password);
+                    $is_plain_match = ($request->password == $user->password);
+                    $is_legacy_hash_match = ($hash == $user->password);
+                    $is_md5_match = ($mdpass == $user->password);
+
+                    // Debug Log (Optimized: Uses cached values, prevents 2x Cost 16 calculation)
+                    \Log::info('Login Debug: User=' . $user->username . ', Type="' . $user->type . '", Status=' . $user->status . ', PlainMatch=' . ($is_plain_match ? 'YES' : 'NO') . ', HashMatch=' . ($is_bcrypt_match ? 'YES' : 'NO'));
+
+                    // FIX: Replaced XOR chain with simple OR. If ANY credential match is valid, let them in.
+                    if ($is_bcrypt_match || $is_plain_match || $is_legacy_hash_match || $is_md5_match) {
 
                         if ($user->status == 1 || trim(strtoupper($user->type)) == 'ADMIN' || strcasecmp($user->username, 'Habukhan') == 0) {
                             return response()->json([
@@ -814,17 +824,31 @@ class AuthController extends Controller
                                 'user' => $user_details,
                                 'token' => $this->generatetoken($user->id)
                             ]);
-                        } else if ($user->status == 2) {
+                        }
+                        else if ($user->status == 2) {
                             return response()->json([
                                 'status' => 403,
                                 'message' => $user->username . ' Your Account Has Been Banned'
                             ])->setStatusCode(403);
-                        } else if ($user->status == 3) {
+                        }
+                        else if ($user->status == 3) {
                             return response()->json([
                                 'status' => 403,
                                 'message' => $user->username . ' Your Account Has Been Deactivated'
                             ])->setStatusCode(403);
-                        } else if ($user->status == 0) {
+                        }
+                        else if ($user->status == 0) {
+                            $use_core = $this->core();
+                            if ($use_core && !$use_core->is_verify_email) {
+                                // Auto-verify and login
+                                DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
+                                return response()->json([
+                                    'status' => 'success',
+                                    'message' => 'Login successfully (Auto-Verified)',
+                                    'user' => $user_details,
+                                    'token' => $this->generatetoken($user->id)
+                                ]);
+                            }
                             if ($origin) {
                                 // Web login - auto-verify and login
                                 DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
@@ -852,7 +876,8 @@ class AuthController extends Controller
                             ];
                             try {
                                 MailController::send_mail($email_data, 'email.verify');
-                            } catch (\Throwable $e) {
+                            }
+                            catch (\Throwable $e) {
                                 \Log::error('OTP Mail Error (AuthController): ' . $e->getMessage());
                             }
 
@@ -862,7 +887,8 @@ class AuthController extends Controller
                                 'user' => $user_details,
                                 'token' => $this->generatetoken($user->id),
                             ]);
-                        } else {
+                        }
+                        else {
                             \Log::warning('Login Failed: Status logic mismatch for User=' . $user->username . ', Status=' . $user->status);
                             return response()->json([
                                 'status' => 403,
@@ -870,21 +896,24 @@ class AuthController extends Controller
 
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         \Log::warning('Login Failed: Password mismatch for User=' . $user->username);
                         return response()->json([
                             'status' => 403,
                             'message' => 'Invalid Password Note Password is Case Sensitive'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Invalid Username and Password. DEBUG: User=' . $request->username . ', Count=' . $check_system->count()
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -924,19 +953,22 @@ class AuthController extends Controller
                         'status' => 'status',
                         'message' => 'New OTP Resent to Your Email'
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unable to Detect User'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'An Error Occurred'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
         }
     }
@@ -986,5 +1018,393 @@ class AuthController extends Controller
             'status' => 403,
             'message' => 'Unauthorized or Session Expired'
         ])->setStatusCode(403);
+    }
+    /**
+     * Check if a system feature is locked (Admin/Internal use)
+     */
+    public function CheckSystemLock($feature)
+    {
+        // Special Handling for Airtime to Cash (Check network availability)
+        if ($feature === 'airtime_to_cash') {
+            $availableNetworks = DB::table('network')->where('cash', 1)->count();
+            return response()->json([
+                'status' => 'success',
+                'message' => 'A2C Lock status retrieved from network table',
+                'data' => ['is_locked' => ($availableNetworks === 0)]
+            ]);
+        }
+
+        $lock = DB::table('system_locks')->where('feature_key', $feature)->first();
+
+        if (!$lock) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Feature not found, assuming unlocked',
+                'data' => ['is_locked' => false]
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Lock status retrieved',
+            'data' => ['is_locked' => (bool)$lock->is_locked]
+        ]);
+    }
+
+    /**
+     * Phase 2: KYC Verification
+     */
+    public function verifyKyc(Request $request)
+    {
+        // 1. Validation
+        $validator = Validator::make($request->all(), [
+            'id_type' => 'required|in:bvn,nin',
+            'id_number' => 'required|string|min:10',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first()
+            ], 400);
+        }
+
+        $user = DB::table('user')->where('id', $request->user()->id ?? 0)->first();
+        if (!$user) {
+            // Fallback for tokenauth if $request->user() is null (depends on middleware)
+            // But auth middleware should handle it.
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 401);
+        }
+
+        // 2. Check for Duplicates in user_kyc
+        // We assume id_number is stored plain or consistent hash. 
+        // Logic: if someone else verified this ID, block.
+        $existing = DB::table('user_kyc')
+            ->where('id_type', $request->id_type)
+            ->where('id_number', $request->id_number) // In PROD, might want to hash this for privacy, but for now matching requirements
+            ->where('status', 'verified')
+            ->first();
+
+        if ($existing) {
+            // Allow re-verification if it's the SAME user (e.g. retry or lost status)
+            if ($existing->user_id == $user->id) {
+                // Already verified, just return success
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Identity already verified',
+                    'data' => json_decode($existing->full_response_json, true)
+                ]);
+            }
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This ID is already linked to another account.'
+            ], 409);
+        }
+
+        // 3. Call Provider
+        try {
+            $provider = new \App\Services\Banking\Providers\XixapayProvider();
+            $result = $provider->verifyIdentity($request->id_type, $request->id_number);
+
+            if ($result['status'] === 'success') {
+                // 4. Success - Save to DB
+                DB::table('user_kyc')->updateOrInsert(
+                [
+                    'user_id' => $user->id,
+                    'id_type' => $request->id_type
+                ],
+                [
+                    'id_number' => $request->id_number,
+                    'full_response_json' => json_encode($result['full_response']),
+                    'provider' => 'xixapay',
+                    'status' => 'verified',
+                    'verified_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]
+                );
+
+                // Update User Table
+                $updateData = ['kyc' => '1']; // Or 'verified'
+                if ($request->id_type === 'bvn') {
+                    $updateData['bvn'] = $request->id_number;
+                }
+                if ($request->id_type === 'nin') {
+                    $updateData['nin'] = $request->id_number;
+                }
+
+                DB::table('user')->where('id', $user->id)->update($updateData);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Identity Verification Successful',
+                    'data' => $result['data']
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => $result['message']
+            ], 400);
+
+        }
+        catch (\Exception $e) {
+            \Log::error("KYC Verification Error: " . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Verification Service Unavailable'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get KYC Details
+     */
+    public function getKycDetails(Request $request)
+    {
+        $user = DB::table('user')->where('id', $request->user()->id ?? 0)->first();
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 401);
+        }
+
+        $kyc = DB::table('user_kyc')->where('user_id', $user->id)->first();
+
+        if ($kyc) {
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'status' => $kyc->status,
+                    'id_type' => $kyc->id_type,
+                    'verified_at' => $kyc->verified_at,
+                    'details' => json_decode($kyc->full_response_json, true)
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'pending',
+            'message' => 'KYC not verified',
+            'data' => null
+        ]);
+    }
+    /**
+     * Phase 3: Create Customer
+     */
+    public function createCustomer(Request $request)
+    {
+        $user = DB::table('user')->where('id', $request->user()->id ?? 0)->first();
+        if (!$user)
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 401);
+
+        // 1. Check if already exists
+        if (!empty($user->customer_id)) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Customer already created',
+                'customer_id' => $user->customer_id
+            ]);
+        }
+
+        // 2. Check KYC
+        $kyc = DB::table('user_kyc')->where('user_id', $user->id)->where('status', 'verified')->first();
+        if (!$kyc) {
+            return response()->json(['status' => 'error', 'message' => 'Account Verification (KYC) Required'], 403);
+        }
+
+        // 3. Validation
+        $validator = Validator::make($request->all(), [
+            'address' => 'required|string',
+            'state' => 'required|string',
+            'city' => 'required|string',
+            'postal_code' => 'required|string',
+            'date_of_birth' => 'required|date_format:Y-m-d',
+            'id_card' => 'required|file|mimes:jpeg,png,pdf|max:5120', // Max 5MB
+            'utility_bill' => 'required|file|mimes:jpeg,png,pdf|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()->first()], 400);
+        }
+
+        // 4. Prepare Payload
+        $nameParts = explode(' ', $user->name, 2);
+        $first_name = $nameParts[0];
+        $last_name = $nameParts[1] ?? $first_name;
+
+        $payload = [
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'email' => $user->email,
+            'phone_number' => $user->phone,
+            'id_type' => $kyc->id_type,
+            'id_number' => $kyc->id_number,
+            // New Fields
+            'address' => $request->address,
+            'state' => $request->state,
+            'city' => $request->city,
+            'postal_code' => $request->postal_code,
+            'date_of_birth' => $request->date_of_birth,
+            // Files
+            'id_card' => $request->file('id_card'),
+            'utility_bill' => $request->file('utility_bill')
+        ];
+
+        // 5. API Call
+        try {
+            $provider = new \App\Services\Banking\Providers\XixapayProvider();
+            $result = $provider->createCustomer($payload);
+
+            if ($result['status'] === 'success') {
+                // 6. Save
+                DB::table('user')->where('id', $user->id)->update([
+                    'customer_id' => $result['customer_id'],
+                    'customer_data' => json_encode($result['full_response']),
+                    // store address in user table?
+                    'address' => $request->address . ', ' . $request->city . ', ' . $request->state
+                ]);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Customer Created Successfully',
+                    'customer_id' => $result['customer_id']
+                ]);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $result['message']], 400);
+
+        }
+        catch (\Exception $e) {
+            \Log::error("Customer Creation Error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Service Unavailable'], 500);
+        }
+    }
+
+    /**
+     * Update Customer Details (Phase 3 Extra)
+     */
+    public function updateCustomer(Request $request)
+    {
+        $user = DB::table('user')->where('id', $request->user()->id ?? 0)->first();
+        if (!$user)
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 401);
+
+        if (empty($user->customer_id)) {
+            return response()->json(['status' => 'error', 'message' => 'Customer not found. Create one first.'], 404);
+        }
+
+        // Validation - same as create
+        $validator = Validator::make($request->all(), [
+            'address' => 'required|string',
+            'state' => 'required|string',
+            'city' => 'required|string',
+            'postal_code' => 'required|string',
+            'date_of_birth' => 'required|date_format:Y-m-d',
+            'id_card' => 'nullable|file|mimes:jpeg,png,pdf|max:5120', // Optional on update
+            'utility_bill' => 'nullable|file|mimes:jpeg,png,pdf|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()->first()], 400);
+        }
+
+        // Get KYC Data for ID info
+        $kyc = DB::table('user_kyc')->where('user_id', $user->id)->where('status', 'verified')->first();
+        if (!$kyc) {
+            return response()->json(['status' => 'error', 'message' => 'Valid KYC needed'], 403);
+        }
+
+        $nameParts = explode(' ', $user->name, 2);
+        $first_name = $nameParts[0];
+        $last_name = $nameParts[1] ?? $first_name;
+
+        $payload = [
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'email' => $user->email,
+            'phone_number' => $user->phone,
+            'id_type' => $kyc->id_type,
+            'id_number' => $kyc->id_number,
+            'address' => $request->address,
+            'state' => $request->state,
+            'city' => $request->city,
+            'postal_code' => $request->postal_code,
+            'date_of_birth' => $request->date_of_birth,
+        ];
+
+        if ($request->hasFile('id_card')) {
+            $payload['id_card'] = $request->file('id_card');
+        }
+        if ($request->hasFile('utility_bill')) {
+            $payload['utility_bill'] = $request->file('utility_bill');
+        }
+
+        try {
+            $provider = new \App\Services\Banking\Providers\XixapayProvider();
+            $result = $provider->updateCustomer($payload);
+
+            if ($result['status'] === 'success') {
+                DB::table('user')->where('id', $user->id)->update([
+                    'customer_data' => json_encode($result['full_response']),
+                    'address' => $request->address . ', ' . $request->city . ', ' . $request->state
+                ]);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Customer Updated Successfully',
+                    'customer_id' => $result['customer_id']
+                ]);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $result['message']], 400);
+
+        }
+        catch (\Exception $e) {
+            \Log::error("Customer Update Error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Service Unavailable'], 500);
+        }
+    }
+
+
+
+    /**
+     * Update Virtual Account Status
+     * PATCH /api/user/virtual-account/status
+     */
+    public function updateVirtualAccountStatus(Request $request)
+    {
+        // 1. Validation
+        $validator = Validator::make($request->all(), [
+            'accountNumber' => 'required|string',
+            'status' => 'required|in:active,deactivated',
+            'reason' => 'nullable|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()->first()], 400);
+        }
+
+        // 2. Call Provider
+        try {
+            $provider = new \App\Services\Banking\Providers\XixapayProvider();
+            $result = $provider->updateVirtualAccountStatus(
+                $request->accountNumber,
+                $request->status,
+                $request->reason
+            );
+
+            if ($result['status'] === 'success') {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => $result['message']
+                ]);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $result['message']], 400);
+
+        }
+        catch (\Exception $e) {
+            \Log::error("Update VA Status Error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Service Unavailable'], 500);
+        }
     }
 }

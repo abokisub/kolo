@@ -19,7 +19,7 @@ class CreateRequestTable extends Migration
             $table->string('transid', 50)->unique();
             $table->text('message');
             $table->string('title', 100);
-            $table->boolean('status')->default('false');
+            $table->boolean('status')->default(false);
             $table->timestamp('date');
         });
     }

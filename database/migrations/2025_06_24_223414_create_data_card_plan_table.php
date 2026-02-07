@@ -21,7 +21,7 @@ class CreateData_card_planTable extends Migration
             $table->string('plan_size', 50);
             $table->integer('plan_day');
             $table->decimal('plan_price', 10, 2);
-            $table->boolean('plan_status')->default('true');
+            $table->boolean('plan_status')->default(true);
         });
     }
 

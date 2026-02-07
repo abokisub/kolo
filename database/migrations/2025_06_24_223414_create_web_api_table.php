@@ -18,7 +18,7 @@ class CreateWeb_apiTable extends Migration
             $table->string('api_url', 255);
             $table->string('api_key', 255);
             $table->string('api_secret', 255);
-            $table->boolean('status')->default('true');
+            $table->boolean('status')->default(true);
         });
     }
 

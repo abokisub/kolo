@@ -1,0 +1,433 @@
+Array
+(
+    [0] => stdClass Object
+        (
+            [Field] => id
+            [Type] => int(11)
+            [Null] => NO
+            [Key] => PRI
+            [Default] => 
+            [Extra] => auto_increment
+        )
+
+    [1] => stdClass Object
+        (
+            [Field] => name
+            [Type] => varchar(255)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [2] => stdClass Object
+        (
+            [Field] => username
+            [Type] => varchar(25)
+            [Null] => NO
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [3] => stdClass Object
+        (
+            [Field] => email
+            [Type] => varchar(255)
+            [Null] => NO
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [4] => stdClass Object
+        (
+            [Field] => phone
+            [Type] => varchar(25)
+            [Null] => NO
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [5] => stdClass Object
+        (
+            [Field] => ref
+            [Type] => varchar(25)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [6] => stdClass Object
+        (
+            [Field] => status
+            [Type] => int(8)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [7] => stdClass Object
+        (
+            [Field] => password
+            [Type] => varchar(255)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [8] => stdClass Object
+        (
+            [Field] => bal
+            [Type] => varchar(100)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [9] => stdClass Object
+        (
+            [Field] => refbal
+            [Type] => varchar(100)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [10] => stdClass Object
+        (
+            [Field] => kyc
+            [Type] => int(8)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [11] => stdClass Object
+        (
+            [Field] => customer_id
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [12] => stdClass Object
+        (
+            [Field] => customer_data
+            [Type] => longtext
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [13] => stdClass Object
+        (
+            [Field] => date
+            [Type] => varchar(255)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [14] => stdClass Object
+        (
+            [Field] => apikey
+            [Type] => varchar(255)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [15] => stdClass Object
+        (
+            [Field] => autofund
+            [Type] => varchar(25)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [16] => stdClass Object
+        (
+            [Field] => type
+            [Type] => varchar(25)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [17] => stdClass Object
+        (
+            [Field] => pin
+            [Type] => varchar(20)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [18] => stdClass Object
+        (
+            [Field] => profile_image
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [19] => stdClass Object
+        (
+            [Field] => sterlen
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [20] => stdClass Object
+        (
+            [Field] => fed
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [21] => stdClass Object
+        (
+            [Field] => wema
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [22] => stdClass Object
+        (
+            [Field] => rolex
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [23] => stdClass Object
+        (
+            [Field] => address
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [24] => stdClass Object
+        (
+            [Field] => about
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [25] => stdClass Object
+        (
+            [Field] => otp
+            [Type] => varchar(25)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [26] => stdClass Object
+        (
+            [Field] => reason
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [27] => stdClass Object
+        (
+            [Field] => webhook
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [28] => stdClass Object
+        (
+            [Field] => user_limit
+            [Type] => varchar(100)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [29] => stdClass Object
+        (
+            [Field] => habukhan_key
+            [Type] => varchar(100)
+            [Null] => YES
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [30] => stdClass Object
+        (
+            [Field] => app_key
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [31] => stdClass Object
+        (
+            [Field] => paystack_account
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [32] => stdClass Object
+        (
+            [Field] => paystack_bank
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [33] => stdClass Object
+        (
+            [Field] => app_token
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [34] => stdClass Object
+        (
+            [Field] => vdf
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [35] => stdClass Object
+        (
+            [Field] => is_bvn_fail
+            [Type] => int(11)
+            [Null] => YES
+            [Key] => 
+            [Default] => 1
+            [Extra] => 
+        )
+
+    [36] => stdClass Object
+        (
+            [Field] => bvn
+            [Type] => varchar(25)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [37] => stdClass Object
+        (
+            [Field] => monify_ref
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [38] => stdClass Object
+        (
+            [Field] => sb
+            [Type] => varchar(25)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [39] => stdClass Object
+        (
+            [Field] => safe
+            [Type] => varchar(25)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [40] => stdClass Object
+        (
+            [Field] => pro
+            [Type] => varchar(25)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [41] => stdClass Object
+        (
+            [Field] => palmpay
+            [Type] => varchar(22)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [42] => stdClass Object
+        (
+            [Field] => opay
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+)

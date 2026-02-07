@@ -17,7 +17,7 @@ class CreateBill_planTable extends Migration
             $table->bigIncrements('id');
             $table->string('plan_id', 50)->unique();
             $table->string('disco_name', 50);
-            $table->boolean('plan_status')->default('true');
+            $table->boolean('plan_status')->default(true);
         });
     }
 

@@ -1,0 +1,18 @@
+[
+    "id",
+    "mon_app_key",
+    "mon_sk_key",
+    "mon_con_num",
+    "mon_bvn",
+    "default_limit",
+    "min",
+    "max",
+    "psk",
+    "psk_bvn",
+    "plive",
+    "bank_name",
+    "account_number",
+    "account_name",
+    "billstack_key",
+    "autopilot_key"
+]

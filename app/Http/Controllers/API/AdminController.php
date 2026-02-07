@@ -33,10 +33,12 @@ class AdminController extends Controller
                                 $users = $select_user->first();
                                 if ($users->profile_image !== null) {
                                     $profile_image[] = ['username' => $habukhan->username, 'transid' => $habukhan->transid, 'title' => $habukhan->title, 'id' => $habukhan->id, 'message' => $habukhan->message, 'date' => $habukhan->date, 'profile_image' => $users->profile_image, 'status' => $habukhan->status];
-                                } else {
+                                }
+                                else {
                                     $profile_image[] = ['username' => $habukhan->username, 'transid' => $habukhan->transid, 'title' => $habukhan->title, 'id' => $habukhan->id, 'message' => $habukhan->message, 'date' => $habukhan->date, 'profile_image' => $users->username, 'status' => $habukhan->status];
                                 }
-                            } else {
+                            }
+                            else {
                                 $profile_image[] = ['username' => $habukhan->username, 'transid' => $habukhan->transid, 'title' => $habukhan->title, 'id' => $habukhan->id, 'message' => $habukhan->message, 'date' => $habukhan->date, 'profile_image' => $habukhan->username, 'status' => $habukhan->status];
                             }
                         }
@@ -45,19 +47,22 @@ class AdminController extends Controller
                             'notif' => $profile_image
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -80,20 +85,23 @@ class AdminController extends Controller
                         'status' => 'success',
                         'message' => 'Done'
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -140,21 +148,36 @@ class AdminController extends Controller
                         'mobile_sme_bal' => DB::table('wallet_funding')->sum('mobile_sme_bal'),
                         'total_process' => DB::table('message')->where(['plan_status' => 0])->count(),
                         'total_data_proccess' => DB::table('data')->where(['plan_status' => 0])->count(),
-                        // Dynamic Stats Calculation
+                        // Charity Stats
+                        'charity_escrow' => DB::table('charities')->sum('pending_balance'),
+                        'charity_available' => DB::table('charities')->sum('available_balance'),
+                        'total_donations' => DB::table('donations')->sum('amount'),
+                        'today_donations' => $today_donations = DB::table('donations')->whereDate('created_at', Carbon::today())->sum('amount'),
+                        'total_campaigns' => DB::table('campaigns')->count(),
+                        'total_organizations' => DB::table('charities')->count(),
+
                         'today_data_success' => $today_data = DB::table('data')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::today())->count(),
                         'today_airtime_success' => $today_airtime = DB::table('airtime')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::today())->count(),
-                        'today_sales' => $today_sales = DB::table('data')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::today())->sum('amount') + DB::table('airtime')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::today())->sum('discount'),
+                        'today_sales' => $today_sales = DB::table('data')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::today())->sum('amount') +
+                        DB::table('airtime')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::today())->sum('discount') +
+                        $today_donations,
 
-                        'yesterday_sales' => $yesterday_sales = DB::table('data')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::yesterday())->sum('amount') + DB::table('airtime')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::yesterday())->sum('discount'),
-                        'yesterday_trans' => $yesterday_trans = DB::table('data')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::yesterday())->count() + DB::table('airtime')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::yesterday())->count(),
+                        'yesterday_sales' => $yesterday_sales = DB::table('data')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::yesterday())->sum('amount') +
+                        DB::table('airtime')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::yesterday())->sum('discount') +
+                        DB::table('donations')->whereDate('created_at', Carbon::yesterday())->sum('amount'),
+
+                        'yesterday_trans' => $yesterday_trans = DB::table('data')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::yesterday())->count() +
+                        DB::table('airtime')->where(['plan_status' => 1])->whereDate('plan_date', Carbon::yesterday())->count() +
+                        DB::table('donations')->whereDate('created_at', Carbon::yesterday())->count(),
 
                         'sales_percent' => $yesterday_sales > 0 ? round((($today_sales - $yesterday_sales) / $yesterday_sales) * 100, 1) : ($today_sales > 0 ? 100 : 0),
-                        'trans_percent' => $yesterday_trans > 0 ? round(((($today_data + $today_airtime) - $yesterday_trans) / $yesterday_trans) * 100, 1) : (($today_data + $today_airtime) > 0 ? 100 : 0),
+                        'trans_percent' => $yesterday_trans > 0 ? round(((($today_data + $today_airtime + DB::table('donations')->whereDate('created_at', Carbon::today())->count()) - $yesterday_trans) / $yesterday_trans) * 100, 1) : (($today_data + $today_airtime + DB::table('donations')->whereDate('created_at', Carbon::today())->count()) > 0 ? 100 : 0),
 
                         'total_pending' => DB::table('data')->where('plan_status', 0)->count() +
-                            DB::table('airtime')->where('plan_status', 0)->count() +
-                            DB::table('cable')->where('plan_status', 0)->count() +
-                            DB::table('bill')->where('plan_status', 0)->count(),
+                        DB::table('airtime')->where('plan_status', 0)->count() +
+                        DB::table('cable')->where('plan_status', 0)->count() +
+                        DB::table('bill')->where('plan_status', 0)->count() +
+                        DB::table('campaigns')->where('payout_status', 'pending')->where('status', 'closed')->count(),
                     ];
 
                     return response()->json([
@@ -162,20 +185,23 @@ class AdminController extends Controller
                         'user' => $users_info,
                         'payment' => DB::table('habukhan_key')->first(),
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -199,32 +225,37 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'user' => $verify_user->first()
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'User ID Not Found'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'User ID Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -269,20 +300,25 @@ class AdminController extends Controller
                     //declaring user status
                     if ($request->status == 'Active' || $request->status == 1) {
                         $status = 1;
-                    } else if ($request->status == 'Deactivate' || $request->status == 3) {
+                    }
+                    else if ($request->status == 'Deactivate' || $request->status == 3) {
                         $status = 3;
-                    } else if ($request->status == 'Banned' || $request->status == 2) {
+                    }
+                    else if ($request->status == 'Banned' || $request->status == 2) {
                         $status = 2;
-                    } else if ($request->status == 'Unverified' || $request->status == 0) {
+                    }
+                    else if ($request->status == 'Unverified' || $request->status == 0) {
                         $status = 0;
-                    } else {
+                    }
+                    else {
                         $status = 0;
                     }
 
                     //system kyc
                     if ($request->kyc == 'true') {
                         $kyc = 1;
-                    } else {
+                    }
+                    else {
                         $kyc = 0;
                     }
                     //checking referral username
@@ -302,13 +338,15 @@ class AdminController extends Controller
                                 'message' => $validator->errors()->first(),
                                 'status' => 403
                             ])->setStatusCode(403);
-                        } else {
+                        }
+                        else {
                             $profile_image = $request->file('profile_image');
                             $profile_image_name = $request->username . '_' . $profile_image->getClientOriginalName();
                             $save_here = 'profile_image';
                             $path = $request->file('profile_image')->storeAs($save_here, $profile_image_name);
                         }
-                    } else {
+                    }
+                    else {
                         $path = null;
                     }
                     if ($main_validator->fails()) {
@@ -316,27 +354,32 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else if (substr($request->phone, 0, 1) != '0') {
+                    }
+                    else if (substr($request->phone, 0, 1) != '0') {
                         return response()->json([
                             'message' => 'Invalid Phone Number',
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else if ($request->ref != null && $check_ref == 0) {
+                    }
+                    else if ($request->ref != null && $check_ref == 0) {
                         return response()->json([
                             'message' => 'Invalid Referral Username You can Leave the referral Box Empty',
                             'status' => '403'
                         ])->setStatusCode(403);
-                    } elseif ($request->pin != null && !is_numeric($request->pin)) {
+                    }
+                    elseif ($request->pin != null && !is_numeric($request->pin)) {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Transaction Pin Must be Numeric'
                         ])->setStatusCode(403);
-                    } else if ($request->pin != null && strlen($request->pin) != 4) {
+                    }
+                    else if ($request->pin != null && strlen($request->pin) != 4) {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Transaction Pin Must be 4 Digit'
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         // checking
                         $user = new User();
                         $user->name = $request->name;
@@ -381,7 +424,8 @@ class AdminController extends Controller
                                     'otp' => $otp
                                 ];
                                 MailController::send_mail($email_data, 'email.verify');
-                            } else {
+                            }
+                            else {
                                 $email_data = [
                                     'name' => $user->name,
                                     'email' => $user->email,
@@ -397,27 +441,31 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'Account Created'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable to Register User'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -440,32 +488,37 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'ApiKey Upgraded'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'An Error Occured'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Invalid User ID'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -510,20 +563,25 @@ class AdminController extends Controller
                         //declaring user status
                         if ($request->status == 'Active' || $request->status == 1) {
                             $status = 1;
-                        } else if ($request->status == 'Deactivate' || $request->status == 3) {
+                        }
+                        else if ($request->status == 'Deactivate' || $request->status == 3) {
                             $status = 3;
-                        } else if ($request->status == 'Banned' || $request->status == 2) {
+                        }
+                        else if ($request->status == 'Banned' || $request->status == 2) {
                             $status = 2;
-                        } else if ($request->status == 'Unverified' || $request->status == 0) {
+                        }
+                        else if ($request->status == 'Unverified' || $request->status == 0) {
                             $status = 0;
-                        } else {
+                        }
+                        else {
                             $status = 0;
                         }
 
                         //system kyc
                         if ($request->kyc == 'true') {
                             $kyc = 1;
-                        } else {
+                        }
+                        else {
                             $kyc = 0;
                         }
                         //checking referral username
@@ -543,13 +601,15 @@ class AdminController extends Controller
                                     'message' => $validator->errors()->first(),
                                     'status' => 403
                                 ])->setStatusCode(403);
-                            } else {
+                            }
+                            else {
                                 $profile_image = $request->file('profile_image');
                                 $profile_image_name = $request->username . '_' . $profile_image->getClientOriginalName();
                                 $save_here = 'profile_image';
                                 $path = url('') . '/' . $request->file('profile_image')->storeAs($save_here, $profile_image_name);
                             }
-                        } else {
+                        }
+                        else {
                             $path = $request->profile_image;
                         }
                         if ($main_validator->fails()) {
@@ -557,27 +617,32 @@ class AdminController extends Controller
                                 'message' => $main_validator->errors()->first(),
                                 'status' => 403
                             ])->setStatusCode(403);
-                        } else if (substr($request->phone, 0, 1) != '0') {
+                        }
+                        else if (substr($request->phone, 0, 1) != '0') {
                             return response()->json([
                                 'message' => 'Invalid Phone Number',
                                 'status' => 403
                             ])->setStatusCode(403);
-                        } else if ($request->ref != null && $check_ref == 0) {
+                        }
+                        else if ($request->ref != null && $check_ref == 0) {
                             return response()->json([
                                 'message' => 'Invalid Referral Username You can Leave the referral Box Empty',
                                 'status' => '403'
                             ])->setStatusCode(403);
-                        } elseif ($request->pin != null && !is_numeric($request->pin)) {
+                        }
+                        elseif ($request->pin != null && !is_numeric($request->pin)) {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Transaction Pin Must be Numeric'
                             ])->setStatusCode(403);
-                        } else if ($request->pin != null && strlen($request->pin) != 4) {
+                        }
+                        else if ($request->pin != null && strlen($request->pin) != 4) {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Transaction Pin Must be 4 Digit'
                             ])->setStatusCode(403);
-                        } else {
+                        }
+                        else {
                             // updateing
                             $user = User::find($request->user_id);
                             $user->name = $request->name;
@@ -596,7 +661,7 @@ class AdminController extends Controller
                             $user->profile_image = $path;
                             $user->sterlen = $request->sterlen;
                             $user->wema = $request->wema;
-                            $user->rolex = $request->rolex;
+                            $user->kolomoni_mfb = $request->kolomoni_mfb;
                             $user->fed = $request->fed;
                             $user->otp = $request->otp;
                             $user->Update();
@@ -626,33 +691,38 @@ class AdminController extends Controller
                                     'status' => 'success',
                                     'message' => 'Updated Success'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Unable to Update User'
                                 ])->setStatusCode(403);
                             }
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'staus' => 403,
                             'message' => 'An Error Occured'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -676,20 +746,23 @@ class AdminController extends Controller
                         'status' => 'success',
                         'user' => $users
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -727,29 +800,41 @@ class AdminController extends Controller
                     // wallet statement
                     if ($request->wallet == 'wallet') {
                         $wallet = 'User Wallet';
-                    } else if ($request->wallet == 'mtn_cg_bal') {
+                    }
+                    else if ($request->wallet == 'mtn_cg_bal') {
                         $wallet = 'MTN CG WALLET';
-                    } else if ($request->wallet == 'mtn_g_bal') {
+                    }
+                    else if ($request->wallet == 'mtn_g_bal') {
                         $wallet = 'MTN GIFTING WALLET';
-                    } else if ($request->wallet == 'mtn_sme_bal') {
+                    }
+                    else if ($request->wallet == 'mtn_sme_bal') {
                         $wallet = 'MTN SME WALLET';
-                    } else if ($request->wallet == 'airtel_cg_bal') {
+                    }
+                    else if ($request->wallet == 'airtel_cg_bal') {
                         $wallet = 'AIRTEL CG WALLET';
-                    } else if ($request->wallet == 'airtel_g_bal') {
+                    }
+                    else if ($request->wallet == 'airtel_g_bal') {
                         $wallet = 'AIRTEL GIFTING WALLET';
-                    } else if ($request->wallet == 'airtel_sme_bal') {
+                    }
+                    else if ($request->wallet == 'airtel_sme_bal') {
                         $wallet = 'AIRTEL SME WALLET';
-                    } else if ($request->wallet == 'glo_cg_bal') {
+                    }
+                    else if ($request->wallet == 'glo_cg_bal') {
                         $wallet = 'GLO CG WALLET';
-                    } else if ($request->wallet == 'glo_g_bal') {
+                    }
+                    else if ($request->wallet == 'glo_g_bal') {
                         $wallet = 'GLO GIFTING WALLET';
-                    } else if ($request->wallet == 'glo_sme_bal') {
+                    }
+                    else if ($request->wallet == 'glo_sme_bal') {
                         $wallet = 'GLO SME WALLET';
-                    } else if ($request->wallet == 'mobile_cg_bal') {
+                    }
+                    else if ($request->wallet == 'mobile_cg_bal') {
                         $wallet = '9MOBILE CG WALLET';
-                    } else if ($request->wallet == 'mobile_g_bal') {
+                    }
+                    else if ($request->wallet == 'mobile_g_bal') {
                         $wallet = '9MOBILE GIFTING WALLET';
-                    } else if ($request->wallet == 'mobile_sme_bal') {
+                    }
+                    else if ($request->wallet == 'mobile_sme_bal') {
                         $wallet = '9MOBILE SME WALLET';
                     }
                     if ($validator->fails()) {
@@ -757,17 +842,20 @@ class AdminController extends Controller
                             'message' => $validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else if ($user->count() != 1) {
+                    }
+                    else if ($user->count() != 1) {
                         return response()->json([
                             'message' => 'Unable to Get the Correspond User Username',
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else if (empty($wallet)) {
+                    }
+                    else if (empty($wallet)) {
                         return response()->json([
                             'message' => 'Account Wallet Not Found',
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if ($request->credit == 'credit') {
                             $all_amount_credited = DB::table('deposit')->where(['credit_by' => $admin->username, 'status' => 1])->where('date', '>=', Carbon::now())->sum('amount');
                             if ($admin->type == 'CUSTOMER' && $request->amount > $this->core()->customer_amount) {
@@ -775,17 +863,20 @@ class AdminController extends Controller
                                     'status' => 403,
                                     'message' => 'Maximum Amount to Credit Users Daily is ₦' . number_format($this->core()->customer_amount, 2)
                                 ])->setStatusCode(403);
-                            } else if ($admin->type == 'CUSTOMER' && $all_amount_credited > $this->core()->customer_amount) {
+                            }
+                            else if ($admin->type == 'CUSTOMER' && $all_amount_credited > $this->core()->customer_amount) {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Credit User Daily Amount Exhausted'
                                 ])->setStatusCode(403);
-                            } else if ($admin->type == 'CUSTOMER' && $all_amount_credited + $request->amount > $this->core()->customer_amount) {
+                            }
+                            else if ($admin->type == 'CUSTOMER' && $all_amount_credited + $request->amount > $this->core()->customer_amount) {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Daliy Amount Remaining To Credit A User is ₦' . number_format($this->core()->customer_amount - $all_amount_credited, 2)
                                 ])->setStatusCode(403);
-                            } else {
+                            }
+                            else {
                                 $deposit_ref = $this->generate_ref('Credit');
                                 // crediting users here
                                 if ($request->wallet == 'wallet') {
@@ -809,13 +900,8 @@ class AdminController extends Controller
                                         ];
                                         $this->inserting_data('message', $message_data);
                                         // inserting notif
-                                        $notif_data = [
-                                            'username' => $user_details->username,
-                                            'message' => 'Your Account has been credited ₦' . $request->amount . ' by admin',
-                                            'date' => $this->system_date(),
-                                            'habukhan' => 0
-                                        ];
-                                        $this->inserting_data('notif', $notif_data);
+                                        // inserting notif
+                                        (new \App\Services\NotificationService())->sendWalletCreditNotification($user_details, $request->amount, 'Admin Funding', $deposit_ref);
                                         // inserting into deposit table
                                         $deposit_data = [
                                             'username' => $user_details->username,
@@ -896,13 +982,15 @@ class AdminController extends Controller
                                             'account_type' => $wallet,
                                             'message' => 'Account Credited SuccessFully'
                                         ]);
-                                    } else {
+                                    }
+                                    else {
                                         return response()->json([
                                             'message' => 'Unable to Credit User',
                                             'status' => 403
                                         ])->setStatusCode(403);
                                     }
-                                } else {
+                                }
+                                else {
                                     // funding the wallet funding (Stock Funding)
                                     $stock_user_wallet = DB::table('wallet_funding')->where('username', $request->user_username);
                                     if ($stock_user_wallet->count() == 1) {
@@ -926,13 +1014,8 @@ class AdminController extends Controller
                                             ];
                                             $this->inserting_data('message', $message_data);
                                             // inserting notif
-                                            $notif_data = [
-                                                'username' => $user_details->username,
-                                                'message' => 'Your Account has been credited ₦' . $request->amount . ' by admin',
-                                                'date' => $this->system_date(),
-                                                'habukhan' => 0
-                                            ];
-                                            $this->inserting_data('notif', $notif_data);
+                                            // inserting notif
+                                            (new \App\Services\NotificationService())->sendWalletCreditNotification($user_details, $request->amount, 'Admin Funding', $deposit_ref);
                                             // inserting into deposit table
                                             $deposit_data = [
                                                 'username' => $user_details->username,
@@ -989,13 +1072,15 @@ class AdminController extends Controller
                                                 'account_type' => $wallet,
                                                 'message' => 'Account Credited SuccessFully'
                                             ]);
-                                        } else {
+                                        }
+                                        else {
                                             return response()->json([
                                                 'status' => 403,
                                                 'message' => 'Unable to Fund User Stock Wallet'
                                             ])->setStatusCode(403);
                                         }
-                                    } else {
+                                    }
+                                    else {
                                         return response()->json([
                                             'status' => 403,
                                             'message' => strtoupper($user_details->username) . ' has not login and is wallet funnding account has not been created'
@@ -1003,7 +1088,8 @@ class AdminController extends Controller
                                     }
                                 }
                             }
-                        } else if ($request->credit == 'debit') {
+                        }
+                        else if ($request->credit == 'debit') {
                             $deposit_ref = $this->generate_ref('Debit');
                             // debiting user over here
                             if ($request->wallet == 'wallet') {
@@ -1026,13 +1112,8 @@ class AdminController extends Controller
                                     ];
                                     $this->inserting_data('message', $message_data);
                                     // inserting notif
-                                    $notif_data = [
-                                        'username' => $user_details->username,
-                                        'message' => 'Your Account has been debited ₦' . $request->amount . ' by admin',
-                                        'date' => $this->system_date(),
-                                        'habukhan' => 0
-                                    ];
-                                    $this->inserting_data('notif', $notif_data);
+                                    // inserting notif
+                                    (new \App\Services\NotificationService())->sendWalletDebitNotification($user_details, $request->amount, 'Admin Debit', $deposit_ref);
                                     if ($request->isnotif == true) {
                                         //sending mail over here
                                         $email_data = [
@@ -1074,13 +1155,15 @@ class AdminController extends Controller
                                         'account_type' => $wallet,
                                         'message' => 'Account Debited SuccessFully'
                                     ]);
-                                } else {
+                                }
+                                else {
                                     return response()->json([
                                         'message' => 'Unable to Debit User',
                                         'status' => 403
                                     ])->setStatusCode(403);
                                 }
-                            } else {
+                            }
+                            else {
                                 // debiting stock wallet
                                 $stock_user_wallet = DB::table('wallet_funding')->where('username', $request->user_username);
                                 if ($stock_user_wallet->count() == 1) {
@@ -1104,13 +1187,8 @@ class AdminController extends Controller
                                         ];
                                         $this->inserting_data('message', $message_data);
                                         // inserting notif
-                                        $notif_data = [
-                                            'username' => $user_details->username,
-                                            'message' => 'Your Account has been debited ₦' . $request->amount . ' by admin',
-                                            'date' => $this->system_date(),
-                                            'habukhan' => 0
-                                        ];
-                                        $this->inserting_data('notif', $notif_data);
+                                        // inserting notif
+                                        (new \App\Services\NotificationService())->sendWalletDebitNotification($user_details, $request->amount, 'Admin Debit', $deposit_ref);
                                         if ($request->isnotif == true) {
                                             //sending mail over here
                                             $email_data = [
@@ -1152,40 +1230,46 @@ class AdminController extends Controller
                                             'account_type' => $wallet,
                                             'message' => 'Account Debited SuccessFully'
                                         ]);
-                                    } else {
+                                    }
+                                    else {
                                         return response()->json([
                                             'status' => 403,
                                             'message' => 'Unable to Debit User Stock Wallet'
                                         ])->setStatusCode(403);
                                     }
-                                } else {
+                                }
+                                else {
                                     return response()->json([
                                         'status' => 403,
                                         'message' => strtoupper($user_details->username) . ' has not login and is wallet funnding account has not been created'
                                     ])->setStatusCode(403);
                                 }
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Account Debit/Credit Unknown'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1216,16 +1300,18 @@ class AdminController extends Controller
                             'message' => $validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else if ($user->count() != 1) {
+                    }
+                    else if ($user->count() != 1) {
                         return response()->json([
                             'message' => 'Unable to Get the Correspond User Username',
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if (
-                            $this->updateData([
-                                'type' => $request->role
-                            ], 'user', ['id' => $details->id])
+                        $this->updateData([
+                        'type' => $request->role
+                        ], 'user', ['id' => $details->id])
                         ) {
                             $dis = $this->generate_ref('Upgrade/Downgrade');
                             $message_data = [
@@ -1270,27 +1356,31 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'Acount Upgraded'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable to upgrade user'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1319,16 +1409,18 @@ class AdminController extends Controller
                             'message' => $validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else if ($user->count() != 1) {
+                    }
+                    else if ($user->count() != 1) {
                         return response()->json([
                             'message' => 'Unable to Get the Correspond User Username',
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         if (
-                            $this->updateData([
-                                'password' => password_hash($request->password, PASSWORD_DEFAULT, array('cost' => 16)),
-                            ], 'user', ['id' => $details->id])
+                        $this->updateData([
+                        'password' => password_hash($request->password, PASSWORD_DEFAULT, array('cost' => 16)),
+                        ], 'user', ['id' => $details->id])
                         ) {
                             if ($request->isnotif == true) {
                                 //sending mail over here
@@ -1347,27 +1439,31 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'Account Password Reseted'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable to Reset User Password'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1395,7 +1491,7 @@ class AdminController extends Controller
                                 $data = [
                                     'autofund' => null,
                                     'wema' => null,
-                                    'rolex' => null,
+                                    'kolomoni_mfb' => null,
                                     'sterlen' => null,
                                     'fed' => null
                                 ];
@@ -1410,32 +1506,37 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'Account Details Deleted Successfully'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable To delete Account or No Changes Made'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'User ID  Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1471,32 +1572,37 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'Account Details Deleted Successfully'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable To delete Account'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'User ID  Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1520,38 +1626,44 @@ class AdminController extends Controller
                                 return response()->json([
                                     'status' => 'success'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Unable to Add Block Number'
                                 ])->setStatusCode(403);
                             }
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Block Number Added Already'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Block Number Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1587,32 +1699,37 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'Blocked Number Deleted Successfully'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable To delete Account'
                             ])->setStatusCode(403);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'status' => 403,
                             'message' => 'Block Id Required'
                         ])->setStatusCode(403);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1639,15 +1756,17 @@ class AdminController extends Controller
                         if (!empty($search)) {
                             return response()->json([
                                 'all_stock' => DB::table('wallet_funding')->where(function ($query) use ($search) {
-                                    $query->orWhere('username', 'LIKE', "%$search%");
-                                })->orderBy('id', 'desc')->paginate($request->input('habukhan', 15))
+                                $query->orWhere('username', 'LIKE', "%$search%");
+                            })->orderBy('id', 'desc')->paginate($request->input('habukhan', 15))
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'all_stock' => DB::table('wallet_funding')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15))
                             ]);
                         }
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'airtime_discount' => DB::table('airtime_discount')->first(),
                             'cable_charges' => DB::table('cable_charge')->first(),
@@ -1661,29 +1780,33 @@ class AdminController extends Controller
                             'adex_api' => DB::table('adex_api')->first(),
                             'msorg_api' => DB::table('msorg_api')->first(),
                             'virus_api' => DB::table('virus_api')->first(),
-                            'other_api' => (object) array_merge((array) DB::table('other_api')->first(), ['autopilot_key' => DB::table('habukhan_key')->first()->autopilot_key ?? '']),
+                            'other_api' => (object)array_merge((array)DB::table('other_api')->first(), ['autopilot_key' => DB::table('habukhan_key')->first()->autopilot_key ?? '']),
                             'web_api' => DB::table('web_api')->first(),
                             'airtime_sel' => DB::table('airtime_sel')->first(),
                             'bill_sel' => DB::table('bill_sel')->first(),
                             'cable_sel' => DB::table('cable_sel')->first(),
                             'bulksms_sel' => DB::table('bulksms_sel')->first(),
                             'exam_sel' => DB::table('exam_sel')->first(),
+                            'card_settings' => DB::table('card_settings')->where('id', 1)->first(),
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1759,7 +1882,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'mtn_vtu_smart' => $request->mtn_vtu_smart,
                             'mtn_vtu_awuf' => $request->mtn_vtu_awuf,
@@ -1826,27 +1950,31 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'Updated Successfully'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable To Update Airtime Discount'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1875,7 +2003,8 @@ class AdminController extends Controller
                                 'message' => $main_validator->errors()->first(),
                                 'status' => 403
                             ])->setStatusCode(403);
-                        } else {
+                        }
+                        else {
                             $data = [
                                 'dstv' => $request->dstv,
                                 'gotv' => $request->gotv,
@@ -1889,14 +2018,16 @@ class AdminController extends Controller
                                     'status' => 'success',
                                     'message' => 'Updated Successfully'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Unable To Update Cable Charges'
                                 ])->setStatusCode(403);
                             }
                         }
-                    } else {
+                    }
+                    else {
                         $main_validator = validator::make($request->all(), [
                             'dstv' => 'required|numeric|between:0,100',
                             'gotv' => 'required|numeric|between:0,100',
@@ -1914,7 +2045,8 @@ class AdminController extends Controller
                                 'message' => $main_validator->errors()->first(),
                                 'status' => 403
                             ])->setStatusCode(403);
-                        } else {
+                        }
+                        else {
                             $data = [
                                 'dstv' => $request->dstv,
                                 'gotv' => $request->gotv,
@@ -1928,7 +2060,8 @@ class AdminController extends Controller
                                     'status' => 'success',
                                     'message' => 'Updated Successfully'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Unable To Update Cable Charges'
@@ -1936,20 +2069,23 @@ class AdminController extends Controller
                             }
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1977,7 +2113,8 @@ class AdminController extends Controller
                                 'message' => $main_validator->errors()->first(),
                                 'status' => 403
                             ])->setStatusCode(403);
-                        } else {
+                        }
+                        else {
                             $data = [
                                 'bill' => $request->bill,
                                 'bill_max' => $request->bill_max,
@@ -1990,14 +2127,16 @@ class AdminController extends Controller
                                     'status' => 'success',
                                     'message' => 'Updated Successfully'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Unable To Update Bill Charges'
                                 ])->setStatusCode(403);
                             }
                         }
-                    } else {
+                    }
+                    else {
                         $main_validator = validator::make($request->all(), [
                             'bill' => 'required|numeric|between:0,100',
                             'bill_max' => 'required|numeric|integer|not_in:0|gt:0',
@@ -2011,7 +2150,8 @@ class AdminController extends Controller
                                 'message' => $main_validator->errors()->first(),
                                 'status' => 403
                             ])->setStatusCode(403);
-                        } else {
+                        }
+                        else {
                             $data = [
                                 'bill' => $request->bill,
                                 'bill_max' => $request->bill_max,
@@ -2024,7 +2164,8 @@ class AdminController extends Controller
                                     'status' => 'success',
                                     'message' => 'Updated Successfully'
                                 ]);
-                            } else {
+                            }
+                            else {
                                 return response()->json([
                                     'status' => 403,
                                     'message' => 'Unable To Update Bill Charges'
@@ -2032,20 +2173,23 @@ class AdminController extends Controller
                             }
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2078,7 +2222,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'mtn' => $request->mtn,
                             'glo' => $request->glo,
@@ -2095,27 +2240,31 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'Updated Successfully'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable To Update '
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2143,7 +2292,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'waec' => $request->waec,
                             'neco' => $request->neco,
@@ -2155,27 +2305,31 @@ class AdminController extends Controller
                                 'status' => 'success',
                                 'message' => 'Updated Successfully'
                             ]);
-                        } else {
+                        }
+                        else {
                             return response()->json([
                                 'status' => 403,
                                 'message' => 'Unable To Update result Charges'
                             ])->setStatusCode(403);
                         }
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2205,13 +2359,23 @@ class AdminController extends Controller
                         'paymentpoint_charge' => 'required|numeric|min:0',
                         'earning_min' => 'required|numeric|integer|not_in:0|gt:0',
                         'customer_amount' => 'required|numeric|integer|not_in:0|gt:0',
+                        // Card Settings Validation
+                        'vcard_ngn_fee' => 'nullable|numeric',
+                        'vcard_usd_fee' => 'nullable|numeric',
+                        'vcard_usd_rate' => 'nullable|numeric',
+                        'vcard_fund_fee' => 'nullable|numeric',
+                        'vcard_usd_failed_fee' => 'nullable|numeric',
+                        'vcard_ngn_fund_fee' => 'nullable|numeric',
+                        'vcard_usd_fund_fee' => 'nullable|numeric',
+                        'vcard_ngn_failed_fee' => 'nullable|numeric',
                     ]);
                     if ($main_validator->fails()) {
                         return response()->json([
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'bulk_sms' => $request->bulk_sms,
                             'bulk_length' => $request->bulk_length,
@@ -2226,25 +2390,51 @@ class AdminController extends Controller
                             'customer_amount' => $request->customer_amount
                         ];
                         DB::table('settings')->update($data);
+
+                        // Update Card Settings
+                        $cardData = [];
+                        if ($request->has('vcard_ngn_fee'))
+                            $cardData['ngn_creation_fee'] = $request->vcard_ngn_fee;
+                        if ($request->has('vcard_usd_fee'))
+                            $cardData['usd_creation_fee'] = $request->vcard_usd_fee;
+                        if ($request->has('vcard_usd_rate'))
+                            $cardData['ngn_rate'] = $request->vcard_usd_rate;
+                        if ($request->has('vcard_fund_fee'))
+                            $cardData['funding_fee_percent'] = $request->vcard_fund_fee;
+                        if ($request->has('vcard_usd_failed_fee'))
+                            $cardData['usd_failed_tx_fee'] = $request->vcard_usd_failed_fee;
+                        if ($request->has('vcard_ngn_fund_fee'))
+                            $cardData['ngn_funding_fee_percent'] = $request->vcard_ngn_fund_fee;
+                        if ($request->has('vcard_usd_fund_fee'))
+                            $cardData['usd_funding_fee_percent'] = $request->vcard_usd_fund_fee;
+                        if ($request->has('vcard_ngn_failed_fee'))
+                            $cardData['ngn_failed_tx_fee'] = $request->vcard_ngn_failed_fee;
+
+                        if (!empty($cardData)) {
+                            DB::table('card_settings')->updateOrInsert(['id' => 1], $cardData);
+                        }
                         return response()->json([
                             'status' => 'success',
                             'message' => 'Updated Successfully'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2272,7 +2462,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'mtn' => $request->mtn,
                             'airtel' => $request->airtel,
@@ -2285,20 +2476,23 @@ class AdminController extends Controller
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2326,7 +2520,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'mtn' => $request->mtn,
                             'airtel' => $request->airtel,
@@ -2339,20 +2534,23 @@ class AdminController extends Controller
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2396,7 +2594,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'mtn_sme' => $request->mtn_sme,
                             'airtel_sme' => $request->airtel_sme,
@@ -2436,20 +2635,23 @@ class AdminController extends Controller
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2481,7 +2683,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'mtn_vtu' => $request->mtn_vtu,
                             'airtel_vtu' => $request->airtel_vtu,
@@ -2499,20 +2702,23 @@ class AdminController extends Controller
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2540,7 +2746,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'mtn' => $request->mtn,
                             'airtel' => $request->airtel,
@@ -2553,20 +2760,23 @@ class AdminController extends Controller
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2594,7 +2804,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'startime' => $request->startime,
                             'gotv' => $request->gotv,
@@ -2607,20 +2818,23 @@ class AdminController extends Controller
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2645,7 +2859,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'bill' => $request->bill,
                         ];
@@ -2655,20 +2870,23 @@ class AdminController extends Controller
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2693,7 +2911,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'bulksms' => $request->bulksms,
                         ];
@@ -2703,20 +2922,23 @@ class AdminController extends Controller
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2743,7 +2965,8 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'waec' => $request->waec,
                             'neco' => $request->neco,
@@ -2755,20 +2978,23 @@ class AdminController extends Controller
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2793,30 +3019,36 @@ class AdminController extends Controller
                             'message' => $main_validator->errors()->first(),
                             'status' => 403
                         ])->setStatusCode(403);
-                    } else {
+                    }
+                    else {
                         $data = [
                             'bank_transfer' => $request->bank_transfer,
                         ];
                         DB::table('bank_transfer_sel')->update($data);
                         DB::table('settings')->update(['primary_transfer_provider' => $request->bank_transfer]);
+                        // FIX: Auto-unlock the selected provider
+                        DB::table('transfer_providers')->where('slug', $request->bank_transfer)->update(['is_locked' => 0]);
                         return response()->json([
                             'status' => 'success',
                             'message' => 'Updated Success'
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
         }
     }
@@ -2834,61 +3066,72 @@ class AdminController extends Controller
                         return response()->json([
                             'all_users' => DB::table('user')->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
                         ]);
-                    } else if ($request->role != 'ALL' && $request->status == 'ALL' && empty($search)) {
+                    }
+                    else if ($request->role != 'ALL' && $request->status == 'ALL' && empty($search)) {
                         return response()->json([
                             'all_users' => DB::table('user')->where(['type' => $request->role])->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
                         ]);
-                    } else if ($request->role == 'ALL' && $request->status != 'ALL' && empty($search)) {
+                    }
+                    else if ($request->role == 'ALL' && $request->status != 'ALL' && empty($search)) {
                         return response()->json([
                             'all_users' => DB::table('user')->where(['status' => $request->status])->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
                         ]);
-                    } else if ($request->role != 'ALL' && $request->status != 'ALL' && empty($search)) {
+                    }
+                    else if ($request->role != 'ALL' && $request->status != 'ALL' && empty($search)) {
                         return response()->json([
                             'all_users' => DB::table('user')->where(['status' => $request->status, 'type' => $request->role])->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
                         ]);
-                    } else if ($request->role == 'ALL' && $request->status == 'ALL' && !empty($search)) {
+                    }
+                    else if ($request->role == 'ALL' && $request->status == 'ALL' && !empty($search)) {
                         return response()->json([
                             'all_users' => DB::table('user')->where(function ($query) use ($search) {
-                                $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
-                            })->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
+                            $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
+                        })->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
                         ]);
-                    } else if ($request->role != 'ALL' && $request->status == 'ALL' && !empty($search)) {
+                    }
+                    else if ($request->role != 'ALL' && $request->status == 'ALL' && !empty($search)) {
                         return response()->json([
                             'all_users' => DB::table('user')->where(['type' => $request->role])->where(function ($query) use ($search) {
-                                $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
-                            })->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
+                            $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
+                        })->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
                         ]);
-                    } else if ($request->role == 'ALL' && $request->status != 'ALL' && !empty($search)) {
+                    }
+                    else if ($request->role == 'ALL' && $request->status != 'ALL' && !empty($search)) {
                         return response()->json([
                             'all_users' => DB::table('user')->where(['status' => $request->status])->where(function ($query) use ($search) {
-                                $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
-                            })->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
+                            $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
+                        })->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
                         ]);
-                    } else if ($request->role != 'ALL' && $request->status != 'ALL' && !empty($search)) {
+                    }
+                    else if ($request->role != 'ALL' && $request->status != 'ALL' && !empty($search)) {
                         return response()->json([
                             'all_users' => DB::table('user')->where(['status' => $request->status, 'type' => $request->role])->where(function ($query) use ($search) {
-                                $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
-                            })->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
+                            $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
+                        })->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'all_users' => DB::table('user')->select('id', 'name', 'username', 'email', 'pin', 'phone', 'bal', 'refbal', 'kyc', 'status', 'type', 'profile_image', 'date')->orderBy('id', 'desc')->paginate($request->input('habukhan', 15)),
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2908,29 +3151,33 @@ class AdminController extends Controller
                     $search = strtolower($request->search);
                     if (!empty($search)) {
                         return response()->json([
-                            'autobank' => DB::table('user')->where('autofund', 'ACTIVE')->select('id', 'username', 'profile_image', 'wema', 'rolex', 'sterlen', 'fed', 'bal', 'refbal', 'status')->orderBy('id', 'desc')->where(function ($query) use ($search) {
-                                $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
-                            })->paginate($request->adex),
-                        ]);
-                    } else {
-                        return response()->json([
-                            'autobank' => DB::table('user')->where('autofund', 'ACTIVE')->select('id', 'username', 'profile_image', 'wema', 'rolex', 'sterlen', 'fed', 'bal', 'refbal', 'status')->orderBy('id', 'desc')->paginate($request->adex),
+                            'autobank' => DB::table('user')->where('autofund', 'ACTIVE')->select('id', 'username', 'profile_image', 'wema', 'kolomoni_mfb', 'sterlen', 'fed', 'bal', 'refbal', 'status')->orderBy('id', 'desc')->where(function ($query) use ($search) {
+                            $query->orWhere('username', 'LIKE', "%$search%")->orWhere('name', 'LIKE', "%$search%")->orWhere('email', 'LIKE', "%$search%")->orWhere('date', 'LIKE', "%$search%")->orWhere('phone', 'LIKE', "%$search%")->orWhere('pin', 'LIKE', "%$search%")->orWhere('type', 'LIKE', "%$search%");
+                        })->paginate($request->adex),
                         ]);
                     }
-                } else {
+                    else {
+                        return response()->json([
+                            'autobank' => DB::table('user')->where('autofund', 'ACTIVE')->select('id', 'username', 'profile_image', 'wema', 'kolomoni_mfb', 'sterlen', 'fed', 'bal', 'refbal', 'status')->orderBy('id', 'desc')->paginate($request->adex),
+                        ]);
+                    }
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2951,28 +3198,32 @@ class AdminController extends Controller
                     if (!empty($search)) {
                         return response()->json([
                             'userbank' => DB::table('user_bank')->where(function ($query) use ($search) {
-                                $query->orWhere('username', 'LIKE', "%$search%");
-                            })->orderBy('id', 'desc')->paginate($request->adex)
+                            $query->orWhere('username', 'LIKE', "%$search%");
+                        })->orderBy('id', 'desc')->paginate($request->adex)
                         ]);
-                    } else {
+                    }
+                    else {
                         return response()->json([
                             'userbank' => DB::table('user_bank')->orderBy('id', 'desc')->paginate($request->adex)
                         ]);
                     }
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -2991,23 +3242,26 @@ class AdminController extends Controller
                 if ($check_user->count() > 0) {
                     return response()->json([
                         'autobanned' => DB::table('block')->leftJoin("user", function ($join) {
-                            $join->on("user.username", "=", "block.added_by");
-                        })->orderBy('block.id', 'desc')->get(),
+                        $join->on("user.username", "=", "block.added_by");
+                    })->orderBy('block.id', 'desc')->get(),
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -3026,32 +3280,35 @@ class AdminController extends Controller
                 if ($check_user->count() > 0) {
                     return response()->json([
                         'data_plans' => DB::table('data_plan')->leftJoin("user", function ($join) {
-                            $join->on("user.username", "=", "data_plan.added_by");
-                        })->orderBy('data_plan.id', 'desc')->get(),
+                        $join->on("user.username", "=", "data_plan.added_by");
+                    })->orderBy('data_plan.id', 'desc')->get(),
                         'cable_plans' => DB::table('cable_plan')->leftJoin("user", function ($join) {
-                            $join->on("user.username", "=", "cable_plan.added_by");
-                        })->orderBy('cable_plan.id', 'desc')->get(),
+                        $join->on("user.username", "=", "cable_plan.added_by");
+                    })->orderBy('cable_plan.id', 'desc')->get(),
                         'bill_plans' => DB::table('bill_plan')->leftJoin("user", function ($join) {
-                            $join->on("user.username", "=", "bill_plan.added_by");
-                        })->orderBy('bill_plan.id', 'desc')->get(),
+                        $join->on("user.username", "=", "bill_plan.added_by");
+                    })->orderBy('bill_plan.id', 'desc')->get(),
                         'result_plans' => DB::table('stock_result_pin')->leftJoin("user", function ($join) {
-                            $join->on("user.username", "=", "stock_result_pin.added_by");
-                        })->orderBy('stock_result_pin.id', 'desc')->get(),
+                        $join->on("user.username", "=", "stock_result_pin.added_by");
+                    })->orderBy('stock_result_pin.id', 'desc')->get(),
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -3078,9 +3335,9 @@ class AdminController extends Controller
                     curl_setopt(
                         $ch,
                         CURLOPT_HTTPHEADER,
-                        [
-                            "Authorization: Basic " . base64_encode($habukhan_api->habukhan1_username . ":" . $habukhan_api->habukhan1_password),
-                        ]
+                    [
+                        "Authorization: Basic " . base64_encode($habukhan_api->habukhan1_username . ":" . $habukhan_api->habukhan1_password),
+                    ]
                     );
                     $json = curl_exec($ch);
                     curl_close($ch);
@@ -3089,13 +3346,16 @@ class AdminController extends Controller
                         if (isset($decode_habukhan['status'])) {
                             if ($decode_habukhan['status'] == 'success') {
                                 $admin_balance = '₦' . $decode_habukhan['balance'];
-                            } else {
+                            }
+                            else {
                                 $admin_balance = 'API NOT CONNECTED';
                             }
-                        } else {
+                        }
+                        else {
                             $admin_balance = 'API NOT CONNECTED';
                         }
-                    } else {
+                    }
+                    else {
                         $admin_balance = 'API NOT CONNECTED';
                     }
                     return response()->json([
@@ -3103,20 +3363,23 @@ class AdminController extends Controller
                         'admin_url' => $api_website->habukhan_website1,
                         'balance' => $admin_balance
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Not Authorised'
                     ])->setStatusCode(403);
                 }
-            } else {
+            }
+            else {
                 return redirect(config('app.error_500'));
                 return response()->json([
                     'status' => 403,
                     'message' => 'Unable to Authenticate System'
                 ])->setStatusCode(403);
             }
-        } else {
+        }
+        else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -3179,14 +3442,16 @@ class AdminController extends Controller
                         'status' => 'success',
                         'message' => ucfirst($provider) . ' has been ' . ($enabled ? 'enabled' : 'disabled')
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unauthorized'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -3235,14 +3500,16 @@ class AdminController extends Controller
                         'status' => 'success',
                         'message' => 'Default provider set to ' . ucfirst($provider)
                     ]);
-                } else {
+                }
+                else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'Unauthorized'
                     ])->setStatusCode(403);
                 }
             }
-        } else {
+        }
+        else {
             return response()->json([
                 'status' => 403,
                 'message' => 'Unable to Authenticate System'
@@ -3267,7 +3534,8 @@ class AdminController extends Controller
                     'providers' => $providers,
                     'settings' => $settings
                 ]);
-            } else {
+            }
+            else {
                 \Log::error('Check User Failed', ['id' => $token, 'verified' => $this->verifytoken($token)]);
                 return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
             }
@@ -3282,6 +3550,18 @@ class AdminController extends Controller
             $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(['type' => 'ADMIN']);
             if ($check_user->count() > 0) {
                 // $request->slug (e.g., 'paystack'), $request->action ('lock' or 'unlock')
+
+                // FIX: Prevent locking the primary provider
+                if ($request->action == 'lock') {
+                    $currentPrimary = DB::table('settings')->value('primary_transfer_provider');
+                    if ($currentPrimary === $request->slug) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Cannot lock the active Primary Provider (' . ucfirst($currentPrimary) . '). Please select a different primary provider first.'
+                        ]);
+                    }
+                }
+
                 $is_locked = ($request->action == 'lock') ? 1 : 0;
                 DB::table('transfer_providers')->where('slug', $request->slug)->update(['is_locked' => $is_locked]);
 
@@ -3336,6 +3616,492 @@ class AdminController extends Controller
                 $lock = ($request->action == 'lock') ? 1 : 0;
                 DB::table('settings')->update(['transfer_lock_all' => $lock]);
                 return response()->json(['status' => 'success', 'message' => 'Global Transfer Lock ' . ($lock ? 'Enabled' : 'Disabled')]);
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+    }
+    public function DeleteKyc(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) { // Admin ID
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN');
+                });
+                if ($check_user->count() > 0) {
+                    $target_user_id = $request->user_id;
+                    if (!$target_user_id) {
+                        return response()->json(['status' => 403, 'message' => 'Target User ID Required'])->setStatusCode(403);
+                    }
+
+                    DB::table('user_kyc')->where('user_id', $target_user_id)->delete();
+
+                    DB::table('user')->where('id', $target_user_id)->update([
+                        'kyc' => '0',
+                        'nin' => null,
+                        'bvn' => null,
+                        'dob' => null,
+                        'xixapay_kyc_data' => null,
+                    ]);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'User KYC Deleted Successfully'
+                    ]);
+                }
+                else {
+                    return response()->json(['status' => 403, 'message' => 'Not Authorised'])->setStatusCode(403);
+                }
+            }
+            else {
+                return response()->json(['status' => 403, 'message' => 'Unable to Authenticate System'])->setStatusCode(403);
+            }
+        }
+        else {
+            return response()->json(['status' => 403, 'message' => 'Unable to Authenticate System'])->setStatusCode(403);
+        }
+    }
+
+    public function UpdateDiscountOther(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN');
+                });
+                if ($check_user->count() > 0) {
+                    // Update Logic
+                    if ($request->has('card_ngn_creation_fee')) {
+                        DB::table('card_settings')->updateOrInsert(['id' => 1], ['ngn_creation_fee' => $request->card_ngn_creation_fee]);
+                    }
+                    if ($request->has('card_usd_creation_fee')) {
+                        DB::table('card_settings')->updateOrInsert(['id' => 1], ['usd_creation_fee' => $request->card_usd_creation_fee]);
+                    }
+                    if ($request->has('card_ngn_rate')) {
+                        DB::table('card_settings')->updateOrInsert(['id' => 1], ['ngn_rate' => $request->card_ngn_rate]); // For funding? Or generic
+                    }
+
+                    // Also handle existing 'discount' table updates if needed?
+                    // The requirement is "Set Fees/FX".
+                    // Since I cannot modify existing tables, I will use `card_settings` table.
+                    // I need to create this table via migration first!
+
+                    return response()->json(['status' => 'success', 'message' => 'Settings Updated']);
+                }
+                else {
+                    return response()->json(['status' => 403, 'message' => 'Not Authorised'])->setStatusCode(403);
+                }
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unable to Authenticate'])->setStatusCode(403);
+    }
+
+    public function getCardSettings(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN');
+                });
+                if ($check_user->count() > 0) {
+                    $settings = DB::table('card_settings')->where('id', 1)->first();
+                    return response()->json(['status' => 'success', 'data' => $settings]);
+                }
+                else {
+                    return response()->json(['status' => 403, 'message' => 'Not Authorised'])->setStatusCode(403);
+                }
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unable to Authenticate'])->setStatusCode(403);
+    }
+    public function AllUsersKyc(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN');
+                });
+                if ($check_user->count() > 0) {
+                    $search = strtolower($request->search);
+                    $status = $request->status ?? 'ALL';
+
+                    // 1. Get verified records from user_kyc
+                    $kycRecords = DB::table('user_kyc')
+                        ->join('user', 'user_kyc.user_id', '=', 'user.id')
+                        ->select(
+                        'user_kyc.id',
+                        'user_kyc.user_id',
+                        'user_kyc.id_type',
+                        'user_kyc.id_number',
+                        'user_kyc.status',
+                        'user_kyc.verified_at as submitted_at',
+                        'user_kyc.full_response_json',
+                        'user.username',
+                        'user.name',
+                        'user.email',
+                        'user.phone',
+                        'user.profile_image',
+                        'user.address',
+                        'user.id_card_path',
+                        'user.utility_bill_path',
+                        'user.type as user_type',
+                        DB::raw("'verified' as kyc_source"),
+                        DB::raw("CONCAT('@', user.username) as display_user")
+                    );
+
+                    // 2. Get pending/submitted records from user table (Smart KYC flow)
+                    $userSubmissions = DB::table('user')
+                        ->whereNotNull('kyc_submitted_at')
+                        ->select(
+                        'user.id as id',
+                        'user.id as user_id',
+                        DB::raw("'N/A' as id_type"),
+                        DB::raw("COALESCE(user.bvn, user.nin, 'N/A') as id_number"),
+                        'user.kyc_status as status',
+                        'user.kyc_submitted_at as submitted_at',
+                        'user.xixapay_kyc_data as full_response_json',
+                        'user.username',
+                        'user.name',
+                        'user.email',
+                        'user.phone',
+                        'user.profile_image',
+                        'user.address',
+                        'user.id_card_path',
+                        'user.utility_bill_path',
+                        'user.type as user_type',
+                        DB::raw("'user_table' as kyc_source"),
+                        DB::raw("CONCAT('@', user.username) as display_user")
+                    );
+
+                    // Combine and Filter
+                    $query = $kycRecords->union($userSubmissions);
+
+                    // Wrap in a subquery to allow filtering and sorting on the union
+                    $finalQuery = DB::table(DB::raw("({$query->toSql()}) as combined_kyc"))
+                        ->mergeBindings($query)
+                        ->orderBy('submitted_at', 'desc');
+
+                    if ($status != 'ALL') {
+                        $finalQuery->where('status', $status);
+                    }
+
+                    if (!empty($search)) {
+                        $finalQuery->where(function ($q) use ($search) {
+                            $q->orWhere('username', 'LIKE', "%$search%")
+                                ->orWhere('name', 'LIKE', "%$search%")
+                                ->orWhere('email', 'LIKE', "%$search%")
+                                ->orWhere('id_number', 'LIKE', "%$search%");
+                        });
+                    }
+
+                    return response()->json([
+                        'all_kyc' => $finalQuery->paginate($request->input('habukhan', 15)),
+                    ]);
+                }
+                else {
+                    return response()->json(['status' => 403, 'message' => 'Not Authorised'])->setStatusCode(403);
+                }
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+    }
+
+    public function ApproveUserKyc(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_admin = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where('type', 'ADMIN')->first();
+                if ($check_admin) {
+                    $userId = $request->user_id ?? $request->kyc_id; // Frontend might send either
+                    $source = $request->kyc_source ?? 'verified';
+
+                    if ($source === 'user_table' || (!$request->kyc_source && $userId)) {
+                        DB::table('user')->where('id', $userId)->update([
+                            'kyc_status' => 'approved',
+                            'kyc' => '1'
+                        ]);
+                        $targetUser = DB::table('user')->where('id', $userId)->first();
+                        (new \App\Services\NotificationService())->sendKycStatusNotification($targetUser, 'approved');
+                    }
+
+                    // Also check user_kyc table if kyc_id is explicitly provided or if it's the legacy flow
+                    if ($request->kyc_id) {
+                        $kyc = DB::table('user_kyc')->where('id', $request->kyc_id)->first();
+                        if ($kyc) {
+                            DB::table('user_kyc')->where('id', $request->kyc_id)->update(['status' => 'verified', 'verified_at' => now()]);
+                            DB::table('user')->where('id', $kyc->user_id)->update(['kyc' => '1', 'kyc_status' => 'approved']);
+                            $targetUser = DB::table('user')->where('id', $kyc->user_id)->first();
+                            (new \App\Services\NotificationService())->sendKycStatusNotification($targetUser, 'approved');
+                        }
+                        else if ($userId) {
+                            // Try treating kyc_id as user_id for user_kyc
+                            DB::table('user_kyc')->where('user_id', $userId)->update(['status' => 'verified', 'verified_at' => now()]);
+                        }
+                    }
+
+                    return response()->json(['status' => 'success', 'message' => 'KYC Approved Successfully']);
+                }
+            }
+        }
+        return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
+    }
+
+    public function RejectUserKyc(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_admin = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where('type', 'ADMIN')->first();
+                if ($check_admin) {
+                    $userId = $request->user_id ?? $request->kyc_id;
+                    $source = $request->kyc_source ?? 'verified';
+
+                    if ($source === 'user_table' || (!$request->kyc_source && $userId)) {
+                        DB::table('user')->where('id', $userId)->update([
+                            'kyc_status' => 'rejected',
+                            'kyc' => '0'
+                        ]);
+                        $targetUser = DB::table('user')->where('id', $userId)->first();
+                        (new \App\Services\NotificationService())->sendKycStatusNotification($targetUser, 'rejected', $request->reason ?? 'Documents invalid');
+                    }
+
+                    if ($request->kyc_id) {
+                        $kyc = DB::table('user_kyc')->where('id', $request->kyc_id)->first();
+                        if ($kyc) {
+                            DB::table('user_kyc')->where('id', $request->kyc_id)->update(['status' => 'rejected']);
+                            DB::table('user')->where('id', $kyc->user_id)->update(['kyc' => '0', 'kyc_status' => 'rejected']);
+                            $targetUser = DB::table('user')->where('id', $kyc->user_id)->first();
+                            (new \App\Services\NotificationService())->sendKycStatusNotification($targetUser, 'rejected', $request->reason ?? 'Documents invalid');
+                        }
+                        else if ($userId) {
+                            DB::table('user_kyc')->where('user_id', $userId)->update(['status' => 'rejected']);
+                        }
+                    }
+
+                    return response()->json(['status' => 'success', 'message' => 'KYC Rejected Successfully']);
+                }
+            }
+        }
+        return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
+    }
+
+    public function DeleteUserKyc(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where(function ($query) {
+                    $query->where('type', 'ADMIN');
+                });
+                if ($check_user->count() > 0) {
+                    $kyc_id = $request->kyc_id ?? $request->id_kyc ?? $request->target_id;
+
+                    // 1. Try deleting from user_kyc (Legacy)
+                    $kyc = DB::table('user_kyc')->where('id', $kyc_id)->first();
+                    if ($kyc) {
+                        $userId = $kyc->user_id;
+                        DB::table('user_kyc')->where('id', $kyc_id)->delete();
+                        DB::table('user')->where('id', $userId)->update([
+                            'kyc' => '0',
+                            'kyc_status' => 'pending',
+                            'kyc_submitted_at' => null,
+                            'nin' => null,
+                            'bvn' => null,
+                            'dob' => null,
+                            'id_card_path' => null,
+                            'utility_bill_path' => null,
+                            'xixapay_kyc_data' => null,
+                        ]);
+                        return response()->json(['status' => 'success', 'message' => 'KYC Deleted Successfully']);
+                    }
+
+                    // 2. Try resetting using id as user_id (Smart KYC Flow)
+                    $user = DB::table('user')->where('id', $kyc_id)->first();
+                    if ($user) {
+                        DB::table('user')->where('id', $kyc_id)->update([
+                            'kyc' => '0',
+                            'kyc_status' => 'pending',
+                            'kyc_submitted_at' => null,
+                            'nin' => null,
+                            'bvn' => null,
+                            'dob' => null,
+                            'id_card_path' => null,
+                            'utility_bill_path' => null,
+                            'xixapay_kyc_data' => null,
+                        ]);
+                        // Also cleanup user_kyc just in case
+                        DB::table('user_kyc')->where('user_id', $kyc_id)->delete();
+                        return response()->json(['status' => 'success', 'message' => 'User KYC Deleted Successfully']);
+                    }
+
+                    return response()->json(['status' => 'error', 'message' => 'KYC Record or User Not Found (ID: ' . $kyc_id . ')'], 404);
+                }
+            }
+        }
+    }
+
+    public function AllVirtualCards(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where('type', 'ADMIN');
+                if ($check_user->count() > 0) {
+                    $page = $request->query('page', 0);
+                    $rowsPerPage = $request->query('rowsPerPage', 10);
+                    $search = $request->query('search', '');
+
+                    $query = DB::table('virtual_cards')
+                        ->join('user', 'virtual_cards.user_id', '=', 'user.id')
+                        ->select('virtual_cards.*', 'user.username', 'user.email');
+
+                    if (!empty($search)) {
+                        $query->where(function ($q) use ($search) {
+                            $q->where('user.username', 'like', "%$search%")
+                                ->orWhere('virtual_cards.card_id', 'like', "%$search%")
+                                ->orWhere('virtual_cards.card_pan', 'like', "%$search%");
+                        });
+                    }
+
+                    $total = $query->count();
+                    $cards = $query->orderBy('virtual_cards.created_at', 'desc')
+                        ->offset($page * $rowsPerPage)
+                        ->limit($rowsPerPage)
+                        ->get();
+
+                    return response()->json([
+                        'status' => 'success',
+                        'data' => $cards,
+                        'total' => $total
+                    ]);
+                }
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+    }
+
+    public function AdminTerminateCard(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where('type', 'ADMIN');
+                if ($check_user->count() > 0) {
+                    $cardId = $request->card_id;
+                    $card = DB::table('virtual_cards')->where('card_id', $cardId)->first();
+                    if (!$card)
+                        return response()->json(['status' => 'error', 'message' => 'Card not found'], 404);
+
+                    $provider = new \App\Services\Banking\Providers\XixapayProvider();
+                    $result = $provider->changeCardStatus($cardId, 'blocked');
+
+                    if ($result['status'] === 'success') {
+                        DB::table('virtual_cards')->where('card_id', $cardId)->update([
+                            'status' => 'terminated',
+                            'updated_at' => now()
+                        ]);
+                        return response()->json(['status' => 'success', 'message' => 'Card Terminated Successfully']);
+                    }
+                    return response()->json(['status' => 'error', 'message' => $result['message']], 400);
+                }
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+    }
+
+    public function AdminDebitCard(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where('type', 'ADMIN');
+                if ($check_user->count() > 0) {
+                    $cardId = $request->card_id;
+                    $amount = $request->amount;
+
+                    if ($amount <= 0)
+                        return response()->json(['status' => 'error', 'message' => 'Invalid amount'], 400);
+
+                    $card = DB::table('virtual_cards')->where('card_id', $cardId)->first();
+                    if (!$card)
+                        return response()->json(['status' => 'error', 'message' => 'Card not found'], 404);
+
+                    $provider = new \App\Services\Banking\Providers\XixapayProvider();
+                    $result = $provider->withdrawVirtualCard($cardId, $amount);
+
+                    if ($result['status'] === 'success') {
+                        // Log Transaction
+                        DB::table('card_transactions')->insert([
+                            'card_id' => $cardId,
+                            'xixapay_transaction_id' => 'ADMIN_DEBIT_' . time(),
+                            'amount' => $amount,
+                            'currency' => $card->card_type,
+                            'status' => 'success',
+                            'merchant_name' => 'Admin Debit/Withdrawal',
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                        return response()->json(['status' => 'success', 'message' => 'Card Debited Successfully']);
+                    }
+                    return response()->json(['status' => 'error', 'message' => $result['message']], 400);
+                }
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+    }
+
+    public function AdminDeleteCard(Request $request)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where('type', 'ADMIN');
+                if ($check_user->count() > 0) {
+                    $cardId = $request->card_id;
+                    $card = DB::table('virtual_cards')->where('card_id', $cardId)->first();
+
+                    if (!$card)
+                        return response()->json(['status' => 'error', 'message' => 'Card not found'], 404);
+                    if ($card->status !== 'terminated')
+                        return response()->json(['status' => 'error', 'message' => 'Only terminated cards can be deleted'], 400);
+
+                    DB::table('virtual_cards')->where('card_id', $cardId)->delete();
+                    return response()->json(['status' => 'success', 'message' => 'Card Record Deleted Successfully']);
+                }
+            }
+        }
+        return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
+    }
+
+    public function AdminCardCustomerInfo(Request $request, $cardId)
+    {
+        $explode_url = explode(',', config('app.habukhan_app_key'));
+        if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
+            if (!empty($request->id)) {
+                $check_user = DB::table('user')->where(['status' => 1, 'id' => $this->verifytoken($request->id)])->where('type', 'ADMIN');
+                if ($check_user->count() > 0) {
+                    $card = DB::table('virtual_cards')->where('card_id', $cardId)->first();
+                    if (!$card)
+                        return response()->json(['status' => 'error', 'message' => 'Card not found'], 404);
+
+                    $user = DB::table('user')->where('id', $card->user_id)->first();
+                    // Fetch latest balance from provider
+                    $provider = new \App\Services\Banking\Providers\XixapayProvider();
+                    $details = $provider->getCardDetails($cardId);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'data' => [
+                            'user' => $user,
+                            'card' => $card,
+                            'provider_details' => $details['data'] ?? null
+                        ]
+                    ]);
+                }
             }
         }
         return response()->json(['status' => 403, 'message' => 'Unauthorized'])->setStatusCode(403);
