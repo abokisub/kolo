@@ -258,24 +258,13 @@ class PlanController extends Controller
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
             $exam_list = [];
             $exam_id = DB::table('exam_id')->get();
-            // The instruction implies an update/insert operation, but the context of ExamList is to retrieve prices.
-            // Assuming the user wants to ensure a default record exists or update it if it does.
-            // However, without a $data variable, this line as provided in the instruction is incomplete for an update.
-            // If the intent was to *get* the prices, the original line is correct.
-            // Given the instruction "Change DB::table('result_charge')->update() to updateOrInsert()",
-            // and the snippet showing `DB::table('result_charge')->updateOrInsert(['id' => 1], $data);`,
-            // but no `$data` is defined, and the original code was `DB::table('result_charge')->first();`
-            // which is for retrieval, I will keep the retrieval and add the case sensitivity fix.
-            // If the user intended to *set* prices here, more context for `$data` would be needed.
-            // For now, I will assume the `updateOrInsert` was a misunderstanding of the context or an incomplete instruction.
-            // I will focus on the case sensitivity fix as it directly applies to the existing logic.
             $exam_price = DB::table('result_charge')->first();
 
             foreach ($exam_id as $exam) {
-                // Safely handle missing exam_price record
                 $amount = '0.00';
                 if ($exam_price) {
                     $exam_key = strtolower($exam->exam_name);
+                    // Standardize mapping for mixed cases (WAEC -> waec, NECO -> neco)
                     if (isset($exam_price->$exam_key)) {
                         $amount = number_format($exam_price->$exam_key, 2);
                     }

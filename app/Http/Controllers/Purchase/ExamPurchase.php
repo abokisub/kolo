@@ -109,13 +109,28 @@ class ExamPurchase extends Controller
                     // check exam id
                     if (DB::table('exam_id')->where('plan_id', $request->exam)->count() == 1) {
                         $exam = DB::table('exam_id')->where('plan_id', $request->exam)->first();
-                        $exam_name = strtolower($exam->exam_name);
-                        // check if lock
                         $exam_lock = DB::table('cable_result_lock')->first();
-                        if ($exam_lock->$exam_name == 1) {
-                            $result_price = DB::table('result_charge')->first();
-                            $exam_price = $result_price->$exam_name * $request->quantity;
-                            if (DB::table('exam')->where('transid', $transid)->count() == 0 && DB::table('message')->where('transid', $transid)->count() == 0) {
+                        
+                        // Null Safety for System Configuration
+                        if (!$exam_lock || !isset($exam_lock->$exam_name) || $exam_lock->$exam_name != 1) {
+                            return response()->json([
+                                'status' => 'fail',
+                                'message' => strtoupper($exam_name) . ' Not Available Right Now'
+                            ])->setStatusCode(403);
+                        }
+
+                        $result_price = DB::table('result_charge')->first();
+                        
+                        if (!$result_price || !isset($result_price->$exam_name)) {
+                            return response()->json([
+                                'status' => 'fail',
+                                'message' => 'Price configuration missing for ' . strtoupper($exam_name)
+                            ])->setStatusCode(403);
+                        }
+
+                        $exam_price = $result_price->$exam_name * $request->quantity;
+                        
+                        if (DB::table('exam')->where('transid', $transid)->count() == 0 && DB::table('message')->where('transid', $transid)->count() == 0) {
                                 DB::beginTransaction();
                                 $user = DB::table('user')->where(['id' => $user->id])->lockForUpdate()->first();
                                 if ($user->bal > 0) {
@@ -308,4 +323,5 @@ class ExamPurchase extends Controller
             ])->setStatusCode(403);
         }
     }
+}   }
 }
