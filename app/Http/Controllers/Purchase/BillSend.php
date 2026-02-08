@@ -48,18 +48,23 @@ class BillSend extends Controller
                         DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -104,18 +109,23 @@ class BillSend extends Controller
                         DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -161,18 +171,23 @@ class BillSend extends Controller
                         DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -217,18 +232,23 @@ class BillSend extends Controller
                         DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -274,18 +294,23 @@ class BillSend extends Controller
                         DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $tokenToSave]);
                     }
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -304,18 +329,22 @@ class BillSend extends Controller
             if (!empty($response)) {
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] != 'fail') {
+                }
+                else if ($response['status'] != 'fail') {
                     $plan_status = 'fail';
-                } else {
+                }
+                else {
                     $plan_status = 'process';
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
 
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -336,7 +365,7 @@ class BillSend extends Controller
                 'amount' => $sendRequest->amount,
                 'request_id' => Carbon::now('Africa/Lagos')->format('YmdHi') . substr(md5($data['transid']), 0, 8)
             );
-            $endpoints = "https://sandbox.vtpass.com/api/pay";
+            $endpoints = "https://vtpass.com/api/pay";
             $headers = [
                 "Authorization: Basic " . base64_encode($other_api->vtpass_username . ":" . $other_api->vtpass_password),
                 'Content-Type: application/json'
@@ -350,20 +379,25 @@ class BillSend extends Controller
                             DB::table('bill')->where(['username' => $sendRequest->username, 'transid' => $sendRequest->transid])->update(['token' => $response['purchased_code']]);
                         }
                         $plan_status = 'success';
-                    } else if ($response['code'] == '099') {
+                    }
+                    else if ($response['code'] == '099') {
                         $plan_status = 'process';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'fail';
                     }
-                } else {
+                }
+                else {
                     $plan_status = 'fail';
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }

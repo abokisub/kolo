@@ -26,9 +26,9 @@ class AirtimeSend extends Controller
 
             $reference = (new Controller)->generateAutopilotReference();
             $payload = [
-                'networkId' => (string) $network->autopilot_id,
+                'networkId' => (string)$network->autopilot_id,
                 'airtimeType' => $type,
-                'amount' => (string) $sendRequest->amount,
+                'amount' => (string)$sendRequest->amount,
                 'phone' => $sendRequest->plan_phone,
                 'reference' => $reference
             ];
@@ -53,18 +53,22 @@ class AirtimeSend extends Controller
                 if ($status == true && $code == 200) {
                     \Log::info('Autopilot Airtime: Returning SUCCESS', ['transid' => $data['transid']]);
                     return 'success';
-                } else if ($status == false || $code == 424) {
+                }
+                else if ($status == false || $code == 424) {
                     \Log::info('Autopilot Airtime: Returning FAIL', ['transid' => $data['transid'], 'code' => $code, 'message' => $response['data']['message'] ?? 'No message']);
                     return 'fail';
-                } else {
+                }
+                else {
                     \Log::info('Autopilot Airtime: Returning PROCESS (code=' . $code . ')', ['transid' => $data['transid'], 'response' => $response]);
                     return 'process';
                 }
-            } else {
+            }
+            else {
                 \Log::info('Autopilot Airtime: Returning PROCESS (empty response)', ['transid' => $data['transid']]);
             }
             return 'process';
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -96,18 +100,23 @@ class AirtimeSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -138,18 +147,23 @@ class AirtimeSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -180,18 +194,23 @@ class AirtimeSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -222,18 +241,23 @@ class AirtimeSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -264,18 +288,23 @@ class AirtimeSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -303,20 +332,25 @@ class AirtimeSend extends Controller
                 if (isset($response['Status'])) {
                     if ($response['Status'] == 'successful' || $response['Status'] == 'processing') {
                         $plan_status = 'success';
-                    } else if ($response['Status'] == 'failed') {
-                        $plan_status = 'fail';
-                    } else {
+                    }
+                    else if ($response['Status'] == 'failed') {
                         $plan_status = 'fail';
                     }
-                } else {
+                    else {
+                        $plan_status = 'fail';
+                    }
+                }
+                else {
                     $plan_status = 'fail';
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -344,20 +378,25 @@ class AirtimeSend extends Controller
                 if (isset($response['Status'])) {
                     if ($response['Status'] == 'successful' || $response['Status'] == 'processing') {
                         $plan_status = 'success';
-                    } else if ($response['Status'] == 'failed') {
-                        $plan_status = 'fail';
-                    } else {
+                    }
+                    else if ($response['Status'] == 'failed') {
                         $plan_status = 'fail';
                     }
-                } else {
+                    else {
+                        $plan_status = 'fail';
+                    }
+                }
+                else {
                     $plan_status = 'fail';
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -385,20 +424,25 @@ class AirtimeSend extends Controller
                 if (isset($response['Status'])) {
                     if ($response['Status'] == 'successful' || $response['Status'] == 'processing') {
                         $plan_status = 'success';
-                    } else if ($response['Status'] == 'failed') {
-                        $plan_status = 'fail';
-                    } else {
+                    }
+                    else if ($response['Status'] == 'failed') {
                         $plan_status = 'fail';
                     }
-                } else {
+                    else {
+                        $plan_status = 'fail';
+                    }
+                }
+                else {
                     $plan_status = 'fail';
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -426,20 +470,25 @@ class AirtimeSend extends Controller
                 if (isset($response['Status'])) {
                     if ($response['Status'] == 'successful' || $response['Status'] == 'processing') {
                         $plan_status = 'success';
-                    } else if ($response['Status'] == 'failed') {
-                        $plan_status = 'fail';
-                    } else {
+                    }
+                    else if ($response['Status'] == 'failed') {
                         $plan_status = 'fail';
                     }
-                } else {
+                    else {
+                        $plan_status = 'fail';
+                    }
+                }
+                else {
                     $plan_status = 'fail';
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -467,20 +516,25 @@ class AirtimeSend extends Controller
                 if (isset($response['Status'])) {
                     if ($response['Status'] == 'successful' || $response['Status'] == 'processing') {
                         $plan_status = 'success';
-                    } else if ($response['Status'] == 'failed') {
-                        $plan_status = 'fail';
-                    } else {
+                    }
+                    else if ($response['Status'] == 'failed') {
                         $plan_status = 'fail';
                     }
-                } else {
+                    else {
+                        $plan_status = 'fail';
+                    }
+                }
+                else {
                     $plan_status = 'fail';
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -508,26 +562,33 @@ class AirtimeSend extends Controller
                 if (isset($response['status'])) {
                     if ($response['status'] == 'success') {
                         $plan_status = 'success';
-                    } else if ($response['status'] == 'fail') {
+                    }
+                    else if ($response['status'] == 'fail') {
                         $plan_status = 'fail';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else if (isset($response['code'])) {
+                }
+                else if (isset($response['code'])) {
                     if ($response['code'] == 'fail') {
                         $plan_status = "fail";
-                    } else {
+                    }
+                    else {
                         $plan_status = null;
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -555,26 +616,33 @@ class AirtimeSend extends Controller
                 if (isset($response['status'])) {
                     if ($response['status'] == 'success') {
                         $plan_status = 'success';
-                    } else if ($response['status'] == 'fail') {
+                    }
+                    else if ($response['status'] == 'fail') {
                         $plan_status = 'fail';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else if (isset($response['code'])) {
+                }
+                else if (isset($response['code'])) {
                     if ($response['code'] == 'fail') {
                         $plan_status = "fail";
-                    } else {
+                    }
+                    else {
                         $plan_status = null;
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -602,26 +670,33 @@ class AirtimeSend extends Controller
                 if (isset($response['status'])) {
                     if ($response['status'] == 'success') {
                         $plan_status = 'success';
-                    } else if ($response['status'] == 'fail') {
+                    }
+                    else if ($response['status'] == 'fail') {
                         $plan_status = 'fail';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else if (isset($response['code'])) {
+                }
+                else if (isset($response['code'])) {
                     if ($response['code'] == 'fail') {
                         $plan_status = "fail";
-                    } else {
+                    }
+                    else {
                         $plan_status = null;
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -649,26 +724,33 @@ class AirtimeSend extends Controller
                 if (isset($response['status'])) {
                     if ($response['status'] == 'success') {
                         $plan_status = 'success';
-                    } else if ($response['status'] == 'fail') {
+                    }
+                    else if ($response['status'] == 'fail') {
                         $plan_status = 'fail';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else if (isset($response['code'])) {
+                }
+                else if (isset($response['code'])) {
                     if ($response['code'] == 'fail') {
                         $plan_status = "fail";
-                    } else {
+                    }
+                    else {
                         $plan_status = null;
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -696,26 +778,33 @@ class AirtimeSend extends Controller
                 if (isset($response['status'])) {
                     if ($response['status'] == 'success') {
                         $plan_status = 'success';
-                    } else if ($response['status'] == 'fail') {
+                    }
+                    else if ($response['status'] == 'fail') {
                         $plan_status = 'fail';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else if (isset($response['code'])) {
+                }
+                else if (isset($response['code'])) {
                     if ($response['code'] == 'fail') {
                         $plan_status = "fail";
-                    } else {
+                    }
+                    else {
                         $plan_status = null;
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -728,11 +817,14 @@ class AirtimeSend extends Controller
 
             if ($network->network == 'MTN') {
                 $the_network = '1';
-            } else if ($network->network == 'AIRTEL') {
+            }
+            else if ($network->network == 'AIRTEL') {
                 $the_network = '2';
-            } else if ($network->network == 'GLO') {
+            }
+            else if ($network->network == 'GLO') {
                 $the_network = '4';
-            } else {
+            }
+            else {
                 $the_network = '3';
             }
 
@@ -753,20 +845,25 @@ class AirtimeSend extends Controller
                 if (isset($response['status'])) {
                     if ($response['status'] == true) {
                         $plan_status = 'success';
-                    } else if ($response['status'] == false) {
+                    }
+                    else if ($response['status'] == false) {
                         $plan_status = 'fail';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -796,20 +893,25 @@ class AirtimeSend extends Controller
                 if (isset($response['status'])) {
                     if ($response['status'] == 'success') {
                         $plan_status = 'success';
-                    } else if ($response['status'] == 'fail') {
+                    }
+                    else if ($response['status'] == 'fail') {
                         $plan_status = 'fail';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -822,11 +924,14 @@ class AirtimeSend extends Controller
 
             if ($network->network == 'MTN') {
                 $the_network = '1';
-            } else if ($network->network == 'AIRTEL') {
+            }
+            else if ($network->network == 'AIRTEL') {
                 $the_network = '2';
-            } else if ($network->network == 'GLO') {
+            }
+            else if ($network->network == 'GLO') {
                 $the_network = '3';
-            } else {
+            }
+            else {
                 $the_network = '4';
             }
 
@@ -848,20 +953,25 @@ class AirtimeSend extends Controller
                 if (isset($response['status'])) {
                     if ($response['status'] == true) {
                         $plan_status = 'success';
-                    } else if ($response['status'] == false) {
+                    }
+                    else if ($response['status'] == false) {
                         $plan_status = 'fail';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -882,7 +992,7 @@ class AirtimeSend extends Controller
                 'amount' => $sendRequest->amount,
                 'request_id' => Carbon::now('Africa/Lagos')->format('YmdHi') . substr(md5($data['transid']), 0, 8)
             );
-            $endpoints = "https://sandbox.vtpass.com/api/pay";
+            $endpoints = "https://vtpass.com/api/pay";
             $headers = [
                 "Authorization: Basic " . base64_encode($other_api->vtpass_username . ":" . $other_api->vtpass_password),
                 'Content-Type: application/json'
@@ -899,16 +1009,20 @@ class AirtimeSend extends Controller
                 // Handle various VTPASS success indicators (loose comparison like BillSend)
                 if ($code == '000' || $code == 'success') {
                     $plan_status = 'success';
-                } else if ($code == '099') {
+                }
+                else if ($code == '099') {
                     $plan_status = 'process';
-                } else {
+                }
+                else {
                     $plan_status = 'fail';
                 }
-            } else {
+            }
+            else {
                 $plan_status = 'fail';
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -927,17 +1041,21 @@ class AirtimeSend extends Controller
             if (!empty($response)) {
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] != 'fail') {
+                }
+                else if ($response['status'] != 'fail') {
                     $plan_status = 'fail';
-                } else {
+                }
+                else {
                     $plan_status = 'process';
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -990,21 +1108,24 @@ class AirtimeSend extends Controller
                 ]);
 
                 if (
-                    $statusLower == 'successful' ||
-                    $statusLower == 'success' ||
-                    $statusLower == 'completed' ||
-                    $messageLower == 'successful' ||
-                    $messageLower == 'success' ||
-                    (isset($response['response']['code']) && $response['response']['code'] == 200)
+                $statusLower == 'successful' ||
+                $statusLower == 'success' ||
+                $statusLower == 'completed' ||
+                $messageLower == 'successful' ||
+                $messageLower == 'success' ||
+                (isset($response['response']['code']) && $response['response']['code'] == 200)
                 ) {
                     return 'success';
-                } else {
+                }
+                else {
                     return 'fail';
                 }
-            } else {
+            }
+            else {
                 return 'fail';
             }
-        } else {
+        }
+        else {
             return 'fail';
         }
     }

@@ -34,17 +34,20 @@ class CableSend extends Controller
                         DB::table('cable')->where(['username' => $data['username'], 'transid' => $data['transid']])->update(['api_response' => $response['data']['message']]);
                     }
                     return 'success';
-                } else if (isset($response['status']) && $response['status'] == false) {
+                }
+                else if (isset($response['status']) && $response['status'] == false) {
                     if (isset($response['data']['message'])) {
                         DB::table('cable')->where(['username' => $data['username'], 'transid' => $data['transid']])->update(['api_response' => $response['data']['message']]);
                     }
                     return 'fail';
-                } else {
+                }
+                else {
                     return 'process';
                 }
             }
             return 'process';
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -76,18 +79,23 @@ class CableSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -119,18 +127,23 @@ class CableSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -161,18 +174,23 @@ class CableSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -204,18 +222,23 @@ class CableSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -247,18 +270,23 @@ class CableSend extends Controller
 
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] == 'fail') {
+                }
+                else if ($response['status'] == 'fail') {
                     $plan_status = 'fail';
-                } else if ($response['status'] == 'process') {
-                    $plan_status = 'process';
-                } else {
+                }
+                else if ($response['status'] == 'process') {
                     $plan_status = 'process';
                 }
-            } else {
+                else {
+                    $plan_status = 'process';
+                }
+            }
+            else {
                 $plan_status = null;
             }
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -272,7 +300,8 @@ class CableSend extends Controller
             $system = DB::table('general')->first();
             if ($sendRequest->cable_name == 'STARTIME') {
                 $cable_name = 'startimes';
-            } else {
+            }
+            else {
                 $cable_name = strtolower($sendRequest->cable_name);
             }
             $paypload = array(
@@ -282,7 +311,7 @@ class CableSend extends Controller
                 'phone' => $system->app_phone,
                 'request_id' => Carbon::now('Africa/Lagos')->format('YmdHi') . substr(md5($data['transid']), 0, 8)
             );
-            $endpoints = "https://sandbox.vtpass.com/api/pay";
+            $endpoints = "https://vtpass.com/api/pay";
             $headers = [
                 "Authorization: Basic " . base64_encode($other_api->vtpass_username . ":" . $other_api->vtpass_password),
                 'Content-Type: application/json'
@@ -293,20 +322,25 @@ class CableSend extends Controller
                 if (isset($response['code'])) {
                     if ($response['code'] == 000) {
                         $plan_status = 'success';
-                    } else if ($response['response_description'] == 'TRANSACTION SUCCESSFUL') {
+                    }
+                    else if ($response['response_description'] == 'TRANSACTION SUCCESSFUL') {
                         $plan_status = 'success';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -326,7 +360,7 @@ class CableSend extends Controller
                 'phone' => $system->app_phone,
                 'request_id' => Carbon::parse($this->system_date())->formatLocalized("%Y%m%d%H%M%S") . '_' . $data['transid']
             );
-            $endpoints = "https://sandbox.vtpass.com/api/pay";
+            $endpoints = "https://vtpass.com/api/pay";
             $headers = [
                 "Authorization: Basic " . base64_encode($other_api->vtpass_username . ":" . $other_api->vtpass_password),
                 'Content-Type: application/json'
@@ -337,20 +371,25 @@ class CableSend extends Controller
                 if (isset($response['code'])) {
                     if ($response['code'] == 000) {
                         $plan_status = 'success';
-                    } else if ($response['response_description'] == 'TRANSACTION SUCCESSFUL') {
+                    }
+                    else if ($response['response_description'] == 'TRANSACTION SUCCESSFUL') {
                         $plan_status = 'success';
-                    } else {
+                    }
+                    else {
                         $plan_status = 'process';
                     }
-                } else {
+                }
+                else {
                     $plan_status = null;
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
@@ -369,18 +408,22 @@ class CableSend extends Controller
             if (!empty($response)) {
                 if ($response['status'] == 'success') {
                     $plan_status = 'success';
-                } else if ($response['status'] != 'fail') {
+                }
+                else if ($response['status'] != 'fail') {
                     $plan_status = 'fail';
-                } else {
+                }
+                else {
                     $plan_status = 'process';
                 }
-            } else {
+            }
+            else {
                 $plan_status = null;
             }
 
             return $plan_status;
 
-        } else {
+        }
+        else {
             return 'fail';
         }
     }
