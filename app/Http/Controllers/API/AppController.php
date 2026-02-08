@@ -24,8 +24,8 @@ class AppController extends Controller
                 'support' => [
                     'support_ai_name' => 'Aboki',
                     'support_call_name' => 'Aminiya',
-                    'support_phone' => $this->general()->app_phone ?? '+2348139123922',
-                    'support_whatsapp' => $this->general()->app_phone ?? '+2348139123922'
+                    'support_phone' => optional($this->general())->app_phone ?? '+2348139123922',
+                    'support_whatsapp' => optional($this->general())->app_phone ?? '+2348139123922'
                 ]
             ]);
         }
