@@ -3440,7 +3440,7 @@ class SecureController extends Controller
             $user_d = DB::table('user')->where(['status' => 1, 'email' => $request->email]);
             if ($user_d->count() == 1) {
                 $user = $user_d->first();
-                $otp = mt_rand(1000000, 9999999) . mt_rand(1000000, 9999999);
+                $otp = mt_rand(100000, 999999);
                 DB::table('user')->where(['username' => $user->username, 'id' => $user->id])->update(['otp' => $otp]);
                 $email_data = [
                     'name' => $user->name,
@@ -3451,6 +3451,7 @@ class SecureController extends Controller
                     'user_email' => $user->email,
                     'app_name' => $this->general()->app_name,
                     'date' => $this->system_date(),
+                    'otp' => $otp,
                     'reset_url' => config('app.app_url') . "/resetpassword/verify/adex/$otp/reset",
                     'app_phone' => $this->general()->app_phone
                 ];
@@ -3479,7 +3480,8 @@ class SecureController extends Controller
     {
         $explode_url = explode(',', config('app.habukhan_app_key'));
         if (!$request->headers->get('origin') || in_array($request->headers->get('origin'), $explode_url)) {
-            $user_d = DB::table('user')->where(['status' => 1, 'otp' => $request->id]);
+            $otp_to_check = $request->otp ?? $request->id;
+            $user_d = DB::table('user')->where(['status' => 1, 'otp' => $otp_to_check]);
             if ($user_d->count() == 1) {
                 $user = $user_d->first();
                 $main_validator = validator::make($request->all(), [
