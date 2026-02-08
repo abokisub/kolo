@@ -2143,7 +2143,7 @@ class AdminController extends Controller
                             'neco' => $request->neco,
                             'nabteb' => $request->nabteb,
                         ];
-                        $updated = DB::table('result_charge')->update($data);
+                        $updated = DB::table('result_charge')->updateOrInsert(['id' => 1], $data);
                         if ($updated || $updated === 0) {
                             return response()->json([
                                 'status' => 'success',

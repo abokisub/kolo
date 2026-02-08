@@ -1,4 +1,13 @@
 <IfModule mod_rewrite.c>
+    # 0. Cache-Busting: Prevent index.html from being cached
+    <FilesMatch "index\.html">
+        <IfModule mod_headers.c>
+            Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+            Header set Pragma "no-cache"
+            Header set Expires "0"
+        </IfModule>
+    </FilesMatch>
+
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
@@ -6,47 +15,18 @@
     RewriteEngine On
     RewriteBase /
 
-    # --- 1. FORCE NO-CACHE FOR REACT UPDATES ---
-    # This prevents the "Old Design" from sticking and fixes "Blank Screen" issues
-    <FilesMatch "\.(html|htm|js|json)$">
-        FileETag None
-        <IfModule mod_headers.c>
-            Header unset ETag
-            Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
-            Header set Pragma "no-cache"
-            Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
-        </IfModule>
-    </FilesMatch>
+    # 1. API & Webhooks -> Send to Laravel (index.php)
+    RewriteCond %{REQUEST_URI} ^/api [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/vdf_auto_fund_habukhan [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/cache [NC]
+    RewriteRule ^ index.php [L]
 
-    # --- 2. CORS HEADERS (Required for API) ---
-    <IfModule mod_headers.c>
-        Header always set Access-Control-Allow-Origin "*"
-        Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
-        Header always set Access-Control-Max-Age "1000"
-        Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token"
-    </IfModule>
-
-    # --- 3. CORE ROUTING ---
-
-    # Handle Authorization Header
-    RewriteCond %{HTTP:Authorization} .
-    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-
-    # Handle OPTIONS requests
-    RewriteCond %{REQUEST_METHOD} OPTIONS
-    RewriteRule ^(.*)$ $1 [R=200,L]
-
-    # Don't touch real files or directories
+    # 2. Existing Files/Dirs (Backend Assets) -> Serve Directly
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # IF REQUEST IS FOR API -> SEND TO LARAVEL (index.php)
-    RewriteCond %{REQUEST_URI} ^/api [NC]
-    RewriteRule ^ index.php [L]
-
-    # IF REQUEST IS ANYTHING ELSE -> SEND TO REACT (index.html)
-    # This fixes the "Refresh = 404/Blank checkout" errors
+    # 3. Everything Else -> Send to React (index.html)
     RewriteRule ^ index.html [L]
 </IfModule>
