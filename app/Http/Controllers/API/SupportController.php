@@ -414,7 +414,6 @@ class SupportController extends Controller
             'status' => 'success',
             'messages' => $messages,
             'ticket_status' => $ticket->status ?? 'unknown',
-            'ticket_status' => $ticket->status ?? 'unknown',
             'current_handler' => $ticket->current_handler ?? 'ai',
             'typing_status' => $ticket->typing_status,
             'typing_agent_name' => $ticket->typing_agent_name,

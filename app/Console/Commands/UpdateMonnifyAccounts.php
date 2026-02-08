@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
+
 
 class UpdateMonnifyAccounts extends Command
 {
@@ -94,17 +96,20 @@ class UpdateMonnifyAccounts extends Command
                                     'date' => Carbon::now("Africa/Lagos")->toDateTimeString()
                                 ]);
                                 $this->info("Assigned Moniepoint account {$accountNumber} to user {$user->username}");
-                            } elseif (strpos($bankName, 'WEMA') !== false && !$has_wema) {
+                            }
+                            elseif (strpos($bankName, 'WEMA') !== false && !$has_wema) {
                                 DB::table('user')->where('id', $user->id)->update(['paystack_account' => $accountNumber]);
                                 $this->info("Assigned Wema account {$accountNumber} to user {$user->username}");
                             }
                         }
                     }
-                } else {
+                }
+                else {
                     $errorMsg = $account_response->json()['responseMessage'] ?? $account_response->body();
                     $this->error("Failed to create Monnify account for user {$user->username}: {$errorMsg}");
                 }
-            } catch (\Exception $e) {
+            }
+            catch (\Exception $e) {
                 $this->error("Exception for user {$user->username}: " . $e->getMessage());
             }
         }

@@ -64,10 +64,6 @@ class AdminController extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function ClearRequest(Request $request)
@@ -95,18 +91,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function UserSystem(Request $request)
@@ -195,18 +183,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function editUserDetails(Request $request)
@@ -249,18 +229,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function CreateNewUser(Request $request)
@@ -459,18 +431,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function ChangeApiKey(Request $request)
@@ -512,18 +476,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function EditUser(Request $request)
@@ -716,18 +672,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function FilterUser(Request $request)
@@ -756,18 +704,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function CreditUserHabukhan(Request $request)
@@ -1263,18 +1203,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function UpgradeUserAccount(Request $request)
@@ -1374,18 +1306,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function ResetUserPassword(Request $request)
@@ -1457,18 +1381,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function Automated(Request $request)
@@ -1530,18 +1446,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function BankDetails(Request $request)
@@ -1596,18 +1504,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AddBlock(Request $request)
@@ -1657,18 +1557,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function DeleteBlock(Request $request)
@@ -1723,18 +1615,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function Discount(Request $request)
@@ -1800,18 +1684,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AirtimeDiscount(Request $request)
@@ -1968,18 +1844,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function CableCharges(Request $request)
@@ -2079,18 +1947,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function BillCharges(Request $request)
@@ -2183,18 +2043,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function CashDiscount(Request $request)
@@ -2258,18 +2110,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function ResultCharge(Request $request)
@@ -2323,18 +2167,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function OtherCharge(Request $request)
@@ -2428,18 +2264,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function RechargeCardSel(Request $request)
@@ -2486,18 +2314,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function DataCardSel(Request $request)
@@ -2544,18 +2364,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function DataSel(Request $request)
@@ -2645,18 +2457,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AirtimeSel(Request $request)
@@ -2712,18 +2516,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function CashSel(Request $request)
@@ -2770,18 +2566,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function CableSel(Request $request)
@@ -2828,18 +2616,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function BillSel(Request $request)
@@ -2880,18 +2660,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function BulkSMSsel(Request $request)
@@ -2932,18 +2704,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function ExamSel(Request $request)
@@ -2988,18 +2752,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function BankTransferSel(Request $request)
@@ -3125,18 +2881,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AllBankDetails(Request $request)
@@ -3171,18 +2919,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function UserBankAccountD(Request $request)
@@ -3217,18 +2957,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AllUserBanned(Request $request)
@@ -3255,18 +2987,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AllSystemPlan(Request $request)
@@ -3302,18 +3026,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
 
@@ -3373,18 +3089,10 @@ class AdminController extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
 

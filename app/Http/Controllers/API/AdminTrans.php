@@ -252,10 +252,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function DepositTransSum(Request $request)
@@ -306,18 +302,10 @@ class AdminTrans extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function StockTransSum(Request $request)
@@ -369,18 +357,10 @@ class AdminTrans extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AirtimeTransSum(Request $request)
@@ -431,18 +411,10 @@ class AdminTrans extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function DataTransSum(Request $request)
@@ -495,18 +467,10 @@ class AdminTrans extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AllSummaryTrans(Request $request)
@@ -557,18 +521,10 @@ class AdminTrans extends Controller
             }
             else {
                 return redirect(config('app.error_500'));
-                return response()->json([
-                    'status' => 403,
-                    'message' => 'Unable to Authenticate System'
-                ])->setStatusCode(403);
             }
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function DataRefund(Request $request)
@@ -705,10 +661,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AirtimeRefund(Request $request)
@@ -790,10 +742,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function CableRefund(Request $request)
@@ -876,10 +824,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function BillRefund(Request $request)
@@ -962,10 +906,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function ResultRefund(Request $request)
@@ -1048,10 +988,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function BulkSmsRefund(Request $request)
@@ -1134,10 +1070,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AirtimeCashRefund(Request $request)
@@ -1274,10 +1206,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function ManualSuccess(Request $request)
@@ -1344,10 +1272,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
 
@@ -1445,10 +1369,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
 
@@ -1492,10 +1412,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
 
@@ -1539,10 +1455,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
 
@@ -1603,10 +1515,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function AutoSuccessBySystem(Request $request)
@@ -1645,10 +1553,6 @@ class AdminTrans extends Controller
         }
         else {
             return redirect(config('app.error_500'));
-            return response()->json([
-                'status' => 403,
-                'message' => 'Unable to Authenticate System'
-            ])->setStatusCode(403);
         }
     }
     public function TransferTransSum(Request $request)
