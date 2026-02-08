@@ -1,1 +1,43 @@
-﻿<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.ico"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Habukhan - Digital Services Platform"/><link rel="apple-touch-icon" href="/logo192.png"/><link rel="manifest" href="/manifest.json"/><title>Habukhan</title><script defer="defer" src="/static/js/main.d262a526.js"></script><link href="/static/css/main.e986b2f6.css" rel="stylesheet"></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>
+﻿@php
+$manifestPath = public_path('asset-manifest.json');
+$manifest = [];
+if (file_exists($manifestPath)) {
+$manifest = json_decode(file_get_contents($manifestPath), true)['files'] ?? [];
+}
+$mainJs = $manifest['main.js'] ?? '';
+$mainCss = $manifest['main.css'] ?? '';
+@endphp
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <!-- Cache-Busting Meta Tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="KoboPoint - Digital Services Platform" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>KoboPoint</title>
+
+    @if($mainCss)
+    <link href="{{ $mainCss }}" rel="stylesheet">
+    @endif
+
+    @if($mainJs)
+    <script defer="defer" src="{{ $mainJs }}"></script>
+    @endif
+</head>
+
+<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+</body>
+
+</html>

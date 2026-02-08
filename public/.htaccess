@@ -1,13 +1,4 @@
 <IfModule mod_rewrite.c>
-    # 0. Cache-Busting: Prevent index.html from being cached
-    <FilesMatch "index\.html">
-        <IfModule mod_headers.c>
-            Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
-            Header set Pragma "no-cache"
-            Header set Expires "0"
-        </IfModule>
-    </FilesMatch>
-
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
@@ -15,18 +6,16 @@
     RewriteEngine On
     RewriteBase /
 
-    # 1. API & Webhooks -> Send to Laravel (index.php)
-    RewriteCond %{REQUEST_URI} ^/api [NC,OR]
-    RewriteCond %{REQUEST_URI} ^/vdf_auto_fund_habukhan [NC,OR]
-    RewriteCond %{REQUEST_URI} ^/cache [NC]
-    RewriteRule ^ index.php [L]
+    # Handle Authorization Header (Needed for some APIs)
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # 2. Existing Files/Dirs (Backend Assets) -> Serve Directly
-    RewriteCond %{REQUEST_FILENAME} -d
-    RewriteRule ^ - [L]
+    # 1. Existing Files/Dirs (Assets) -> Serve Directly
+    RewriteCond %{REQUEST_FILENAME} -d [OR]
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # 3. Everything Else -> Send to React (index.html)
-    RewriteRule ^ index.html [L]
+    # 2. Everything Else -> Send to Laravel (index.php)
+    # Laravel will decide whether to serve an API response or the React SPA
+    RewriteRule ^ index.php [L]
 </IfModule>
