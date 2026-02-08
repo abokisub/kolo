@@ -31,3 +31,16 @@ public/notifications/
 # Backups / dumps
 scripts_backup/
 *.json
+
+# Server / runtime
+public/error_log
+public/*.json
+public/uploads/
+public/upload/
+public/build/
+storage/
+images/
+
+# Apache
+.htaccess
+**/.htaccess
