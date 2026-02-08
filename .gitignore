@@ -1,25 +1,33 @@
-# Standard Laravel Ignores
-/node_modules
-/public/hot
+# Ignore frontend (React)
+frontend/
+node_modules/
+
+# Ignore mobile app
+Kobopoint Mobile/
+
+# Laravel ignores
+/vendor
 /public/storage
 /storage/*.key
-/vendor
+/storage/*.log
+/storage/framework/*
+/storage/logs/*
 .env
-.env.backup
+.env.*
 .phpunit.result.cache
-docker-compose.override.yml
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-/.idea
-/.vscode
 
-# Custom Ignores - Exclude non-backend folders
-frontend/
-Kobopoint?Mobile/
-Kobopoint\ Mobile/
-/Kobopoint Mobile/
-"Kobopoint Mobile/"
-"Kobopoint Mobile"
-Kobopoint\ Mobile
+# System / IDE
+.idea
+.vscode
+.DS_Store
+
+# Runtime / debug files
+public/debug_trace.txt
+public/message.txt
+
+# User generated files
+public/notifications/
+
+# Backups / dumps
+scripts_backup/
+*.json
