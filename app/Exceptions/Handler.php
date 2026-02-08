@@ -23,12 +23,12 @@ class Handler extends ExceptionHandler
      */
     public function register()
     {
-        error_reporting(0);
+        // error_reporting(0);
 
         $this->renderable(function (NotFoundHttpException $e, $request) {
             if ($request->is('api/*')) {
                 return response()->json([
-                    'message' => 'File Not Found.'
+                'message' => 'File Not Found.'
                 ], 404);
             }
             return redirect(config('app.error_404'));
@@ -37,7 +37,7 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $e)
     {
-        error_reporting(0);
+        // error_reporting(0);
         if (Str::contains($request->url(), '/api')) {
             if ($e instanceof ErrorException)
                 return response()->apiResponse($e);

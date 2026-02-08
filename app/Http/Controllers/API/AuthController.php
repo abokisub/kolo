@@ -376,7 +376,7 @@ class AuthController extends Controller
                     }
                     // $this->insert_stock($user->username); // Optimize stock check if needed
                     $user = DB::table('user')->where(['id' => $user->id])->first();
-                    $moniepoint_acc = DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first()->account_number ?? null;
+                    $moniepoint_acc = optional(DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first())->account_number ?? null;
 
                     $user_details = [
                         'username' => $user->username,
