@@ -42,5 +42,51 @@ storage/
 images/
 
 # Apache
-.htaccess
-**/.htaccess
+
+# Runtime files
+public/error_log
+public/*.json
+public/build.zip
+webpack/
+resources/lang/lang/
+tests/Unit/Unit/
+app/Console/Console/
+app/Exceptions/Exceptions/
+database/factories/factories/
+database/migrations/migrations/
+
+# Random server files
+*.php
+
+# Ignore server-specific runtime and temp files
+public/error_log
+public/response_h.json
+public/build.zip
+public/adex_error_css/json/json/
+public/adex_error_css/vendor/libs/shepherd/shepherd/
+public/txets.php
+public/xixapay_debug.txt
+
+# Ignore uploads (optional, if you handle uploads outside Git)
+public/uploads/
+public/upload/
+
+# Ignore node/build directories
+webpack/
+resources/lang/lang/
+tests/Unit/Unit/
+app/Console/Console/
+app/Exceptions/Exceptions/
+database/factories/factories/
+database/migrations/migrations/
+
+# Ignore random PHP temp files
+mpQ8zLZU.php
+txets.php
+wWZ2ddKe.php
+
+# Ignore robot file (if you don’t want in repo)
+robots.txt
+
+# Ignore layouts duplicates
+resources/views/layouts/layouts/
