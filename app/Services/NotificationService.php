@@ -67,7 +67,8 @@ class NotificationService
             'payload' => [
                 'action' => 'credit_internal',
                 'amount' => $amount,
-                'sender' => $senderName
+                'sender' => $senderName,
+                'audio_type' => 'internal'
             ]
         ]);
     }
@@ -85,7 +86,8 @@ class NotificationService
             'payload' => [
                 'action' => 'credit_external',
                 'amount' => $amount,
-                'reference' => $reference
+                'reference' => $reference,
+                'audio_type' => 'bank'
             ]
         ]);
     }
@@ -354,7 +356,8 @@ class NotificationService
             'payload' => [
                 'amount' => $amount,
                 'reference' => $reference,
-                'source' => $type
+                'source' => $type,
+                'audio_type' => stripos($type, 'Admin') !== false ? 'admin' : 'general'
             ]
         ]);
     }
