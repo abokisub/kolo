@@ -651,267 +651,245 @@ class AuthController extends Controller
         $explode_url = explode(',', config('app.habukhan_app_key'));
         $origin = $request->headers->get('origin');
         if (!$origin || in_array($origin, $explode_url)) {
-            //our login function over here
-            \Log::info('API Login Hit: ' . json_encode($request->except('password')));
-            $validator = Validator::make($request->all(), [
-                'username' => 'required|string',
-                'password' => 'required'
-            ], [
-                'username.required' => 'Your Username or Phone Number or Email is Required',
-            ]);
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 403,
-                    'message' => $validator->errors()->first()
-                ])->setStatusCode(403);
-            }
-            else {
-                $check_system = User::where('username', $request->username);
-                if ($check_system->count() == 1) {
-                    $user = $check_system->get()[0];
-                    // Fetch settings to check enabled providers
-                    try {
-                        $settings = DB::table('settings')->select(
-                            'palmpay_enabled',
-                            'monnify_enabled',
-                            'wema_enabled',
-                            'xixapay_enabled',
-                            'default_virtual_account'
-                        )->first();
+            try {
+                //our login function over here
+                \Log::info('API Login Hit: ' . json_encode($request->except('password')));
+                $validator = Validator::make($request->all(), [
+                    'username' => 'required|string',
+                    'password' => 'required'
+                ], [
+                    'username.required' => 'Your Username or Phone Number or Email is Required',
+                ]);
+                if ($validator->fails()) {
+                    return response()->json([
+                        'status' => 403,
+                        'message' => $validator->errors()->first()
+                    ])->setStatusCode(403);
+                }
+                else {
+                    $check_system = User::where('username', $request->username);
+                    if ($check_system->count() == 1) {
+                        $user = $check_system->get()[0];
+                        // Fetch settings to check enabled providers
+                        try {
+                            $settings = DB::table('settings')->select(
+                                'palmpay_enabled',
+                                'monnify_enabled',
+                                'wema_enabled',
+                                'xixapay_enabled',
+                                'default_virtual_account'
+                            )->first();
 
-                        // Determine which accounts to show based on settings
-                        $monnify_enabled = $settings->monnify_enabled ?? true;
-                        $wema_enabled = $settings->wema_enabled ?? true;
-                        $xixapay_enabled = $settings->xixapay_enabled ?? true;
-                        $palmpay_enabled = $settings->palmpay_enabled ?? true;
-                        $default_virtual_account = $settings->default_virtual_account ?? 'palmpay';
-                        $default_virtual_account = ($default_virtual_account == 'palmpay') ? 'xixapay' : $default_virtual_account; // Migration for name change if needed
-                    }
-                    catch (\Exception $e) {
-                        $monnify_enabled = true;
-                        $wema_enabled = true;
-                        $xixapay_enabled = true;
-                        $palmpay_enabled = true;
-                        $default_virtual_account = 'palmpay';
-                    }
-
-                    // Smart Fallback
-                    $active_default = $default_virtual_account;
-                    if ($active_default == 'wema' && !$wema_enabled)
-                        $active_default = null;
-                    if ($active_default == 'monnify' && !$monnify_enabled)
-                        $active_default = null;
-                    if ($active_default == 'xixapay' && !$xixapay_enabled)
-                        $active_default = null;
-                    if ($active_default == 'palmpay' && !$palmpay_enabled)
-                        $active_default = null;
-
-                    if ($active_default == null) {
-                        if ($palmpay_enabled)
-                            $active_default = 'palmpay';
-                        elseif ($wema_enabled)
-                            $active_default = 'wema';
-                        elseif ($monnify_enabled)
-                            $active_default = 'monnify';
-                        elseif ($xixapay_enabled)
-                            $active_default = 'xixapay';
-                    }
-
-                    // FIX: Smart Account Generation (Only if missing AND enabled)
-                    // DISABLED DURING LOGIN: This prevents 30s timeouts by not calling external APIs synchronously.
-                    // Accounts can be fetched/generated on the Wallet screen or via background jobs.
-                    /*
-                     try {
-                     if ($wema_enabled && empty($user->paystack_account))
-                     $this->monnify_account($user->username);
-                     }
-                     catch (\Exception $e) {
-                     \Log::error("Login Wema: " . $e->getMessage());
-                     }
-                     try {
-                     if ($monnify_enabled && DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->count() == 0)
-                     $this->monnify_account($user->username);
-                     }
-                     catch (\Exception $e) {
-                     \Log::error("Login Sterlen: " . $e->getMessage());
-                     }
-                     try {
-                     if ($xixapay_enabled && empty($user->palmpay))
-                     $this->xixapay_account($user->username);
-                     }
-                     catch (\Exception $e) {
-                     \Log::error("Login Xixapay: " . $e->getMessage());
-                     }
-                     try {
-                     if (empty($user->paystack_account))
-                     $this->paystack_account($user->username);
-                     }
-                     catch (\Exception $e) {
-                     \Log::error("Login Paystack: " . $e->getMessage());
-                     }
-                     */
-
-                    $user = DB::table('user')->where(['id' => $user->id])->first();
-                    $moniepoint_row = DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first();
-                    $moniepoint_acc = $moniepoint_row ? $moniepoint_row->account_number : null;
-
-                    $user_details = [
-                        'username' => $user->username,
-                        'name' => $user->name,
-                        'phone' => $user->phone,
-                        'email' => $user->email,
-                        'bal' => number_format($user->bal, 2),
-                        'refbal' => number_format($user->refbal, 2),
-                        'kyc' => $user->kyc,
-                        'type' => $user->type,
-                        'pin' => $user->pin,
-                        'profile_image' => $user->profile_image,
-
-                        // Conditionals
-                        'sterlen' => $moniepoint_acc,
-                        'fed' => null,
-                        'wema' => $user->paystack_account,
-                        'opay' => $xixapay_enabled ? $user->palmpay : null,
-                        'kolomoni_mfb' => $xixapay_enabled ? $user->kolomoni_mfb : null,
-                        'palmpay' => null,
-
-                        // Polyfill for Frontend 'Generating...' issue
-                        // LOGIC: Prefer Moniepoint (sterlen) if available, otherwise follow default settings.
-                        'account_number' => ($monnify_enabled && !empty($moniepoint_acc)) ? $moniepoint_acc : (
-                        ($active_default == 'wema') ? $user->paystack_account :
-                        (($active_default == 'monnify') ? $moniepoint_acc :
-                        (($active_default == 'xixapay') ? $user->palmpay :
-                        null))
-                    ),
-
-                        // Keep Paystack independent or link to another setting if needed
-                        'bank_name' => ($monnify_enabled && !empty($moniepoint_acc)) ? 'Moniepoint' : (
-                        ($active_default == 'wema') ? 'Wema Bank' :
-                        (($active_default == 'monnify') ? 'Moniepoint' :
-                        (($active_default == 'xixapay') ? 'PalmPay' :
-                        'PalmPay'))
-                    ),
-
-                        'paystack_account' => $user->paystack_account,
-                        'paystack_bank' => $user->paystack_bank,
-                        'kolomoni' => $user->kolomoni_mfb, // Alias for frontend
-                        'vdf' => $user->vdf,
-                        'address' => $user->address,
-                        'webhook' => $user->webhook,
-                        'about' => $user->about,
-                        'apikey' => $user->apikey,
-                        'default_account' => $active_default,
-                        'account_name' => isset($user->account_name) ? $user->account_name : null,
-                        'is_bvn' => $user->bvn == null ? false : true,
-                        'theme' => DB::table('user_settings')->where('user_id', $user->id)->value('theme') ?? 'light'
-                    ];
-                    $hash = substr(sha1(md5($request->password)), 3, 10);
-                    $mdpass = md5($request->password);
-                    $is_bcrypt_match = password_verify($request->password, $user->password);
-                    $is_plain_match = ($request->password == $user->password);
-                    $is_legacy_hash_match = ($hash == $user->password);
-                    $is_md5_match = ($mdpass == $user->password);
-
-                    // Debug Log (Optimized: Uses cached values, prevents 2x Cost 16 calculation)
-                    \Log::info('Login Debug: User=' . $user->username . ', Type="' . $user->type . '", Status=' . $user->status . ', PlainMatch=' . ($is_plain_match ? 'YES' : 'NO') . ', HashMatch=' . ($is_bcrypt_match ? 'YES' : 'NO'));
-
-                    // FIX: Replaced XOR chain with simple OR. If ANY credential match is valid, let them in.
-                    if ($is_bcrypt_match || $is_plain_match || $is_legacy_hash_match || $is_md5_match) {
-
-                        if ($user->status == 1 || trim(strtoupper($user->type)) == 'ADMIN' || strcasecmp($user->username, 'Habukhan') == 0) {
-                            return response()->json([
-                                'status' => 'success',
-                                'message' => 'Login successfully (DEBUG: ' . $user->status . '/' . $user->type . ')',
-                                'user' => $user_details,
-                                'token' => $this->generatetoken($user->id)
-                            ]);
+                            // Determine which accounts to show based on settings
+                            $monnify_enabled = $settings->monnify_enabled ?? true;
+                            $wema_enabled = $settings->wema_enabled ?? true;
+                            $xixapay_enabled = $settings->xixapay_enabled ?? true;
+                            $palmpay_enabled = $settings->palmpay_enabled ?? true;
+                            $default_virtual_account = $settings->default_virtual_account ?? 'palmpay';
+                            $default_virtual_account = ($default_virtual_account == 'palmpay') ? 'xixapay' : $default_virtual_account; // Migration for name change if needed
                         }
-                        else if ($user->status == 2) {
-                            return response()->json([
-                                'status' => 403,
-                                'message' => $user->username . ' Your Account Has Been Banned'
-                            ])->setStatusCode(403);
+                        catch (\Exception $e) {
+                            $monnify_enabled = true;
+                            $wema_enabled = true;
+                            $xixapay_enabled = true;
+                            $palmpay_enabled = true;
+                            $default_virtual_account = 'palmpay';
                         }
-                        else if ($user->status == 3) {
-                            return response()->json([
-                                'status' => 403,
-                                'message' => $user->username . ' Your Account Has Been Deactivated'
-                            ])->setStatusCode(403);
+
+                        // Smart Fallback
+                        $active_default = $default_virtual_account;
+                        if ($active_default == 'wema' && !$wema_enabled)
+                            $active_default = null;
+                        if ($active_default == 'monnify' && !$monnify_enabled)
+                            $active_default = null;
+                        if ($active_default == 'xixapay' && !$xixapay_enabled)
+                            $active_default = null;
+                        if ($active_default == 'palmpay' && !$palmpay_enabled)
+                            $active_default = null;
+
+                        if ($active_default == null) {
+                            if ($palmpay_enabled)
+                                $active_default = 'palmpay';
+                            elseif ($wema_enabled)
+                                $active_default = 'wema';
+                            elseif ($monnify_enabled)
+                                $active_default = 'moniepoint';
+                            elseif ($xixapay_enabled)
+                                $active_default = 'xixapay';
                         }
-                        else if ($user->status == 0) {
-                            $use_core = $this->core();
-                            if ($use_core && !$use_core->is_verify_email) {
-                                // Auto-verify and login
-                                DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
+
+
+                        $user = DB::table('user')->where(['id' => $user->id])->first();
+                        $moniepoint_row = DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first();
+                        $moniepoint_acc = $moniepoint_row ? $moniepoint_row->account_number : null;
+
+                        $user_details = [
+                            'username' => $user->username,
+                            'name' => $user->name,
+                            'phone' => $user->phone,
+                            'email' => $user->email,
+                            'bal' => number_format($user->bal, 2),
+                            'refbal' => number_format($user->refbal, 2),
+                            'kyc' => $user->kyc,
+                            'type' => $user->type,
+                            'pin' => $user->pin,
+                            'profile_image' => $user->profile_image,
+
+                            // Conditionals
+                            'sterlen' => $moniepoint_acc,
+                            'fed' => null,
+                            'wema' => $user->paystack_account,
+                            'opay' => $xixapay_enabled ? $user->palmpay : null,
+                            'kolomoni_mfb' => $xixapay_enabled ? $user->kolomoni_mfb : null,
+                            'palmpay' => null,
+
+                            // Polyfill for Frontend 'Generating...' issue
+                            // LOGIC: Prefer Moniepoint (sterlen) if available, otherwise follow default settings.
+                            'account_number' => ($monnify_enabled && !empty($moniepoint_acc)) ? $moniepoint_acc : (
+                            ($active_default == 'wema') ? $user->paystack_account :
+                            (($active_default == 'monnify') ? $moniepoint_acc :
+                            (($active_default == 'xixapay') ? $user->palmpay :
+                            null))
+                        ),
+
+                            // Keep Paystack independent or link to another setting if needed
+                            'bank_name' => ($monnify_enabled && !empty($moniepoint_acc)) ? 'Moniepoint' : (
+                            ($active_default == 'wema') ? 'Wema Bank' :
+                            (($active_default == 'monnify') ? 'Moniepoint' :
+                            (($active_default == 'xixapay') ? 'PalmPay' :
+                            'PalmPay'))
+                        ),
+
+                            'paystack_account' => $user->paystack_account,
+                            'paystack_bank' => $user->paystack_bank,
+                            'kolomoni' => $user->kolomoni_mfb, // Alias for frontend
+                            'vdf' => $user->vdf,
+                            'address' => $user->address,
+                            'webhook' => $user->webhook,
+                            'about' => $user->about,
+                            'apikey' => $user->apikey,
+                            'default_account' => $active_default,
+                            'account_name' => isset($user->account_name) ? $user->account_name : null,
+                            'is_bvn' => $user->bvn == null ? false : true,
+                            'theme' => DB::table('user_settings')->where('user_id', $user->id)->value('theme') ?? 'light'
+                        ];
+                        $hash = substr(sha1(md5($request->password)), 3, 10);
+                        $mdpass = md5($request->password);
+                        $is_bcrypt_match = password_verify($request->password, $user->password);
+                        $is_plain_match = ($request->password == $user->password);
+                        $is_legacy_hash_match = ($hash == $user->password);
+                        $is_md5_match = ($mdpass == $user->password);
+
+                        // Debug Log (Optimized: Uses cached values, prevents 2x Cost 16 calculation)
+                        \Log::info('Login Debug: User=' . $user->username . ', Type="' . $user->type . '", Status=' . $user->status . ', PlainMatch=' . ($is_plain_match ? 'YES' : 'NO') . ', HashMatch=' . ($is_bcrypt_match ? 'YES' : 'NO'));
+
+                        // FIX: Replaced XOR chain with simple OR. If ANY credential match is valid, let them in.
+                        if ($is_bcrypt_match || $is_plain_match || $is_legacy_hash_match || $is_md5_match) {
+
+                            if ($user->status == 1 || trim(strtoupper($user->type)) == 'ADMIN' || strcasecmp($user->username, 'Habukhan') == 0) {
                                 return response()->json([
                                     'status' => 'success',
-                                    'message' => 'Login successfully (Auto-Verified)',
+                                    'message' => 'Login successfully (DEBUG: ' . $user->status . '/' . $user->type . ')',
                                     'user' => $user_details,
                                     'token' => $this->generatetoken($user->id)
                                 ]);
                             }
-                            if ($origin) {
-                                // Web login - auto-verify and login
-                                DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
+                            else if ($user->status == 2) {
                                 return response()->json([
-                                    'status' => 'success',
-                                    'message' => 'Login successfully (Web Auto-Verify)',
+                                    'status' => 403,
+                                    'message' => $user->username . ' Your Account Has Been Banned'
+                                ])->setStatusCode(403);
+                            }
+                            else if ($user->status == 3) {
+                                return response()->json([
+                                    'status' => 403,
+                                    'message' => $user->username . ' Your Account Has Been Deactivated'
+                                ])->setStatusCode(403);
+                            }
+                            else if ($user->status == 0) {
+                                $use_core = $this->core();
+                                if ($use_core && !$use_core->is_verify_email) {
+                                    // Auto-verify and login
+                                    DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
+                                    return response()->json([
+                                        'status' => 'success',
+                                        'message' => 'Login successfully (Auto-Verified)',
+                                        'user' => $user_details,
+                                        'token' => $this->generatetoken($user->id)
+                                    ]);
+                                }
+                                if ($origin) {
+                                    // Web login - auto-verify and login
+                                    DB::table('user')->where(['id' => $user->id])->update(['status' => 1]);
+                                    return response()->json([
+                                        'status' => 'success',
+                                        'message' => 'Login successfully (Web Auto-Verify)',
+                                        'user' => $user_details,
+                                        'token' => $this->generatetoken($user->id)
+                                    ]);
+                                }
+
+                                // Mobile login - send OTP
+                                $otp = random_int(100000, 999999);
+                                DB::table('user')->where(['id' => $user->id])->update(['otp' => $otp]);
+
+                                $general = $this->general();
+                                $email_data = [
+                                    'name' => $user->name,
+                                    'email' => $user->email,
+                                    'username' => $user->username,
+                                    'title' => 'Account Verification',
+                                    'sender_mail' => $general->app_email,
+                                    'app_name' => config('app.name'),
+                                    'otp' => $otp
+                                ];
+                                try {
+                                    MailController::send_mail($email_data, 'email.verify');
+                                }
+                                catch (\Throwable $e) {
+                                    \Log::error('OTP Mail Error (AuthController): ' . $e->getMessage());
+                                }
+
+                                return response()->json([
+                                    'status' => 'verify',
+                                    'message' => $user->username . ' (' . $user->type . ') Your Account Not Yet verified. An OTP has been sent to your email.',
                                     'user' => $user_details,
-                                    'token' => $this->generatetoken($user->id)
+                                    'token' => $this->generatetoken($user->id),
                                 ]);
                             }
+                            else {
+                                \Log::warning('Login Failed: Status logic mismatch for User=' . $user->username . ', Status=' . $user->status);
+                                return response()->json([
+                                    'status' => 403,
+                                    'message' => 'System is unable to verify user (DEBUG: status=' . $user->status . ')'
 
-                            // Mobile login - send OTP
-                            $otp = random_int(100000, 999999);
-                            DB::table('user')->where(['id' => $user->id])->update(['otp' => $otp]);
-
-                            $general = $this->general();
-                            $email_data = [
-                                'name' => $user->name,
-                                'email' => $user->email,
-                                'username' => $user->username,
-                                'title' => 'Account Verification',
-                                'sender_mail' => $general->app_email,
-                                'app_name' => config('app.name'),
-                                'otp' => $otp
-                            ];
-                            try {
-                                MailController::send_mail($email_data, 'email.verify');
+                                ])->setStatusCode(403);
                             }
-                            catch (\Throwable $e) {
-                                \Log::error('OTP Mail Error (AuthController): ' . $e->getMessage());
-                            }
-
-                            return response()->json([
-                                'status' => 'verify',
-                                'message' => $user->username . ' (' . $user->type . ') Your Account Not Yet verified. An OTP has been sent to your email.',
-                                'user' => $user_details,
-                                'token' => $this->generatetoken($user->id),
-                            ]);
                         }
                         else {
-                            \Log::warning('Login Failed: Status logic mismatch for User=' . $user->username . ', Status=' . $user->status);
+                            \Log::warning('Login Failed: Password mismatch for User=' . $user->username);
                             return response()->json([
                                 'status' => 403,
-                                'message' => 'System is unable to verify user (DEBUG: status=' . $user->status . ')'
-
+                                'message' => 'Invalid Password Note Password is Case Sensitive'
                             ])->setStatusCode(403);
                         }
                     }
                     else {
-                        \Log::warning('Login Failed: Password mismatch for User=' . $user->username);
                         return response()->json([
                             'status' => 403,
-                            'message' => 'Invalid Password Note Password is Case Sensitive'
+                            'message' => 'Invalid Username and Password. DEBUG: User=' . $request->username . ', Count=' . $check_system->count()
                         ])->setStatusCode(403);
                     }
                 }
-                else {
-                    return response()->json([
-                        'status' => 403,
-                        'message' => 'Invalid Username and Password. DEBUG: User=' . $request->username . ', Count=' . $check_system->count()
-                    ])->setStatusCode(403);
-                }
+            }
+            catch (\Throwable $e) {
+                return response()->json([
+                    'status' => 500,
+                    'message' => 'Server Crash: ' . $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => substr($e->getTraceAsString(), 0, 500)
+                ], 500);
             }
         }
         else {
