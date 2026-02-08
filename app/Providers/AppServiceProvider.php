@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Response::macro('apiResponse', function ($e, $data = [], $message = '', $code = 500) {
+        Response::macro('apiResponse', function (\Throwable $e, array $data = [], string $message = '', int $code = 500) {
             $exception = $e->getMessage() . ' in ' . $e->getFile() . ' at line ' . $e->getLine();
 
             $data['status'] = false;
