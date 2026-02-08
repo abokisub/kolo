@@ -193,7 +193,7 @@ class Auth extends Controller
                                     'token' => $this->generateapptoken($user->id)
                                 ]);
                             }
-                            $otp = random_int(1000, 9999);
+                            $otp = random_int(100000, 999999);
                             $data = ['otp' => $otp];
                             $tableid = ['username' => $user->username];
                             $this->updateData($data, 'user', $tableid);
@@ -425,7 +425,7 @@ class Auth extends Controller
                     $user = DB::table('user')->where(['id' => $this->verifyapptoken($request->app_key), 'status' => 0])->first();
 
                     $general = $this->general();
-                    $otp = random_int(1000, 9999);
+                    $otp = random_int(100000, 999999);
                     $data = [
                         'otp' => $otp
                     ];

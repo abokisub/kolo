@@ -3155,17 +3155,35 @@ class SecureController extends Controller
                 if (DB::table('user')->where(['id' => $this->verifytoken($request->id)])->count() == 1) {
                     $user = DB::table('user')->where(['id' => $this->verifytoken($request->id)])->first();
                     if ($user->status == 1 and $user->type == 'ADMIN') {
-                        if ($request->notfi_show == 1 || $request->notif_show == true) {
-                            $plan_status = 1;
+                        $data = [];
+                        if ($request->has('notif_message'))
+                            $data['notif_message'] = $request->notif_message;
+                        if ($request->has('notfi_show') || $request->has('notif_show')) {
+                            $data['notif_show'] = ($request->notfi_show == 1 || $request->notif_show == true) ? 1 : 0;
                         }
-                        else {
-                            $plan_status = 0;
+                        if ($request->hasFile('ads_image')) {
+                            $image = $request->file('ads_image');
+                            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                            if (!file_exists(public_path('uploads/ads'))) {
+                                mkdir(public_path('uploads/ads'), 0755, true);
+                            }
+                            $image->move(public_path('uploads/ads'), $imageName);
+                            $data['ads_message'] = url('uploads/ads/' . $imageName);
                         }
-                        $data = [
-                            'notif_message' => $request->notif_message,
-                            'notif_show' => $plan_status
-                        ];
-                        DB::table('settings')->update($data);
+                        elseif ($request->has('ads_message')) {
+                            $data['ads_message'] = $request->ads_message;
+                        }
+
+                        if ($request->has('ads_show')) {
+                            $data['ads_show'] = ($request->ads_show == 1 || $request->ads_show == true) ? 1 : 0;
+                        }
+                        if ($request->has('app_notif_show')) {
+                            $data['app_notif_show'] = ($request->app_notif_show == 1 || $request->app_notif_show == true) ? 1 : 0;
+                        }
+
+                        if (!empty($data)) {
+                            DB::table('settings')->update($data);
+                        }
                         return response()->json([
                             'status' => 'success',
                             'message' => 'message'

@@ -36,10 +36,14 @@ class AppController extends Controller
 
     public function welcomeMessage()
     {
-        $message = DB::table('settings')->value('notif_message');
+        $settings = $this->core();
         return response()->json([
             'status' => 'success',
-            'message' => $message ?? 'Glo cooperate have been reduce with 30days validity Dan samun update da zaran munyi posting ka yi save din number mu 08139123922'
+            'notif_message' => $settings->notif_message ?? '',
+            'notif_show' => $settings->notif_show ?? 0,
+            'ads_message' => $settings->ads_message ?? '',
+            'ads_show' => $settings->ads_show ?? 0,
+            'app_notif_show' => $settings->app_notif_show ?? 1
         ]);
     }
 

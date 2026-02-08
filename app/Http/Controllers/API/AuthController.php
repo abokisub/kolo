@@ -861,7 +861,7 @@ class AuthController extends Controller
                             }
 
                             // Mobile login - send OTP
-                            $otp = random_int(1000, 9999);
+                            $otp = random_int(100000, 999999);
                             DB::table('user')->where(['id' => $user->id])->update(['otp' => $otp]);
 
                             $general = $this->general();
