@@ -914,11 +914,12 @@ class AuthController extends Controller
             }
         }
         else {
-            return redirect(config('app.error_500'));
             return response()->json([
-                'status' => 403,
-                'message' => 'unauntorized'
-            ])->setStatusCode(403);
+                'status' => 'error',
+                'message' => 'Origin validation failed. Please check your .env configuration.',
+                'origin' => $request->headers->get('origin'),
+                'allowed' => explode(',', config('app.habukhan_app_key'))
+            ], 403);
         }
     }
 
