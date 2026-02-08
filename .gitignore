@@ -90,3 +90,14 @@ robots.txt
 
 # Ignore layouts duplicates
 resources/views/layouts/layouts/
+
+
+# Ignore all .htaccess files
+**/.htaccess
+
+# Optional: ignore temp directories or test units
+tests/
+resources/views/layouts/.htaccess
+resources/lang/.htaccess
+public/assets/.htaccess
+public/adex_error_css/.htaccess
