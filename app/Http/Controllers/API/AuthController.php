@@ -752,7 +752,8 @@ class AuthController extends Controller
                      */
 
                     $user = DB::table('user')->where(['id' => $user->id])->first();
-                    $moniepoint_acc = DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first()->account_number ?? null;
+                    $moniepoint_row = DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first();
+                    $moniepoint_acc = $moniepoint_row ? $moniepoint_row->account_number : null;
 
                     $user_details = [
                         'username' => $user->username,
