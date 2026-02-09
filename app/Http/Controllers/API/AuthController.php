@@ -161,7 +161,7 @@ class AuthController extends Controller
                         // Always try paystack or link to setting
                         $this->insert_stock($user->username);
 
-                        $user = DB::table('user')->where(['id' => $user->id])->first();
+                        $moniepoint_acc = optional(DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first())->account_number ?? null;
 
                         $user_details = [
                             'username' => $user->username,
@@ -176,7 +176,7 @@ class AuthController extends Controller
                             'profile_image' => $user->profile_image,
 
                             // Conditionals
-                            'sterlen' => $monnify_enabled ? $user->sterlen : null,
+                            'sterlen' => $moniepoint_acc,
                             'vdf' => $monnify_enabled ? $user->vdf : null,
                             'fed' => $monnify_enabled ? $user->fed : null,
                             'wema' => $wema_enabled ? $user->wema : null,
@@ -186,7 +186,7 @@ class AuthController extends Controller
 
                             // Polyfill for Frontend 'Generating...' issue
                             'account_number' => ($active_default == 'wema') ? ($wema_enabled ? $user->paystack_account : null) :
-                            (($active_default == 'monnify') ? ($monnify_enabled ? $user->sterlen : null) :
+                            (($active_default == 'monnify') ? ($monnify_enabled ? $moniepoint_acc : null) :
                             (($active_default == 'xixapay') ? ($xixapay_enabled ? $user->palmpay : null) :
                             null)),
 
@@ -549,6 +549,8 @@ class AuthController extends Controller
 
 
 
+                $moniepoint_acc = optional(DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first())->account_number ?? null;
+
                 $user_details = [
                     'username' => $user->username,
                     'name' => $user->name,
@@ -562,7 +564,7 @@ class AuthController extends Controller
                     'profile_image' => $user->profile_image,
 
                     // Conditionals
-                    'sterlen' => $monnify_enabled ? $user->sterlen : null,
+                    'sterlen' => $moniepoint_acc,
                     'fed' => $monnify_enabled ? $user->fed : null,
                     'wema' => $wema_enabled ? $user->wema : null,
                     'opay' => $xixapay_enabled ? $user->opay : null,

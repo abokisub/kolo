@@ -464,6 +464,7 @@ class Auth extends Controller
 
     public function Signup(Request $request)
     {
+        set_time_limit(300); // Increase timeout for sequential API calls
         $authHeader = $request->header('Authorization');
         if (strpos($authHeader, 'Token ') === 0) {
             $authHeader = substr($authHeader, 6);
@@ -495,9 +496,9 @@ class Auth extends Controller
                 'phone.unique' => 'Phone Number already Taken',
                 'username.max' => 'Username Maximum Length is 12 ' . $request->username,
 
-                'email.unique' => 'Email Alreay Taken',
+                'email.unique' => 'Email Already Taken',
                 'password.min' => 'Password Not Strong Enough',
-                'name.min' => 'Invalid Full Name',
+                'name.min' => 'Invalid Full Name (Min 3 characters)',
                 'name.max' => 'Invalid Full Name',
                 'phone.numeric' => 'Phone Number Must be Numeric ' . $request->phone,
 
@@ -544,9 +545,10 @@ class Auth extends Controller
                     $user->username = $request->username;
                     $user->email = $request->email;
                     $user->phone = $request->phone;
-                    $user->password = password_hash($request->password, PASSWORD_DEFAULT, array('cost' => 16));
+                    $user->password = password_hash($request->password, PASSWORD_DEFAULT, array('cost' => 12));
                     // $user->password = Hash::make($request->password);
                     $user->apikey = bin2hex(openssl_random_pseudo_bytes(30));
+                    $user->app_key = $user->apikey;
                     $user->bal = '0.00';
                     $user->refbal = '0.00';
                     $user->ref = $request->ref;
@@ -587,14 +589,37 @@ class Auth extends Controller
                                 $active_default = 'xixapay';
                         }
 
-                        if ($xixapay_enabled && ($user->kolomoni_mfb == null || $user->palmpay == null))
-                            $this->xixapay_account($user->username);
-                        if ($monnify_enabled && ($user->paystack_account == null || DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->count() == 0))
-                            $this->monnify_account($user->username);
-                        if ($palmpay_enabled && ($user->palmpay == null || $user->opay == null))
-                            $this->paymentpoint_account($user->username);
-                        if ($user->paystack_account == null)
-                            $this->paystack_account($user->username);
+                        try {
+                            if ($xixapay_enabled && ($user->kolomoni_mfb == null || $user->palmpay == null))
+                                $this->xixapay_account($user->username);
+                        }
+                        catch (\Exception $e) {
+                            \Log::error("Signup Xixapay Error: " . $e->getMessage());
+                        }
+
+                        try {
+                            if ($monnify_enabled && ($user->paystack_account == null || DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->count() == 0))
+                                $this->monnify_account($user->username);
+                        }
+                        catch (\Exception $e) {
+                            \Log::error("Signup Monnify Error: " . $e->getMessage());
+                        }
+
+                        try {
+                            if ($palmpay_enabled && ($user->palmpay == null || $user->opay == null))
+                                $this->paymentpoint_account($user->username);
+                        }
+                        catch (\Exception $e) {
+                            \Log::error("Signup PaymentPoint Error: " . $e->getMessage());
+                        }
+
+                        try {
+                            if ($user->paystack_account == null)
+                                $this->paystack_account($user->username);
+                        }
+                        catch (\Exception $e) {
+                            \Log::error("Signup Paystack Error: " . $e->getMessage());
+                        }
 
                         $this->insert_stock($user->username);
                         $moniepoint_acc = DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->first()->account_number ?? null;
