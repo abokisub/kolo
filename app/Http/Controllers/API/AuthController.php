@@ -175,13 +175,13 @@ class AuthController extends Controller
                             'pin' => $user->pin,
                             'profile_image' => $user->profile_image,
 
-                            // Conditionals
+                            // Conditionals (Safe Access)
                             'sterlen' => $moniepoint_acc,
-                            'vdf' => $monnify_enabled ? $user->vdf : null,
-                            'fed' => $monnify_enabled ? $user->fed : null,
-                            'wema' => $wema_enabled ? $user->wema : null,
-                            'opay' => $xixapay_enabled ? $user->palmpay : null,
-                            'kolomoni_mfb' => $xixapay_enabled ? $user->kolomoni_mfb : null,
+                            'vdf' => (isset($user->vdf)) ? $user->vdf : null,
+                            'fed' => (isset($user->fed)) ? $user->fed : null,
+                            'wema' => (isset($user->wema)) ? $user->wema : null,
+                            'opay' => $xixapay_enabled ? (isset($user->palmpay) ? $user->palmpay : null) : null,
+                            'kolomoni_mfb' => $xixapay_enabled ? (isset($user->kolomoni_mfb) ? $user->kolomoni_mfb : null) : null,
                             'palmpay' => null,
 
                             // Polyfill for Frontend 'Generating...' issue
@@ -563,13 +563,13 @@ class AuthController extends Controller
                     'pin' => $user->pin,
                     'profile_image' => $user->profile_image,
 
-                    // Conditionals
+                    // Conditionals (Safe Access)
                     'sterlen' => $moniepoint_acc,
-                    'fed' => $monnify_enabled ? $user->fed : null,
-                    'wema' => $wema_enabled ? $user->wema : null,
-                    'opay' => $xixapay_enabled ? $user->opay : null,
-                    'kolomoni_mfb' => $xixapay_enabled ? $user->kolomoni_mfb : null,
-                    'palmpay' => $palmpay_enabled ? $user->palmpay : null,
+                    'fed' => (isset($user->fed)) ? $user->fed : null,
+                    'wema' => (isset($user->wema)) ? $user->wema : null,
+                    'opay' => $xixapay_enabled ? (isset($user->opay) ? $user->opay : null) : null,
+                    'kolomoni_mfb' => $xixapay_enabled ? (isset($user->kolomoni_mfb) ? $user->kolomoni_mfb : null) : null,
+                    'palmpay' => $palmpay_enabled ? (isset($user->palmpay) ? $user->palmpay : null) : null,
 
                     'paystack_account' => $user->paystack_account,
                     'paystack_bank' => $user->paystack_bank,
