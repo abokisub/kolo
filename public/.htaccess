@@ -6,16 +6,18 @@
     RewriteEngine On
     RewriteBase /
 
-    # Handle Authorization Header (Needed for some APIs)
+    # 1. THE NUKE RULE: Ignore static index.html always (prefer Laravel view)
+    RewriteRule ^index\.html$ / [R=301,L]
+
+    # 2. Handle Authorization Header (Needed for some APIs)
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # 1. Existing Files/Dirs (Assets) -> Serve Directly
+    # 3. Existing Files/Dirs (Assets) -> Serve Directly
     RewriteCond %{REQUEST_FILENAME} -d [OR]
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # 2. Everything Else -> Send to Laravel (index.php)
-    # Laravel will decide whether to serve an API response or the React SPA
+    # 4. Everything Else -> Send to Laravel (index.php)
     RewriteRule ^ index.php [L]
 </IfModule>
