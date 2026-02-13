@@ -1537,15 +1537,17 @@ class DataSend extends Controller
             $response = ApiSending::BoltNetApi($endpoint_details, $payload);
 
             if (!empty($response)) {
-                if (isset($response['response']['Status']) && $response['response']['Status'] == 'successful') {
-                    if (isset($response['response']['api_response'])) {
-                        DB::table('data')->where(['username' => $data['username'], 'transid' => $data['transid']])->update(['api_response' => $response['response']['api_response']]);
-                    }
+                $res = $response['response'] ?? $response;
+                $status = strtolower($res['Status'] ?? $res['status'] ?? '');
+                $api_res = $res['api_response'] ?? $res['message'] ?? $res['Message'] ?? '';
+
+                if ($api_res) {
+                    DB::table('data')->where(['username' => $data['username'], 'transid' => $data['transid']])->update(['api_response' => $api_res]);
+                }
+
+                if ($status == 'successful' || $status == 'success' || $status == 'processing') {
                     return 'success';
                 } else {
-                    if (isset($response['response']['api_response'])) {
-                        DB::table('data')->where(['username' => $data['username'], 'transid' => $data['transid']])->update(['api_response' => $response['response']['api_response']]);
-                    }
                     return 'fail';
                 }
             } else {
