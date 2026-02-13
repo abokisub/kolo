@@ -1303,7 +1303,7 @@ class DataSend extends Controller
 
             $curl = curl_init();
             curl_setopt_array($curl, array(
-                CURLOPT_URL => "https://easyaccessapi.com.ng/api/live/v1/purchase-data",
+                CURLOPT_URL => "https://easyaccess.com.ng/api/live/v1/purchase-data",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => "",
                 CURLOPT_MAXREDIRS => 10,
@@ -1318,18 +1318,21 @@ class DataSend extends Controller
                     'client_reference' => $data['transid'],
                 )),
                 CURLOPT_HTTPHEADER => array(
-                    "Authorization: Bearer " . $other_api->easy_access, // Standard V1
-                    "AuthorizationToken: " . $other_api->easy_access,  // Fallback for some endpoints
+                    "Authorization: Bearer " . $other_api->easy_access,
+                    "Cache-Control: no-cache",
                     "Content-Type: application/json",
-                    "cache-control: no-cache"
                 ),
             ));
             $dataapi = curl_exec($curl);
             $response = json_decode($dataapi, true);
             curl_close($curl);
 
-            // Log response for debugging
-            \Log::info("EasyAccess Data Response [$data[transid]]: ", ['res' => $response]);
+            // Log response and masked token for debugging
+            $masked_token = substr($other_api->easy_access, 0, 5) . "..." . substr($other_api->easy_access, -5);
+            \Log::info("EasyAccess Data Trace [$data[transid]]: ", [
+                'token_used' => $masked_token,
+                'response' => $response
+            ]);
 
             if ($response) {
                 // The new API returns results inside a 'res' object

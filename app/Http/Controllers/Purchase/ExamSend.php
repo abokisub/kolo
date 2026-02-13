@@ -217,7 +217,7 @@ class ExamSend extends Controller
 
             $curl = curl_init();
             curl_setopt_array($curl, array(
-                CURLOPT_URL => "https://easyaccessapi.com.ng/api/live/v1/exam-pins",
+                CURLOPT_URL => "https://easyaccess.com.ng/api/live/v1/exam-pins",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => "",
                 CURLOPT_MAXREDIRS => 10,
@@ -231,9 +231,8 @@ class ExamSend extends Controller
                 )),
                 CURLOPT_HTTPHEADER => array(
                     "Authorization: Bearer " . $habukhan_api->easy_access,
-                    "AuthorizationToken: " . $habukhan_api->easy_access,
+                    "Cache-Control: no-cache",
                     "Content-Type: application/json",
-                    "cache-control: no-cache"
                 ),
             ));
             $dataapi = curl_exec($curl);
@@ -241,7 +240,11 @@ class ExamSend extends Controller
             curl_close($curl);
 
             // Log response for debugging
-            \Log::info("EasyAccess Exam Pins Response [$data[transid]]: ", ['res' => $response]);
+            $masked_token = substr($habukhan_api->easy_access, 0, 5) . "..." . substr($habukhan_api->easy_access, -5);
+            \Log::info("EasyAccess Exam Pins Trace [$data[transid]]: ", [
+                'token_used' => $masked_token,
+                'response' => $response
+            ]);
 
             if ($response) {
                 $res = $response['res'] ?? $response;
