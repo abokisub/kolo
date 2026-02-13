@@ -231,6 +231,7 @@ class ExamSend extends Controller
                 )),
                 CURLOPT_HTTPHEADER => array(
                     "Authorization: Bearer " . $habukhan_api->easy_access,
+                    "AuthorizationToken: " . $habukhan_api->easy_access,
                     "Content-Type: application/json",
                     "cache-control: no-cache"
                 ),

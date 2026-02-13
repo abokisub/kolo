@@ -1318,7 +1318,8 @@ class DataSend extends Controller
                     'client_reference' => $data['transid'],
                 )),
                 CURLOPT_HTTPHEADER => array(
-                    "Authorization: Bearer " . $other_api->easy_access,
+                    "Authorization: Bearer " . $other_api->easy_access, // Standard V1
+                    "AuthorizationToken: " . $other_api->easy_access,  // Fallback for some endpoints
                     "Content-Type: application/json",
                     "cache-control: no-cache"
                 ),
