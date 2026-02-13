@@ -41,8 +41,7 @@ class TransactionCalculator extends Controller
                         $charity_donations = DB::table('donations')->whereDate('created_at', Carbon::now("Africa/Lagos"))->where('status', 'confirmed')->get();
                         $charity_withdrawals = DB::table('donations')->whereDate('created_at', Carbon::now("Africa/Lagos"))->where('status', 'withdrawn')->get();
 
-                    }
-                    else if ($request->status == '7DAYS') {
+                    } else if ($request->status == '7DAYS') {
                         $data_trans = DB::table('data')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1])->get();
                         $airtime_trans = DB::table('airtime')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1])->get();
                         $cable_trans = DB::table('cable')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1])->get();
@@ -61,8 +60,7 @@ class TransactionCalculator extends Controller
                         $charity_donations = DB::table('donations')->whereDate('created_at', '>', Carbon::now("Africa/Lagos")->subDays(7))->where('status', 'confirmed')->get();
                         $charity_withdrawals = DB::table('donations')->whereDate('created_at', '>', Carbon::now("Africa/Lagos")->subDays(7))->where('status', 'withdrawn')->get();
 
-                    }
-                    else if ($request->status == '30DAYS') {
+                    } else if ($request->status == '30DAYS') {
                         $data_trans = DB::table('data')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1])->get();
                         $airtime_trans = DB::table('airtime')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1])->get();
                         $cable_trans = DB::table('cable')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1])->get();
@@ -81,8 +79,7 @@ class TransactionCalculator extends Controller
                         $charity_donations = DB::table('donations')->whereDate('created_at', '>', Carbon::now("Africa/Lagos")->subDays(30))->where('status', 'confirmed')->get();
                         $charity_withdrawals = DB::table('donations')->whereDate('created_at', '>', Carbon::now("Africa/Lagos")->subDays(30))->where('status', 'withdrawn')->get();
 
-                    }
-                    else if ($request->status == 'ALL TIME') {
+                    } else if ($request->status == 'ALL TIME') {
                         $data_trans = DB::table('data')->where(['plan_status' => 1])->get();
                         $airtime_trans = DB::table('airtime')->where(['plan_status' => 1])->get();
                         $cable_trans = DB::table('cable')->where(['plan_status' => 1])->get();
@@ -101,8 +98,7 @@ class TransactionCalculator extends Controller
                         $charity_donations = DB::table('donations')->where('status', 'confirmed')->get();
                         $charity_withdrawals = DB::table('donations')->where('status', 'withdrawn')->get();
 
-                    }
-                    else if ($request->status == 'CUSTOM USER') {
+                    } else if ($request->status == 'CUSTOM USER') {
                         if ((isset($request->from)) and isset($request->to)) {
                             if (!empty($request->username)) {
                                 if ((!empty($request->from)) and !empty($request->to)) {
@@ -125,46 +121,43 @@ class TransactionCalculator extends Controller
                                             $q->select('id')->from('user')->where('username', $request->username);
                                         })->get();
                                         $card_ext_trans = DB::table('card_transactions')->join('virtual_cards', 'card_transactions.card_id', '=', 'virtual_cards.card_id')->select('card_transactions.*', 'virtual_cards.card_type')->whereBetween('card_transactions.created_at', [$start_date, $end_date])->whereIn('card_transactions.card_id', function ($q) use ($request) {
-                                            $q->select('card_id')->from('virtual_cards')->whereIn('user_id', function ($u) use ($request) {
+                                            $q->select('card_id')->from('virtual_cards')->whereIn(
+                                                'user_id',
+                                                function ($u) use ($request) {
                                                     $u->select('id')->from('user')->where('username', $request->username);
                                                 }
-                                                );
-                                            })->get();
+                                            );
+                                        })->get();
                                         $charity_donations = DB::table('donations')->whereBetween('created_at', [$start_date, $end_date])->where([
                                             'status' => 'confirmed',
                                             'user_id' => function ($q) use ($request) {
-                                            $q->select('id')->from('user')->where('username', $request->username);
-                                        }
+                                                $q->select('id')->from('user')->where('username', $request->username);
+                                            }
                                         ])->get();
                                         $charity_withdrawals = DB::table('donations')->whereBetween('created_at', [$start_date, $end_date])->where(['status' => 'withdrawn'])->get(); // Withdrawals aren't per-user usually but per-charity
 
-                                    }
-                                    else {
+                                    } else {
                                         return response()->json([
                                             'message' => 'Invalid User Username'
                                         ])->setStatusCode(403);
                                     }
-                                }
-                                else {
+                                } else {
 
                                     return response()->json([
                                         'message' => 'start date and end date required'
                                     ])->setStatusCode(403);
                                 }
-                            }
-                            else {
+                            } else {
                                 return response()->json([
                                     'messsage' => ' Username Required'
                                 ])->setStatusCode(403);
                             }
-                        }
-                        else {
+                        } else {
                             return response()->json([
                                 'message' => 'start date and end date required'
                             ])->setStatusCode(403);
                         }
-                    }
-                    else {
+                    } else {
                         if ((isset($request->from)) and isset($request->to)) {
                             if ((!empty($request->from)) and !empty($request->to)) {
                                 $start_date = Carbon::parse($request->from . ' 00:00:00')->toDateTimeString();
@@ -187,14 +180,12 @@ class TransactionCalculator extends Controller
                                 $charity_donations = DB::table('donations')->whereBetween('created_at', [$start_date, $end_date])->where('status', 'confirmed')->get();
                                 $charity_withdrawals = DB::table('donations')->whereBetween('created_at', [$start_date, $end_date])->where('status', 'withdrawn')->get();
 
-                            }
-                            else {
+                            } else {
                                 return response()->json([
                                     'message' => 'start date and end date required'
                                 ])->setStatusCode(403);
                             }
-                        }
-                        else {
+                        } else {
                             return response()->json([
                                 'message' => 'start date and end date required'
                             ])->setStatusCode(403);
@@ -255,334 +246,275 @@ class TransactionCalculator extends Controller
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_g += $gb;
                             $mtn_g_bal += $data->amount;
-                        }
-                        else if ($data->network == 'MTN' and $data->network_type == 'SME') {
+                        } else if ($data->network == 'MTN' and $data->network_type == 'SME') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_sme += $gb;
                             $mtn_sme_bal += $data->amount;
-                        }
-                        else if ($data->network == 'MTN' and $data->network_type == 'COOPERATE GIFTING') {
+                        } else if ($data->network == 'MTN' and $data->network_type == 'COOPERATE GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_cg += $gb;
                             $mtn_cg_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'GIFTING') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_g += $gb;
                             $airtel_g_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'SME') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'SME') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_sme += $gb;
                             $airtel_sme_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'COOPERATE GIFTING') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'COOPERATE GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_cg += $gb;
                             $airtel_cg_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'GIFTING') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_g += $gb;
                             $glo_g_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'SME') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'SME') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_sme += $gb;
                             $glo_sme_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'COOPERATE GIFTING') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'COOPERATE GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_cg += $gb;
                             $glo_cg_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'GIFTING') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mobile_g += $gb;
                             $mobile_g_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'SME') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'SME') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mobile_sme += $gb;
                             $mobile_sme_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'COOPERATE GIFTING') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'COOPERATE GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mobile_cg += $gb;
                             $mobile_cg_bal += $data->amount;
-                        }
-                        else if ($data->network == 'MTN' and $data->network_type == 'SME 2') {
+                        } else if ($data->network == 'MTN' and $data->network_type == 'SME 2') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_sme2 += $gb;
                             $mtn_sme2_bal += $data->amount;
-                        }
-                        else if ($data->network == 'MTN' and $data->network_type == 'DATASHARE') {
+                        } else if ($data->network == 'MTN' and $data->network_type == 'DATASHARE') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_datashare += $gb;
                             $mtn_datashare_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'SME 2') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'SME 2') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_sme2 += $gb;
                             $airtel_sme2_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'DATASHARE') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'DATASHARE') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_datashare += $gb;
                             $airtel_datashare_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'SME 2') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'SME 2') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_sme2 += $gb;
                             $glo_sme2_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'DATASHARE') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'DATASHARE') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_datashare += $gb;
                             $glo_datashare_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'SME 2') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'SME 2') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mobile_sme2 += $gb;
                             $mobile_sme2_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'DATASHARE') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'DATASHARE') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
@@ -749,8 +681,7 @@ class TransactionCalculator extends Controller
                             $tx_amount = $card_tx->amount;
                             if (isset($card_tx->currency) && $card_tx->currency == 'USD') {
                                 $tx_amount = $tx_amount * $ngn_rate;
-                            }
-                            else {
+                            } else {
                                 // Fallback: Check card_type if currency is missing in transaction
                                 if (isset($card_tx->card_type) && $card_tx->card_type == 'USD') {
                                     $tx_amount = $tx_amount * $ngn_rate;
@@ -780,8 +711,7 @@ class TransactionCalculator extends Controller
                     if ($total_m != 0) {
                         $habukhan_in_trans = ($habukhan_in / $total_m) * 100;
                         $habukhan_out_trans = ($habukhan_out / $total_m) * 100;
-                    }
-                    else {
+                    } else {
                         $habukhan_in_trans = 0;
                         $habukhan_out_trans = 0;
                     }
@@ -813,130 +743,110 @@ class TransactionCalculator extends Controller
 
                     if ($mtn_cg >= 1024) {
                         $calculate_mtn_cg = number_format($mtn_cg / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mtn_cg = number_format($mtn_cg, 3) . 'GB';
                     }
                     if ($mtn_g >= 1024) {
                         $calculate_mtn_g = number_format($mtn_g / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mtn_g = number_format($mtn_g, 3) . 'GB';
                     }
                     if ($mtn_sme >= 1024) {
                         $calculate_mtn_sme = number_format($mtn_sme / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mtn_sme = number_format($mtn_sme, 3) . 'GB';
                     }
 
                     if ($mtn_sme2 >= 1024) {
                         $calculate_mtn_sme2 = number_format($mtn_sme2 / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mtn_sme2 = number_format($mtn_sme2, 3) . 'GB';
                     }
                     if ($mtn_datashare >= 1024) {
                         $calculate_mtn_datashare = number_format($mtn_datashare / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mtn_datashare = number_format($mtn_datashare, 3) . 'GB';
                     }
 
                     if ($glo_cg >= 1024) {
                         $calculate_glo_cg = number_format($glo_cg / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_glo_cg = number_format($glo_cg, 3) . 'GB';
                     }
                     if ($glo_g >= 1024) {
                         $calculate_glo_g = number_format($glo_g / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_glo_g = number_format($glo_g, 3) . 'GB';
                     }
                     if ($glo_sme >= 1024) {
                         $calculate_glo_sme = number_format($glo_sme / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_glo_sme = number_format($glo_sme, 3) . 'GB';
                     }
 
                     if ($glo_sme2 >= 1024) {
                         $calculate_glo_sme2 = number_format($glo_sme2 / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_glo_sme2 = number_format($glo_sme2, 3) . 'GB';
                     }
                     if ($glo_datashare >= 1024) {
                         $calculate_glo_datashare = number_format($glo_datashare / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_glo_datashare = number_format($glo_datashare, 3) . 'GB';
                     }
 
 
                     if ($airtel_cg >= 1024) {
                         $calculate_airtel_cg = number_format($airtel_cg / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_airtel_cg = number_format($airtel_cg, 3) . 'GB';
                     }
                     if ($airtel_g >= 1024) {
                         $calculate_airtel_g = number_format($airtel_g / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_airtel_g = number_format($airtel_g, 3) . 'GB';
                     }
                     if ($airtel_sme >= 1024) {
                         $calculate_airtel_sme = number_format($airtel_sme / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_airtel_sme = number_format($airtel_sme, 3) . 'GB';
                     }
 
                     if ($airtel_sme2 >= 1024) {
                         $calculate_airtel_sme2 = number_format($airtel_sme2 / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_airtel_sme2 = number_format($airtel_sme2, 3) . 'GB';
                     }
                     if ($airtel_datashare >= 1024) {
                         $calculate_airtel_datashare = number_format($airtel_datashare / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_airtel_datashare = number_format($airtel_datashare, 3) . 'GB';
                     }
 
                     if ($mobile_cg >= 1024) {
                         $calculate_mobile_cg = number_format($mobile_cg / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mobile_cg = number_format($mobile_cg, 3) . 'GB';
                     }
                     if ($mobile_g >= 1024) {
                         $calculate_mobile_g = number_format($mobile_g / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mobile_g = number_format($mobile_g, 3) . 'GB';
                     }
                     if ($mobile_sme >= 1024) {
                         $calculate_mobile_sme = number_format($mobile_sme / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mobile_sme = number_format($mobile_sme, 3) . 'GB';
                     }
 
                     if ($mobile_sme2 >= 1024) {
                         $calculate_mobile_sme2 = number_format($mobile_sme2 / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mobile_sme2 = number_format($mobile_sme2, 3) . 'GB';
                     }
                     if ($mobile_datashare >= 1024) {
                         $calculate_mobile_datashare = number_format($mobile_datashare / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mobile_datashare = number_format($mobile_datashare, 3) . 'GB';
                     }
 
@@ -1055,22 +965,19 @@ class TransactionCalculator extends Controller
                         'transfer_amount' => number_format($transfer_total, 2),
                         'transfer_charges' => number_format($transfer_charges, 2)
                     ]);
-                }
-                else {
+                } else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            }
-            else {
+            } else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        }
-        else {
+        } else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
@@ -1085,16 +992,14 @@ class TransactionCalculator extends Controller
         $headerToken = $request->header('Authorization');
         if (!empty($headerToken) && $headerToken !== 'Bearer null') {
             $token = $headerToken;
-        }
-        else {
+        } else {
             $token = $id ?? $request->id ?? $request->route('id');
         }
         if (empty($token)) {
             $authHeader = $request->header('Authorization');
             if (strpos($authHeader, 'Token ') === 0) {
                 $token = substr($authHeader, 6);
-            }
-            elseif (strpos($authHeader, 'Bearer ') === 0) {
+            } elseif (strpos($authHeader, 'Bearer ') === 0) {
                 $token = substr($authHeader, 7);
             }
         }
@@ -1115,17 +1020,13 @@ class TransactionCalculator extends Controller
                         // Date Filtering logic reuse
                         if ($request->status == 'TODAY') {
                             $query->whereDate('habukhan_date', Carbon::now("Africa/Lagos"));
-                        }
-                        elseif ($request->status == '7DAYS') {
+                        } elseif ($request->status == '7DAYS') {
                             $query->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(7));
-                        }
-                        elseif ($request->status == '30DAYS') {
+                        } elseif ($request->status == '30DAYS') {
                             $query->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(30));
-                        }
-                        elseif ($request->status == 'ALL TIME') {
-                        // No date filter
-                        }
-                        elseif ($request->status == 'CUSTOM' && isset($request->from, $request->to)) {
+                        } elseif ($request->status == 'ALL TIME') {
+                            // No date filter
+                        } elseif ($request->status == 'CUSTOM' && isset($request->from, $request->to)) {
                             $start_date = Carbon::parse($request->from . ' 00:00:00')->toDateTimeString();
                             $end_date = Carbon::parse($request->to . ' 23:59:59')->toDateTimeString();
                             $query->whereBetween('habukhan_date', [$start_date, $end_date]);
@@ -1196,7 +1097,7 @@ class TransactionCalculator extends Controller
                         $transactions = $query->orderBy('habukhan_date', 'desc')->paginate(50);
 
                         // Map to cleaner format
-                        $mapped = $transactions->getCollection()->map(function ($tx) {
+                        $mapped = collect($transactions->items())->map(function ($tx) {
                             $cat = 'Others';
                             $icon = 'more_horiz';
                             $color = '0xFF6B7280';
@@ -1206,57 +1107,49 @@ class TransactionCalculator extends Controller
                                 $cat = 'Wallet Transfer';
                                 $icon = 'wallet';
                                 $color = '0xFFF97316';
-                            }
-                            elseif ($tx->role == 'transfer') {
+                            } elseif ($tx->role == 'transfer') {
                                 $cat = 'Bank Transfer';
                                 $icon = 'account_balance';
                                 $color = '0xFF3B82F6';
-                            }
-                            elseif ($tx->role == 'airtime') {
+                            } elseif ($tx->role == 'airtime') {
                                 $cat = 'Airtime';
                                 $icon = 'phone_android';
                                 $color = '0xFF10B981';
-                            }
-                            elseif ($tx->role == 'data') {
+                            } elseif ($tx->role == 'data') {
                                 $cat = 'Data';
                                 $icon = 'dynamic_feed';
                                 $color = '0xFF10B981';
-                            }
-                            elseif ($tx->role == 'bill') {
+                            } elseif ($tx->role == 'bill') {
                                 $cat = 'Electricity';
                                 $icon = 'electric_bolt';
                                 $color = '0xFFF59E0B';
-                            }
-                            elseif ($tx->role == 'cable') {
+                            } elseif ($tx->role == 'cable') {
                                 $cat = 'Cable TV';
                                 $icon = 'tv';
                                 $color = '0xFF8B5CF6';
-                            }
-                            elseif ($tx->role == 'exam') {
+                            } elseif ($tx->role == 'exam') {
                                 $cat = 'Education';
                                 $icon = 'school';
                                 $color = '0xFFF43F5E';
-                            }
-                            elseif ($tx->role == 'charity_donation') {
+                            } elseif ($tx->role == 'charity_donation') {
                                 $cat = 'Charity';
                                 $icon = 'volunteer_activism';
                                 $color = '0xFF06B6D4';
-                            }
-                            elseif ($tx->role == 'recharge_card') {
+                            } elseif ($tx->role == 'recharge_card') {
                                 $cat = 'Airtime PIN';
                                 $icon = 'confirmation_number';
                                 $color = '0xFF6366F1';
                             }
 
                             return [
-                            'id' => $tx->transid,
-                            'title' => $cat,
-                            'subtitle' => $tx->message,
-                            'amount' => $tx->amount,
-                            'date' => $tx->habukhan_date,
-                            'category' => $cat,
-                            'icon' => $icon,
-                            'color' => $color
+                                'id' => $tx->transid,
+                                'title' => $cat,
+                                'subtitle' => $tx->message,
+                                'amount' => $tx->amount,
+                                'date' => $tx->habukhan_date,
+                                'category' => $cat,
+                                'icon' => $icon,
+                                'color' => $color
                             ];
                         });
 
@@ -1289,8 +1182,7 @@ class TransactionCalculator extends Controller
                         $recharge_card_trans = DB::table('message')->select('amount')->where('role', 'recharge_card')->whereDate('habukhan_date', Carbon::now("Africa/Lagos"))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $wallet_trans = DB::table('message')->select('amount')->where('role', 'transfer_sent')->whereDate('habukhan_date', Carbon::now("Africa/Lagos"))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $charity_withdrawals = collect([]); // Users don't have withdrawals usually
-                    }
-                    else if ($request->status == '7DAYS') {
+                    } else if ($request->status == '7DAYS') {
                         $data_trans = DB::table('data')->select('network', 'network_type', 'plan_name', 'amount')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $airtime_trans = DB::table('airtime')->select('network', 'network_type', 'amount', 'discount')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $cable_trans = DB::table('cable')->select('cable_name', 'amount', 'charges')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
@@ -1310,8 +1202,7 @@ class TransactionCalculator extends Controller
                         $recharge_card_trans = DB::table('message')->select('amount')->where('role', 'recharge_card')->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $wallet_trans = DB::table('message')->select('amount')->where('role', 'transfer_sent')->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(7))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $charity_withdrawals = collect([]);
-                    }
-                    else if ($request->status == '30DAYS') {
+                    } else if ($request->status == '30DAYS') {
                         $data_trans = DB::table('data')->select('network', 'network_type', 'plan_name', 'amount')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $airtime_trans = DB::table('airtime')->select('network', 'network_type', 'amount', 'discount')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $cable_trans = DB::table('cable')->select('cable_name', 'amount', 'charges')->whereDate('plan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
@@ -1331,8 +1222,7 @@ class TransactionCalculator extends Controller
                         $recharge_card_trans = DB::table('message')->select('amount')->where('role', 'recharge_card')->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $wallet_trans = DB::table('message')->select('amount')->where('role', 'transfer_sent')->whereDate('habukhan_date', '>', Carbon::now("Africa/Lagos")->subDays(30))->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $charity_withdrawals = collect([]);
-                    }
-                    else if ($request->status == 'ALL TIME') {
+                    } else if ($request->status == 'ALL TIME') {
                         $data_trans = DB::table('data')->select('network', 'network_type', 'plan_name', 'amount')->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $airtime_trans = DB::table('airtime')->select('network', 'network_type', 'amount', 'discount')->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $cable_trans = DB::table('cable')->select('cable_name', 'amount', 'charges')->where(['plan_status' => 1, 'username' => $real_username])->get();
@@ -1352,8 +1242,7 @@ class TransactionCalculator extends Controller
                         $recharge_card_trans = DB::table('message')->select('amount')->where('role', 'recharge_card')->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $wallet_trans = DB::table('message')->select('amount')->where('role', 'transfer_sent')->where(['plan_status' => 1, 'username' => $real_username])->get();
                         $charity_withdrawals = collect([]);
-                    }
-                    else {
+                    } else {
                         if ((isset($request->from)) and isset($request->to)) {
                             if ((!empty($request->from)) and !empty($request->to)) {
                                 $start_date = Carbon::parse($request->from . ' 00:00:00')->toDateTimeString();
@@ -1377,15 +1266,13 @@ class TransactionCalculator extends Controller
                                 $recharge_card_trans = DB::table('message')->select('amount')->where('role', 'recharge_card')->whereBetween('habukhan_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $real_username])->get();
                                 $wallet_trans = DB::table('message')->select('amount')->where('role', 'transfer_sent')->whereBetween('habukhan_date', [$start_date, $end_date])->where(['plan_status' => 1, 'username' => $real_username])->get();
                                 $charity_withdrawals = collect([]);
-                            }
-                            else {
+                            } else {
 
                                 return response()->json([
                                     'message' => 'start date and end date required'
                                 ])->setStatusCode(403);
                             }
-                        }
-                        else {
+                        } else {
                             return response()->json([
                                 'message' => 'start date and end date required'
                             ])->setStatusCode(403);
@@ -1446,334 +1333,275 @@ class TransactionCalculator extends Controller
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_g += $gb;
                             $mtn_g_bal += $data->amount;
-                        }
-                        else if ($data->network == 'MTN' and $data->network_type == 'SME') {
+                        } else if ($data->network == 'MTN' and $data->network_type == 'SME') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_sme += $gb;
                             $mtn_sme_bal += $data->amount;
-                        }
-                        else if ($data->network == 'MTN' and $data->network_type == 'COOPERATE GIFTING') {
+                        } else if ($data->network == 'MTN' and $data->network_type == 'COOPERATE GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_cg += $gb;
                             $mtn_cg_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'GIFTING') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_g += $gb;
                             $airtel_g_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'SME') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'SME') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_sme += $gb;
                             $airtel_sme_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'COOPERATE GIFTING') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'COOPERATE GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_cg += $gb;
                             $airtel_cg_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'GIFTING') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_g += $gb;
                             $glo_g_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'SME') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'SME') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_sme += $gb;
                             $glo_sme_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'COOPERATE GIFTING') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'COOPERATE GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_cg += $gb;
                             $glo_cg_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'GIFTING') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mobile_g += $gb;
                             $mobile_g_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'SME') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'SME') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mobile_sme += $gb;
                             $mobile_sme_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'COOPERATE GIFTING') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'COOPERATE GIFTING') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mobile_cg += $gb;
                             $mobile_cg_bal += $data->amount;
-                        }
-                        else if ($data->network == 'MTN' and $data->network_type == 'SME 2') {
+                        } else if ($data->network == 'MTN' and $data->network_type == 'SME 2') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_sme2 += $gb;
                             $mtn_sme2_bal += $data->amount;
-                        }
-                        else if ($data->network == 'MTN' and $data->network_type == 'DATASHARE') {
+                        } else if ($data->network == 'MTN' and $data->network_type == 'DATASHARE') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mtn_datashare += $gb;
                             $mtn_datashare_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'SME 2') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'SME 2') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_sme2 += $gb;
                             $airtel_sme2_bal += $data->amount;
-                        }
-                        else if ($data->network == 'AIRTEL' and $data->network_type == 'DATASHARE') {
+                        } else if ($data->network == 'AIRTEL' and $data->network_type == 'DATASHARE') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $airtel_datashare += $gb;
                             $airtel_datashare_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'SME 2') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'SME 2') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_sme2 += $gb;
                             $glo_sme2_bal += $data->amount;
-                        }
-                        else if ($data->network == 'GLO' and $data->network_type == 'DATASHARE') {
+                        } else if ($data->network == 'GLO' and $data->network_type == 'DATASHARE') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $glo_datashare += $gb;
                             $glo_datashare_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'SME 2') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'SME 2') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
                             $mobile_sme2 += $gb;
                             $mobile_sme2_bal += $data->amount;
-                        }
-                        else if ($data->network == '9MOBILE' and $data->network_type == 'DATASHARE') {
+                        } else if ($data->network == '9MOBILE' and $data->network_type == 'DATASHARE') {
                             $plans = $data->plan_name;
                             $check_gb = substr($plans, -2);
                             if ($check_gb == 'MB') {
                                 $mb = rtrim($plans, "MB");
                                 $gb = $mb / 1024;
-                            }
-                            elseif ($check_gb == 'GB') {
+                            } elseif ($check_gb == 'GB') {
                                 $gb = rtrim($plans, "GB");
-                            }
-                            elseif ($check_gb == 'TB') {
+                            } elseif ($check_gb == 'TB') {
                                 $tb = rtrim($plans, 'TB');
                                 $gb = ceil($tb * 1024);
                             }
@@ -1922,8 +1750,7 @@ class TransactionCalculator extends Controller
                     if ($total_m != 0) {
                         $habukhan_in_trans = ($habukhan_in / $total_m) * 100;
                         $habukhan_out_trans = ($habukhan_out / $total_m) * 100;
-                    }
-                    else {
+                    } else {
                         $habukhan_in_trans = 0;
                         $habukhan_out_trans = 0;
                     }
@@ -1946,78 +1773,66 @@ class TransactionCalculator extends Controller
 
                     if ($mtn_cg >= 1024) {
                         $calculate_mtn_cg = number_format($mtn_cg / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mtn_cg = number_format($mtn_cg, 3) . 'GB';
                     }
                     if ($mtn_g >= 1024) {
                         $calculate_mtn_g = number_format($mtn_g / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mtn_g = number_format($mtn_g, 3) . 'GB';
                     }
                     if ($mtn_sme >= 1024) {
                         $calculate_mtn_sme = number_format($mtn_sme / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mtn_sme = number_format($mtn_sme, 3) . 'GB';
                     }
 
                     if ($glo_cg >= 1024) {
                         $calculate_glo_cg = number_format($glo_cg / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_glo_cg = number_format($glo_cg, 3) . 'GB';
                     }
                     if ($glo_g >= 1024) {
                         $calculate_glo_g = number_format($glo_g / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_glo_g = number_format($glo_g, 3) . 'GB';
                     }
                     if ($glo_sme >= 1024) {
                         $calculate_glo_sme = number_format($glo_sme / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_glo_sme = number_format($glo_sme, 3) . 'GB';
                     }
 
 
                     if ($airtel_cg >= 1024) {
                         $calculate_airtel_cg = number_format($airtel_cg / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_airtel_cg = number_format($airtel_cg, 3) . 'GB';
                     }
                     if ($airtel_g >= 1024) {
                         $calculate_airtel_g = number_format($airtel_g / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_airtel_g = number_format($airtel_g, 3) . 'GB';
                     }
                     if ($airtel_sme >= 1024) {
                         $calculate_airtel_sme = number_format($airtel_sme / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_airtel_sme = number_format($airtel_sme, 3) . 'GB';
                     }
 
                     if ($mobile_cg >= 1024) {
                         $calculate_mobile_cg = number_format($mobile_cg / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mobile_cg = number_format($mobile_cg, 3) . 'GB';
                     }
                     if ($mobile_g >= 1024) {
                         $calculate_mobile_g = number_format($mobile_g / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mobile_g = number_format($mobile_g, 3) . 'GB';
                     }
                     if ($mobile_sme >= 1024) {
                         $calculate_mobile_sme = number_format($mobile_sme / 1024, 3) . 'TB';
-                    }
-                    else {
+                    } else {
                         $calculate_mobile_sme = number_format($mobile_sme, 3) . 'GB';
                     }
 
@@ -2165,85 +1980,74 @@ class TransactionCalculator extends Controller
                             ['name' => 'Others', 'amount' => round($others_total, 2), 'icon' => 'more_horiz', 'color' => '0xFF6B7280'],
                         ],
                         'recent_spending' => DB::table('message')->where('username', $real_username)->where('role', '!=', 'credit')->orderBy('habukhan_date', 'desc')->limit(10)->get()->map(function ($tx) {
-                        $cat = 'Others';
-                        $icon = 'more_horiz';
-                        $color = '0xFF6B7280';
+                            $cat = 'Others';
+                            $icon = 'more_horiz';
+                            $color = '0xFF6B7280';
 
-                        if (strpos($tx->message, 'Transfer to') !== false || $tx->role == 'transfer_sent') {
-                            $cat = 'Wallet Transfer';
-                            $icon = 'wallet';
-                            $color = '0xFFF97316';
-                        }
-                        elseif ($tx->role == 'transfer') {
-                            $cat = 'Bank Transfer';
-                            $icon = 'account_balance';
-                            $color = '0xFF3B82F6';
-                        }
-                        elseif ($tx->role == 'airtime') {
-                            $cat = 'Airtime';
-                            $icon = 'phone_android';
-                            $color = '0xFF10B981';
-                        }
-                        elseif ($tx->role == 'data') {
-                            $cat = 'Data';
-                            $icon = 'dynamic_feed';
-                            $color = '0xFF10B981';
-                        }
-                        elseif ($tx->role == 'bill') {
-                            $cat = 'Electricity';
-                            $icon = 'electric_bolt';
-                            $color = '0xFFF59E0B';
-                        }
-                        elseif ($tx->role == 'cable') {
-                            $cat = 'Cable TV';
-                            $icon = 'tv';
-                            $color = '0xFF8B5CF6';
-                        }
-                        elseif ($tx->role == 'exam') {
-                            $cat = 'Education';
-                            $icon = 'school';
-                            $color = '0xFFF43F5E';
-                        }
-                        elseif ($tx->role == 'charity_donation') {
-                            $cat = 'Charity';
-                            $icon = 'volunteer_activism';
-                            $color = '0xFF06B6D4';
-                        }
-                        elseif ($tx->role == 'recharge_card') {
-                            $cat = 'Airtime PIN';
-                            $icon = 'confirmation_number';
-                            $color = '0xFF6366F1';
-                        }
+                            if (strpos($tx->message, 'Transfer to') !== false || $tx->role == 'transfer_sent') {
+                                $cat = 'Wallet Transfer';
+                                $icon = 'wallet';
+                                $color = '0xFFF97316';
+                            } elseif ($tx->role == 'transfer') {
+                                $cat = 'Bank Transfer';
+                                $icon = 'account_balance';
+                                $color = '0xFF3B82F6';
+                            } elseif ($tx->role == 'airtime') {
+                                $cat = 'Airtime';
+                                $icon = 'phone_android';
+                                $color = '0xFF10B981';
+                            } elseif ($tx->role == 'data') {
+                                $cat = 'Data';
+                                $icon = 'dynamic_feed';
+                                $color = '0xFF10B981';
+                            } elseif ($tx->role == 'bill') {
+                                $cat = 'Electricity';
+                                $icon = 'electric_bolt';
+                                $color = '0xFFF59E0B';
+                            } elseif ($tx->role == 'cable') {
+                                $cat = 'Cable TV';
+                                $icon = 'tv';
+                                $color = '0xFF8B5CF6';
+                            } elseif ($tx->role == 'exam') {
+                                $cat = 'Education';
+                                $icon = 'school';
+                                $color = '0xFFF43F5E';
+                            } elseif ($tx->role == 'charity_donation') {
+                                $cat = 'Charity';
+                                $icon = 'volunteer_activism';
+                                $color = '0xFF06B6D4';
+                            } elseif ($tx->role == 'recharge_card') {
+                                $cat = 'Airtime PIN';
+                                $icon = 'confirmation_number';
+                                $color = '0xFF6366F1';
+                            }
 
-                        return [
-                        'id' => $tx->transid,
-                        'title' => $cat,
-                        'subtitle' => $tx->message,
-                        'amount' => $tx->amount,
-                        'date' => $tx->habukhan_date,
-                        'category' => $cat,
-                        'icon' => $icon,
-                        'color' => $color
-                        ];
-                    })
+                            return [
+                                'id' => $tx->transid,
+                                'title' => $cat,
+                                'subtitle' => $tx->message,
+                                'amount' => $tx->amount,
+                                'date' => $tx->habukhan_date,
+                                'category' => $cat,
+                                'icon' => $icon,
+                                'color' => $color
+                            ];
+                        })
                     ]);
                     return $final_response;
-                }
-                else {
+                } else {
                     return response()->json([
                         'status' => 403,
                         'message' => 'User Not Authorised'
                     ])->setStatusCode(403);
                 }
-            }
-            else {
+            } else {
                 return response()->json([
                     'status' => 403,
                     'message' => 'Not Authorised'
                 ])->setStatusCode(403);
             }
-        }
-        else {
+        } else {
             return redirect(config('app.error_500'));
             return response()->json([
                 'status' => 403,
