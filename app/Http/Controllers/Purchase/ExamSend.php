@@ -243,9 +243,12 @@ class ExamSend extends Controller
             \Log::info("EasyAccess Exam Pins Response [$data[transid]]: ", ['res' => $response]);
 
             if ($response) {
-                $status = strtolower($response['status'] ?? '');
-                if ($status == 'success' || ($response['code'] ?? 0) == 200 || ($response['code'] ?? 0) == 201) {
-                    $pins = $response['pins'] ?? [];
+                $res = $response['res'] ?? $response;
+                $status = strtolower($res['status'] ?? '');
+                $code = $res['code'] ?? 0;
+
+                if ($status == 'success' || $code == 200 || $code == 201) {
+                    $pins = $res['pins'] ?? [];
                     if (is_array($pins)) {
                         $pin_string = implode(", ", $pins);
                     } else {

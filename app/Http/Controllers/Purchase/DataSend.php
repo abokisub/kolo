@@ -1331,9 +1331,12 @@ class DataSend extends Controller
             \Log::info("EasyAccess Data Response [$data[transid]]: ", ['res' => $response]);
 
             if ($response) {
-                // The new API returns status string and code 200/201 for success
-                $status = strtolower($response['status'] ?? '');
-                if ($status == 'success' || $status == 'successful' || ($response['code'] ?? 0) == 200 || ($response['code'] ?? 0) == 201) {
+                // The new API returns results inside a 'res' object
+                $res = $response['res'] ?? $response;
+                $status = strtolower($res['status'] ?? '');
+                $code = $res['code'] ?? 0;
+
+                if ($status == 'success' || $status == 'successful' || $code == 200 || $code == 201) {
                     return 'success';
                 } else {
                     return 'fail';
