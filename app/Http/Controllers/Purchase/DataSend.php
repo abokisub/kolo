@@ -1292,45 +1292,54 @@ class DataSend extends Controller
             $other_api = DB::table('other_api')->first();
 
             if ($network->network == 'MTN') {
-                $the_network = 01;
-            } else if ($network->network == 'AIRTEL') {
-                $the_network = 03;
+                $the_network = 1;
             } else if ($network->network == 'GLO') {
-                $the_network = 02;
+                $the_network = 2;
+            } else if ($network->network == 'AIRTEL') {
+                $the_network = 3;
             } else {
-                $the_network = 04;
+                $the_network = 4;
             }
 
             $curl = curl_init();
             curl_setopt_array($curl, array(
-                CURLOPT_URL => "https://easyaccessapi.com.ng/api/data.php",
+                CURLOPT_URL => "https://easyaccessapi.com.ng/api/live/v1/purchase-data",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => "",
                 CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
+                CURLOPT_TIMEOUT => 30,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => "POST",
-                CURLOPT_POSTFIELDS => array(
+                CURLOPT_POSTFIELDS => json_encode(array(
                     'network' => $the_network,
                     'mobileno' => $sendRequest->plan_phone,
                     'dataplan' => $dataplan->easyaccess,
-                    'client_reference' => $data['transid'], //update this on your script to receive webhook notifications
-                ),
+                    'client_reference' => $data['transid'],
+                )),
                 CURLOPT_HTTPHEADER => array(
-                    "AuthorizationToken: " . $other_api->easy_access, //replace this with your authorization_token
+                    "Authorization: Bearer " . $other_api->easy_access,
+                    "Content-Type: application/json",
                     "cache-control: no-cache"
                 ),
             ));
-            $response = json_decode(curl_exec($curl), true);
+            $dataapi = curl_exec($curl);
+            $response = json_decode($dataapi, true);
             curl_close($curl);
+
+            // Log response for debugging
+            \Log::info("EasyAccess Data Response [$data[transid]]: ", ['res' => $response]);
+
             if ($response) {
-                if ($response['success'] == 'true') {
+                // The new API returns status string and code 200/201 for success
+                $status = strtolower($response['status'] ?? '');
+                if ($status == 'success' || $status == 'successful' || ($response['code'] ?? 0) == 200 || ($response['code'] ?? 0) == 201) {
                     return 'success';
                 } else {
                     return 'fail';
                 }
             }
+            return 'fail';
         } else {
             return 'fail';
         }

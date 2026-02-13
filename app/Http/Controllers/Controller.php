@@ -367,47 +367,19 @@ class Controller extends BaseController
 
                     if ($response->successful()) {
                         $responseBody = $resBody['responseBody'];
-                        $accounts = [];
+                        $this->processMonnifyAccounts($user, $responseBody);
+                    } else if (isset($resBody['responseCode']) && $resBody['responseCode'] == '99' && str_contains($resBody['responseMessage'], 'same reference')) {
+                        \Log::info("Monnify SYNC: Account reference already exists for $username. Fetching details...");
+                        $fetchResponse = Http::timeout(10)->withOptions(['connect_timeout' => 5])->withToken($accessToken)
+                            ->get('https://api.monnify.com/api/v1/bank-transfer/reserved-accounts/' . $ref);
 
-                        if (isset($responseBody['accounts'])) {
-                            $accounts = $responseBody['accounts'];
-                        } elseif (isset($responseBody['accountNumber'])) {
-                            $accounts[] = $responseBody;
-                        }
-
-                        if (!empty($accounts)) {
-                            \Log::info("Monnify SYNC: Retreived accounts for $username.");
-                            $updateData = [];
-
-                            foreach ($accounts as $account) {
-                                $bankName = strtoupper($account['bankName']);
-                                $accountNumber = $account['accountNumber'];
-                                $bankCode = $account['bankCode'];
-
-                                if (strpos($bankName, 'MONIEPOINT') !== false) {
-                                    // Monify Table (user_bank) for Moniepoint
-                                    if (DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->count() == 0) {
-                                        DB::table('user_bank')->insert([
-                                            'username' => $user->username,
-                                            'bank' => 'MONIEPOINT',
-                                            'bank_name' => $user->name,
-                                            'account_number' => $accountNumber,
-                                            'bank_code' => $bankCode,
-                                            'date' => $this->system_date()
-                                        ]);
-                                    }
-                                } elseif (strpos($bankName, 'WEMA') !== false) {
-                                    // Standardized Wema Field (paystack_account)
-                                    if (empty($user->paystack_account)) {
-                                        $updateData['paystack_account'] = $accountNumber;
-                                    }
-                                }
+                        if ($fetchResponse->successful()) {
+                            $fetchBody = $fetchResponse->json();
+                            if (isset($fetchBody['responseBody'])) {
+                                $this->processMonnifyAccounts($user, $fetchBody['responseBody']);
                             }
-
-                            if (!empty($updateData)) {
-                                DB::table('user')->where('id', $user->id)->update($updateData);
-                                \Log::info("Monnify SYNC: Assigned accounts to $username.");
-                            }
+                        } else {
+                            \Log::error("Monnify SYNC FETCH FAILED for $username: " . $fetchResponse->body());
                         }
                     } else {
                         \Log::error("Monnify SYNC FAILED for $username: " . $response->body());
@@ -421,6 +393,52 @@ class Controller extends BaseController
             }
         } catch (\Exception $e) {
             \Log::error("Monnify Error for $username: " . $e->getMessage());
+        }
+    }
+
+    private function processMonnifyAccounts($user, $responseBody)
+    {
+        $accounts = [];
+
+        if (isset($responseBody['accounts'])) {
+            $accounts = $responseBody['accounts'];
+        } elseif (isset($responseBody['accountNumber'])) {
+            $accounts[] = $responseBody;
+        }
+
+        if (!empty($accounts)) {
+            \Log::info("Monnify SYNC: Retreived accounts for $user->username.");
+            $updateData = [];
+
+            foreach ($accounts as $account) {
+                $bankName = strtoupper($account['bankName']);
+                $accountNumber = $account['accountNumber'];
+                $bankCode = $account['bankCode'] ?? null;
+
+                if (strpos($bankName, 'MONIEPOINT') !== false) {
+                    // Monify Table (user_bank) for Moniepoint
+                    if (DB::table('user_bank')->where(['username' => $user->username, 'bank' => 'MONIEPOINT'])->count() == 0) {
+                        DB::table('user_bank')->insert([
+                            'username' => $user->username,
+                            'bank' => 'MONIEPOINT',
+                            'bank_name' => $user->name,
+                            'account_number' => $accountNumber,
+                            'bank_code' => $bankCode,
+                            'date' => $this->system_date()
+                        ]);
+                    }
+                } elseif (strpos($bankName, 'WEMA') !== false) {
+                    // Standardized Wema Field (paystack_account)
+                    if (empty($user->paystack_account)) {
+                        $updateData['paystack_account'] = $accountNumber;
+                    }
+                }
+            }
+
+            if (!empty($updateData)) {
+                DB::table('user')->where('id', $user->id)->update($updateData);
+                \Log::info("Monnify SYNC: Assigned accounts to $user->username.");
+            }
         }
     }
 
